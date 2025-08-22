@@ -71,11 +71,24 @@ async def test_select():
 
 
 @pytest.mark.asyncio
+# async def test_hover():
+#     async with async_playwright() as p:
+#         browser = await p.chromium.launch()
+#         page = await browser.new_page()
+#         await page.goto('https://magento.softwaretestingboard.com/')
+#         await page.locator('#ui-id-4').hover()
+#         await page.locator('#ui-id-9').hover()
+#         await page.screenshot(type='jpeg', path='/Users/eokulik/projects/playwright-start/hover.jpg')
 async def test_hover():
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
         await page.goto('https://magento.softwaretestingboard.com/')
-        await page.locator('#ui-id-4').hover()
-        await page.locator('#ui-id-9').hover()
-        await page.screenshot(type='jpeg', path='/Users/eokulik/projects/playwright-start/hover.jpg')
+
+        locator = page.locator('#ui-id-4')
+        try:
+            await locator.wait_for(state='visible', timeout=10000)  # ждём элемент до 10 секунд
+            await locator.scroll_into_view_if_needed()
+            await locator.hover()
+        except TimeoutError:
+            print("Элемент не найден или не видим")
