@@ -2,17 +2,22 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
+from conftest import page_open
 
-def test_first(page: Page):
-    page.goto('https://www.google.com/')
-    expect(page).to_have_title('Google')
-    mail_link = page.get_by_role('link', name='mail')
-    expect(mail_link).to_have_attribute('href', 'https://mail.google.com/mail/&ogbl')
-    input_field = page.locator('css=[name="q"]')
-    input_field.fill('cat')
-    search_button = page.locator('xpath=(//*[@name="btnK"])[2]')
-    search_button.click()
-    expect(page).to_have_title(re.compile('cat'))
+
+def test_first(page: Page, page_open):
+    # page.goto('https://www.google.com/')
+    logo = page_open.locator("img.logo_image")  # знаходимо <img> з класом
+    expect(logo).to_be_visible()  # перевіряємо, що зображення видно
+    # expect(page_open.locator("site_header")).to_be_visible()
+    # expect(page_open).to_have_title('Google')
+    # mail_link = page.get_by_role('link', name='mail')
+    # expect(mail_link).to_have_attribute('href', 'https://mail.google.com/mail/&ogbl')
+    # input_field = page.locator('css=[name="q"]')
+    # input_field.fill('cat')
+    # search_button = page.locator('xpath=(//*[@name="btnK"])[2]')
+    # search_button.click()
+    # expect(page).to_have_title(re.compile('cat'))
 
 
 @pytest.mark.skip('Site doesn\'t work')
