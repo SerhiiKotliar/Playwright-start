@@ -17,13 +17,21 @@ def user_data():
 #         yield browser
 #         browser.close()
 
-@pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args):
-    # Add Chromium flag for always on top
-    return {
-        **browser_type_launch_args,
-        "args": ["--always-on-top"]
-    }
+# @pytest.fixture(scope="session")
+# def browser_type_launch_args(browser_type_launch_args):
+#     # Add Chromium flag for always on top
+#     return {
+#         **browser_type_launch_args,
+#         "args": ["--always-on-top"]
+#     }
+
+# @pytest.fixture(scope="function")
+# def page_open(user_data, browser):
+#     page = browser.new_page()
+#     page.goto(user_data['url'])
+#     # page.goto(get_user_input['url'])
+#     return page
+
 
 @pytest.fixture(scope="function")
 def page_open(page: Page, user_data):

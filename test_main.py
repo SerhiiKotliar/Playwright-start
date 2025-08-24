@@ -34,7 +34,7 @@ from playwright.sync_api import Page, expect
     # search_button.click()
     # expect(page).to_have_title(re.compile('cat'))
 
-def test_example(page: Page, page_open, browser) -> None:
+def test_example(page: Page, page_open) -> None:
     logo = page_open.locator("img.logo_image")  # знаходимо <img> з класом
     expect(logo).to_be_visible()  # перевіряємо, що зображення видно
     expect(page_open.get_by_role("link", name="Select input")).to_be_visible()
