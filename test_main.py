@@ -2,6 +2,9 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
+from conftest import page_open
+pytestmark = pytest.mark.usefixtures("page_open")
+
 # from conftest import page_open
 
 
@@ -48,34 +51,34 @@ def test_example(page: Page, page_open) -> None:
 
 
 @pytest.mark.skip('Site doesn\'t work')
-def test_dynamic_props(page: Page):
-    page.goto('https://demoqa.com/dynamic-properties')
-    button = page.locator('#visibleAfter')
+def test_dynamic_props(page: Page, page_open) -> None:
+    # page.goto('https://demoqa.com/dynamic-properties')
+    button = page_open().locator('#visibleAfter')
     button.click()
-    page.screenshot(type='jpeg', path='/Users/eokulik/projects/playwright-start/shot.jpg')
+    page_open.screenshot(type='jpeg', path='screenshots/shot.jpg')
 
 
-def test_iframe(page: Page):
-    page.goto('https://www.qa-practice.com/elements/iframe/iframe_page')
-    toggler = page.frames[1].locator('css=.navbar-toggler-icon')
+def test_iframe(page: Page, page_open):
+    # page.goto('https://www.qa-practice.com/elements/iframe/iframe_page')
+    toggler = page_open.frames[1].locator('css=.navbar-toggler-icon')
     toggler.click()
-    page.screenshot(type='jpeg', path='/Users/eokulik/projects/playwright-start/toggler.jpg')
+    page_open.screenshot(type='jpeg', path='screenshots/toggler.jpg')
 
 
-def test_drag(page: Page):
-    page.goto('https://www.qa-practice.com/elements/dragndrop/boxes')
-    page.drag_and_drop('#rect-draggable', '#rect-droppable')
-    page.screenshot(type='jpeg', path='/Users/eokulik/projects/playwright-start/drag.jpg')
+def test_drag(page: Page, page_open):
+    # page.goto('https://www.qa-practice.com/elements/dragndrop/boxes')
+    page_open.drag_and_drop('#rect-draggable', '#rect-droppable')
+    page_open.screenshot(type='jpeg', path='screenshots/drag.jpg')
 
 
-def test_select(page: Page):
-    page.goto('https://www.qa-practice.com/elements/button/disabled')
-    page.locator('#id_select_state').select_option('enabled')
-    page.screenshot(type='jpeg', path='/Users/eokulik/projects/playwright-start/select.jpg')
+def test_select(page: Page, page_open):
+    # page.goto('https://www.qa-practice.com/elements/button/disabled')
+    page_open.locator('#id_select_state').select_option('enabled')
+    page_open.screenshot(type='jpeg', path='screenshots/select.jpg')
 
 
-def test_hover(page: Page):
-    page.goto('https://magento.softwaretestingboard.com/')
-    page.locator('#ui-id-4').hover()
-    page.locator('#ui-id-9').hover()
-    page.screenshot(type='jpeg', path='/Users/eokulik/projects/playwright-start/hover.jpg')
+def test_hover(page: Page, page_open):
+    # page.goto('https://magento.softwaretestingboard.com/')
+    page_open.locator('#ui-id-4').hover()
+    page_open.locator('#ui-id-9').hover()
+    page_open.screenshot(type='jpeg', path='screenshots/hover.jpg')
