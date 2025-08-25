@@ -2,9 +2,6 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-# pytestmark = pytest.mark.usefixtures("page_open")
-
-# from conftest import page_open
 
 
 # def test_first(page: Page, page_open):
@@ -36,7 +33,7 @@ from playwright.sync_api import Page, expect
     # search_button.click()
     # expect(page).to_have_title(re.compile('cat'))
 
-def test_example(page: Page, page_open) -> None:
+def test_example(page_open) -> None:
     logo = page_open.locator("img.logo_image")  # знаходимо <img> з класом
     expect(logo).to_be_visible()  # перевіряємо, що зображення видно
     expect(page_open.get_by_role("link", name="Select input")).to_be_visible()
@@ -44,8 +41,8 @@ def test_example(page: Page, page_open) -> None:
     expect(page_open.get_by_label("Choose language*")).to_be_visible()
     page_open.get_by_label("Choose language*").select_option(label="Python")
     page_open.get_by_role("button", name="Submit").click()
-    expect(page.get_by_text("You selected Python")).to_be_visible()
-    page.get_by_text("You selected Python").screenshot(path="screenshots/Python.png")
+    expect(page_open.get_by_text("You selected Python")).to_be_visible()
+    page_open.get_by_text("You selected Python").screenshot(path="screenshots/Python.png")
 
 
 
