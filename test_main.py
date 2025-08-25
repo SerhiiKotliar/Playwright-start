@@ -2,8 +2,7 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-from conftest import page_open
-pytestmark = pytest.mark.usefixtures("page_open")
+# pytestmark = pytest.mark.usefixtures("page_open")
 
 # from conftest import page_open
 
@@ -42,9 +41,9 @@ def test_example(page: Page, page_open) -> None:
     expect(logo).to_be_visible()  # перевіряємо, що зображення видно
     expect(page_open.get_by_role("link", name="Select input")).to_be_visible()
     page_open.get_by_role("link", name="Select input").click()
-    expect(page.get_by_label("Choose language*")).to_be_visible()
-    page.get_by_label("Choose language*").select_option(label="Python")
-    page.get_by_role("button", name="Submit").click()
+    expect(page_open.get_by_label("Choose language*")).to_be_visible()
+    page_open.get_by_label("Choose language*").select_option(label="Python")
+    page_open.get_by_role("button", name="Submit").click()
     expect(page.get_by_text("You selected Python")).to_be_visible()
     page.get_by_text("You selected Python").screenshot(path="screenshots/Python.png")
 
@@ -53,7 +52,7 @@ def test_example(page: Page, page_open) -> None:
 @pytest.mark.skip('Site doesn\'t work')
 def test_dynamic_props(page: Page, page_open) -> None:
     # page.goto('https://demoqa.com/dynamic-properties')
-    button = page_open().locator('#visibleAfter')
+    button = page_open.locator('#visibleAfter')
     button.click()
     page_open.screenshot(type='jpeg', path='screenshots/shot.jpg')
 
@@ -81,4 +80,4 @@ def test_hover(page: Page, page_open):
     # page.goto('https://magento.softwaretestingboard.com/')
     page_open.locator('#ui-id-4').hover()
     page_open.locator('#ui-id-9').hover()
-    page_open.screenshot(type='jpeg', path='screenshots/hover.jpg')
+    page.screenshot(type='jpeg', path='screenshots/hover.jpg')
