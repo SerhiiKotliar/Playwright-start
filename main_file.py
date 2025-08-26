@@ -2,13 +2,13 @@ import tkinter as tk
 from tkinter import messagebox
 import re
 import string
-from urllib.parse import urlparse
+# from urllib.parse import urlparse
 from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtCore import Qt
 from pyside_dialog import MyDialog  # твоя PySide форма
 import os
-from tkinter import simpledialog
-from helper import debug
+# from tkinter import simpledialog
+# from helper import debug
 # _root = None  # глобальная ссылка на root
 
 
@@ -309,6 +309,45 @@ def validate_url_value(url: str):
         return "Неправильний формат URL."
     return None
 
+def make_input_data(file_name):
+    # Словарь для хранения данных
+    data = {
+        "url": [],
+        "login": [],
+        "password": [],
+        "email": []
+    }
+
+    current_section = None
+
+    with open(file_name, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()  # Убираем пробелы и переносы строк
+            if not line:  # Пропускаем пустые строки
+                continue
+            if line.startswith("[") and line.endswith("]"):
+                # Определяем текущую секцию
+                section = line[1:-1].lower()
+                if section in data:
+                    current_section = section
+                else:
+                    current_section = None
+            elif current_section:
+                # Добавляем строки в соответствующий список
+                data[current_section].append(line)
+    return data
+
+def test_list(file_test):
+    test_names = []
+    with open(file_test, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("def test_") and line.endswith(":"):
+                # Витягаємо назву тесту без "def" та дужок
+                name = line.split("(")[0].replace("def ", "").strip()
+                test_names.append(name)
+    return test_names
+
 # https://www.qa-practice.com/
 # https://en.wikipedia.org/wiki/Main_Page
 # --- конфиг полей ---
@@ -514,3 +553,4 @@ def get_user_input():
     root.wait_window(dlg)
     # debug(f"Форма закрыта, результат: {dlg.result}", "INFO")
     return dlg.result
+

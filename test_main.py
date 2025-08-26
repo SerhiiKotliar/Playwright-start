@@ -58,7 +58,7 @@ from helper import debug
 #
 #     # root.destroy()  # корректно закрываем скрытый root
 
-def test_example(page: Page, page_open, user_data) -> None:
+def test_example(page: Page, page_open) -> None:
     # 'https://www.qa-practice.com/'
     # debug(user_data['url'], "URL")  # сразу в консоль и в Allure
     logo = page_open.locator("img.logo_image")  # знаходимо <img> з класом

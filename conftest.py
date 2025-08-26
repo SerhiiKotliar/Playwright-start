@@ -1,6 +1,6 @@
 import pytest
 
-from main import get_user_input
+from main_file import get_user_input
 from playwright.sync_api import Page
 from helper import debug
 
