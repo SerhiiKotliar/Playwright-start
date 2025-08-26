@@ -1,13 +1,7 @@
-import re
 import pytest
 from playwright.sync_api import Page, expect
 
 from conftest import page_open
-pytestmark = pytest.mark.usefixtures("page_open")
-
-# from conftest import page_open
-
-
 # def test_first(page: Page, page_open):
     # page.goto('https://www.google.com/')
     # logo = page_open.locator("img.logo_image")  # знаходимо <img> з класом
