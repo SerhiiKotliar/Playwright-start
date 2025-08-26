@@ -421,7 +421,9 @@ class InputDialog(tk.Toplevel):
             var = tk.BooleanVar(master=self, value=(name in ("login", "password")))
             self.required_vars[name] = var
             chk = tk.Checkbutton(self, text="Обов'язкове", variable=var,
-                                 command=lambda name=name: self.on_toggle(name))
+                                 command=lambda name=name: self.on_toggle(name, var))
+            # записываем начальное состояние
+            # self.required_vars[name] = var.get()
             chk.grid(row=row, column=2, sticky="w", padx=5, pady=5)
             # кнопка для виклику toggle_rule
             btn = tk.Button(self, text="Правила",
@@ -444,12 +446,16 @@ class InputDialog(tk.Toplevel):
         self.entries[first_field].focus_set()
 
 
-    def set_url(self, url_value):
-        self.entries["url"].delete(0, tk.END)
-        self.entries["url"].insert(0, url_value)
+    # def set_url(self, url_value):
+    #     self.entries["url"].delete(0, tk.END)
+    #     self.entries["url"].insert(0, url_value)
 
-    def on_toggle(self, name):
-        val = self.required_vars[name].get()
+    def on_toggle(self, name, var):
+        self.required_vars[name].get()
+        # print(f"{name}: {self.required_vars[name].get()}")
+        # self.required_vars[name] = val
+        # self.required_vars[name] = var.get()
+        # print(f"{name} → {self.required_vars[name].get()}")# теперь в словаре всегда True/False
 
     # --- validatecommand factory ---
     def _vcmd_factory(self, entry, allow_func):
@@ -510,14 +516,14 @@ class InputDialog(tk.Toplevel):
 
         login_val = self.login.get()
         if "login" in self.required_vars and login_val != "":
-            if email and self.entries["email"].get() == "":
-                # if "email" in self.required_vars and login_val != "":
+            if email: #and self.entries["email"].get() == "":
                 errlog = validate_email_rules(login_val)
             else:
                 errlog = validate_login_rules(login_val)
             if not allow_login_value(login_val) or errlog:
                 self._set_err(self.login)
                 messagebox.showerror("Помилка", errlog or "Логін містить недопустимі символи.", parent=self)
+                self.entries['login'].delete(0, tk.END)
                 self.login.focus_set()
                 return
             self._set_ok(self.login)
@@ -528,6 +534,7 @@ class InputDialog(tk.Toplevel):
             if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
                 messagebox.showerror("Помилка", errp or "Пароль містить недопустимі символи.", parent=self)
+                self.entries['password'].delete(0, tk.END)
                 self.password.focus_set()
                 return
             self._set_ok(self.password)
@@ -538,6 +545,7 @@ class InputDialog(tk.Toplevel):
             if erru:
                 self._set_err(self.url)
                 messagebox.showerror("Помилка", erru, parent=self)
+                self.entries['url'].delete(0, tk.END)
                 self.url.focus_set()
                 return
             self._set_ok(self.url)
@@ -549,6 +557,7 @@ class InputDialog(tk.Toplevel):
             if not allow_email_value(email_val) or erre:
                 self._set_err(self.email)
                 messagebox.showerror("Помилка", erre or "Email містить недопустимі символи.", parent=self)
+                self.entries['email'].delete(0, tk.END)
                 self.email.focus_set()
                 return
             self._set_ok(self.email)
