@@ -12,8 +12,8 @@ import os
 # _root = None  # глобальная ссылка на root
 
 
-email = ""
-url = ""
+email = False
+url = False
 len_min = 4
 len_max = 16
 lenminlog = 4
@@ -102,11 +102,13 @@ def entries_rules(fame, **kwargs):
         elif key == "len_max":
             len_max = value
 
-        elif key == "email_in" and value:
-            email = r"A-Za-z0-9@._-"
+        elif key == "email_in":
+            # email = r"(A-Za-z0-9@._-)"
+            email = value
 
-        elif key == "url_in" and value:
-            url = r"http?://[^\s/$.?#].[^\s]"
+        elif key == "url_in":
+            # url = r"(http?://[^\s/$.?#].[^\s])"
+            url = value
         #     url = re.compile(
         #     r'^[A-Za-z][A-Za-z0-9+.-]*://'  # схема (http, https, ftp…)
         #     r'([A-Za-z0-9._~%!$&\'()*+,;=-]+@)?'  # user:pass@
@@ -127,6 +129,10 @@ def entries_rules(fame, **kwargs):
         parts.append(digits_str)
     if is_probel:
         parts.append(r'^\s')
+    # if email:
+    #     parts.append(email)
+    # if url:
+    #     parts.append(url)
 
     chars = "".join(parts) or "."  # если ничего не выбрано — разрешаем всё
     if email:
@@ -149,6 +155,9 @@ def entries_rules(fame, **kwargs):
     pattern = r"[{chars}]*"
     # print("✅ Готовый паттерн:", pattern)
     if fame == "login":
+        # if not email:
+        #     patternlog = pattern
+        # else:
         lenminlog = len_min
         lenmaxlog = len_max
         patternlog = pattern
@@ -182,21 +191,19 @@ def show_error(parent, text: str):
 
 # --- проверки при вводе ---
 def allow_login_value(new_value: str) -> bool:
-    global pattern, chars, patternlog
+    global chars, patternlog
     if not new_value:
         return True
     # если chars == ".", разрешаем всё
     if chars == ".":
         return True
+    if email:
+        patternlog = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$)"
     return bool(re.fullmatch(patternlog, new_value))
 
 
-def allow_password_value(new_value: str, empty_email=True) -> bool:
-    global pattern, chars, patternpas, _root
-    if email and empty_email:
-        if _root.entries["email"].get() == "":
-            show_error(_root, "Помилка, Пароль не може форматуватись як Email адреса.")
-            return False
+def allow_password_value(new_value: str) -> bool:
+    global pattern, chars, patternpas
     if not new_value:
         return True
     # если chars == ".", разрешаем всё
@@ -209,8 +216,10 @@ def allow_url_value(new_value: str) -> bool:
     global patternu
     if not new_value:
         return True
-    return bool(re.fullmatch(r"(http?://[^\s/$.?#].[^\s]*)", new_value))
-    # return bool(re.fullmatch(patternu, new_value))
+    if chars == ".":
+        return True
+    # return bool(re.fullmatch(r"(http?://[^\s/$.?#].[^\s]*)", new_value))
+    return bool(re.fullmatch(patternu, new_value))
 
 
 # --- проверки Email при вводе ---
@@ -218,18 +227,22 @@ def allow_email_value(new_value: str) -> bool:
     global patterne
     if not new_value:
         return True
+    if chars == ".":
+        return True
     # простой паттерн для "live" проверки: разрешаем буквы, цифры, @, ., -, _
     # pattern = r"[A-Za-z0-9@._\-]*"
     pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$)"
     return bool(re.fullmatch(pattern, new_value))
 
 
-def validate_email_rules(email: str):
-    if not email:
+def validate_email_rules(email_t: str):
+    if url:
+        return "Помилка, Email не може форматуватись як URL адреса."
+    if not email_t:
         return "Email не може бути порожнім."
     # RFC 5322 упрощённая проверка
     pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$)"
-    if not re.fullmatch(pattern, email):
+    if not re.fullmatch(pattern, email_t):
         return "Неправильний формат Email."
     return None
 
@@ -241,6 +254,8 @@ def validate_login_rules(log: str):
         return "Логін не може бути порожнім."
     if len(log) < lenminlog or len(log) > lenmaxlog:
         return f"Логін має бути від {lenminlog} до {lenmaxlog} символів включно"
+    if email:
+        return None
     if both_reg_log:
         if not any(c.islower() for c in log):
             return "Логін має містити принаймні одну маленьку літеру."
@@ -257,6 +272,12 @@ def validate_login_rules(log: str):
 
 def validate_password_rules(pw: str):
     global both_reg_p, digits_str_p, spec_escaped_p
+    if email:
+        # show_error(_root, "Помилка, Пароль не може форматуватись як Email адреса.")
+        return "Помилка, Пароль не може форматуватись як Email адреса."
+    if url:
+        # show_error(_root, "Помилка, Пароль не може форматуватись як Email адреса.")
+        return "Помилка, Пароль не може форматуватись як URL адреса."
     if not pw:
         return "Пароль не може бути порожнім."
     if len(pw) < lenminpas or len(pw) > lenmaxpas:
@@ -278,6 +299,9 @@ def validate_password_rules(pw: str):
 def validate_url_value(url: str):
     if not url:
         return "URL не може бути порожнім."
+    if email:
+        # show_error(_root, "Помилка, URL не може форматуватись як Email адреса.")
+        return "Помилка, URL не може форматуватись як Email адреса."
     # allowed_pattern = re.compile(
     #     r'^[A-Za-z][A-Za-z0-9+.-]*://'
     #     r'([A-Za-z0-9\-._~%!$&\'()*+,;=]+@)?'
@@ -380,10 +404,10 @@ class InputDialog(tk.Toplevel):
             self.labels[name] = label_text
 
             entry = tk.Entry(self)
-            if name == 'url':
-                entry.insert(0, init_url)
-            else:
-                entry.insert(0, default)
+            # if name == 'url':
+            #     entry.insert(0, init_url)
+            # else:
+            entry.insert(0, default)
             entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray", state=tk.DISABLED)
 
             if allow_func:
@@ -473,8 +497,8 @@ class InputDialog(tk.Toplevel):
 
     def on_ok(self):
         empty_fields = [name for name, entry in self.entries.items() if not entry.get().strip()]
-        if not "email" in empty_fields:
-            empty_email = False
+        # if not "email" in empty_fields:
+        #     empty_email = False
         missing = [name for name, var in self.required_vars.items() if var.get() and self.entries[name].get() == ""]
         for name in missing:
             if not self.entries[name].get():
@@ -501,7 +525,7 @@ class InputDialog(tk.Toplevel):
         pw = self.password.get()
         if "password" in self.required_vars and pw != "":
             errp = validate_password_rules(pw)
-            if not allow_password_value(pw, empty_email) or errp:
+            if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
                 messagebox.showerror("Помилка", errp or "Пароль містить недопустимі символи.", parent=self)
                 self.password.focus_set()
