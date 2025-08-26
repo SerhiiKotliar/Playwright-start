@@ -2,18 +2,29 @@ import pytest
 
 from main import get_user_input
 from playwright.sync_api import Page
+from helper import debug
 
 # @pytest.fixture(scope='function')
 # def user_data():
 #         """Фікстура, яка перед запуском тестів показує форму і повертає введені дані"""
 #         return get_user_input()
 
-@pytest.fixture(scope="function")
+# @pytest.fixture(scope="function")
+# def user_data():
+#     data, root = get_user_input()
+#     # Сохраняем root в data, чтобы можно было использовать при необходимости
+#     data["_root"] = root
+#     return data
+
+@pytest.fixture(scope='function')
 def user_data():
-    data, root = get_user_input()
-    # Сохраняем root в data, чтобы можно было использовать при необходимости
-    data["_root"] = root
-    return data
+    # debug("Фикстура user_data запускается", "FIXTURE")
+
+    # debug("Форма откроется сейчас", "FIXTURE")
+    result = get_user_input()  # открытие формы
+
+    debug(f"Дані для введення отримані: {result}", "FIXTURE")
+    return result
 
 # @pytest.fixture(scope="session")
 # def browser():

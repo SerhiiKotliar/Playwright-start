@@ -1,21 +1,43 @@
 import allure
+from datetime import datetime
+# def debug(value, description="DEBUG"):
+#     """
+#     Универсальный вывод для отладки:
+#     - печатает в консоль
+#     - прикрепляет в Allure-отчёт
+#     """
+#     # Вывод в консоль
+#     print(f"[{description}] {value}")
+#
+#     # Вывод в Allure
+#     try:
+#         allure.attach(
+#             str(value),
+#             name=description,
+#             attachment_type=allure.attachment_type.TEXT
+#         )
+#     except Exception:
+#         # если Allure не подключён — просто пропускаем
+#         pass
 
 def debug(value, description="DEBUG"):
     """
-    Универсальный вывод для отладки:
-    - печатает в консоль
-    - прикрепляет в Allure-отчёт
+    Вывод сообщения для отладки с таймштампом:
+    - печать в консоль
+    - добавление в Allure-отчёт
     """
-    # Вывод в консоль
-    print(f"[{description}] {value}")
+    timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]  # Часы:Минуты:Секунды.мс
+    message = f"[{timestamp}] [{description}] {value}"
 
-    # Вывод в Allure
+    # Консоль
+    print(message)
+
+    # Allure
     try:
         allure.attach(
-            str(value),
+            message,
             name=description,
             attachment_type=allure.attachment_type.TEXT
         )
     except Exception:
-        # если Allure не подключён — просто пропускаем
         pass

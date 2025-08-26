@@ -1,10 +1,5 @@
-import re
-import pytest
 from playwright.sync_api import Page, expect
-import tkinter as tk
-from tkinter import messagebox
-import multiprocessing
-# from main import get_root
+from conftest import user_data
 from helper import debug
 
 # def _show_message(title, text):
@@ -63,11 +58,9 @@ from helper import debug
 #
 #     # root.destroy()  # корректно закрываем скрытый root
 
-def test_example(page: Page, page_open) -> None:
-    # show_message('URL', 'https://www.qa-practice.com/')
-    # Всплывающее окно для отладки
-    # show_message_async("URL", 'https://www.qa-practice.com/')
-    debug('https://www.qa-practice.com/', "URL")  # сразу в консоль и в Allure
+def test_example(page: Page, page_open, user_data) -> None:
+    # 'https://www.qa-practice.com/'
+    # debug(user_data['url'], "URL")  # сразу в консоль и в Allure
     logo = page_open.locator("img.logo_image")  # знаходимо <img> з класом
     expect(logo).to_be_visible()  # перевіряємо, що зображення видно
     expect(page_open.get_by_role("link", name="Select input")).to_be_visible()

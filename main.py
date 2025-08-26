@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from pyside_dialog import MyDialog  # твоя PySide форма
 import os
 from tkinter import simpledialog
-
+from helper import debug
 # _root = None  # глобальная ссылка на root
 
 
@@ -310,9 +310,10 @@ def validate_url_value(url: str):
     return None
 
 # https://www.qa-practice.com/
+# https://en.wikipedia.org/wiki/Main_Page
 # --- конфиг полей ---
 FIELDS_CONFIG = [
-    {"label": "Адреса (URL):", "name": "url", "default": "https://en.wikipedia.org/wiki/Main_Page",
+    {"label": "Адреса (URL):", "name": "url", "default": "",
          "allow_func": allow_url_value},
     {"label": "Логін:", "name": "login", "default": "", "allow_func": allow_login_value},
     {"label": "Пароль:", "name": "password", "default": "", "allow_func": allow_password_value},
@@ -321,7 +322,7 @@ FIELDS_CONFIG = [
 
 
 class InputDialog(tk.Toplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, init_url=None):
         super().__init__(parent)
         self.title("Введення тестових даних")
         self.attributes("-topmost", True)
@@ -340,7 +341,10 @@ class InputDialog(tk.Toplevel):
             self.labels[name] = label_text
 
             entry = tk.Entry(self)
-            entry.insert(0, default)
+            if name == 'url':
+                entry.insert(0, init_url)
+            else:
+                entry.insert(0, default)
             entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray", state=tk.DISABLED)
 
             if allow_func:
@@ -375,6 +379,11 @@ class InputDialog(tk.Toplevel):
 
         first_field = FIELDS_CONFIG[0]["name"]
         self.entries[first_field].focus_set()
+
+
+    def set_url(self, url_value):
+        self.entries["url"].delete(0, tk.END)
+        self.entries["url"].insert(0, url_value)
 
     def on_toggle(self, name):
         val = self.required_vars[name].get()
@@ -494,21 +503,14 @@ class InputDialog(tk.Toplevel):
 
 # --- вызов диалога ---
 def get_user_input():
-    # global _root
-    # _root = tk.Tk()
-    # _root.withdraw()
-    # dlg = InputDialog(_root)
-    # dlg.grab_set()
-    # _root.wait_window(dlg)
-    #
-    # return dlg.result
-
+    # debug("Создаём форму Tkinter...", "INFO")
     root = tk.Tk()
     root.withdraw()
-    dlg = InputDialog(root)
+    # Пример простой формы через askstring
+    # url = simpledialog.askstring("Ввод URL", "Введите URL:", parent=root)
+    # debug("Открываем форму InputDialog", "INFO")
+    dlg = InputDialog(root, url)
     dlg.grab_set()
     root.wait_window(dlg)
-    return dlg.result, root
-# def get_root():
-#     """Вернуть root, созданный в get_user_input"""
-#     return _root
+    # debug(f"Форма закрыта, результат: {dlg.result}", "INFO")
+    return dlg.result
