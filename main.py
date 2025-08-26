@@ -7,6 +7,10 @@ from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtCore import Qt
 from pyside_dialog import MyDialog  # твоя PySide форма
 import os
+from tkinter import simpledialog
+
+# _root = None  # глобальная ссылка на root
+
 
 email = ""
 url = ""
@@ -490,9 +494,21 @@ class InputDialog(tk.Toplevel):
 
 # --- вызов диалога ---
 def get_user_input():
+    # global _root
+    # _root = tk.Tk()
+    # _root.withdraw()
+    # dlg = InputDialog(_root)
+    # dlg.grab_set()
+    # _root.wait_window(dlg)
+    #
+    # return dlg.result
+
     root = tk.Tk()
     root.withdraw()
     dlg = InputDialog(root)
     dlg.grab_set()
     root.wait_window(dlg)
-    return dlg.result
+    return dlg.result, root
+# def get_root():
+#     """Вернуть root, созданный в get_user_input"""
+#     return _root

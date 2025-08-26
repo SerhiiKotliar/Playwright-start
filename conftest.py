@@ -1,14 +1,19 @@
 import pytest
-# from selenium import webdriver
+
 from main import get_user_input
 from playwright.sync_api import Page
-# from playwright.sync_api import sync_playwright
-# from playwright.async_api import async_playwright
 
-@pytest.fixture(scope='function')
+# @pytest.fixture(scope='function')
+# def user_data():
+#         """Фікстура, яка перед запуском тестів показує форму і повертає введені дані"""
+#         return get_user_input()
+
+@pytest.fixture(scope="function")
 def user_data():
-        """Фікстура, яка перед запуском тестів показує форму і повертає введені дані"""
-        return get_user_input()
+    data, root = get_user_input()
+    # Сохраняем root в data, чтобы можно было использовать при необходимости
+    data["_root"] = root
+    return data
 
 # @pytest.fixture(scope="session")
 # def browser():
