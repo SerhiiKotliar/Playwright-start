@@ -1,6 +1,6 @@
 import allure
 from datetime import datetime
-from main_file import test_list
+# from main_file import test_list
 # def debug(value, description="DEBUG"):
 #     """
 #     Универсальный вывод для отладки:
@@ -44,6 +44,6 @@ def debug(value, description="DEBUG"):
         pass
 
 
-if __name__ == "__main__":
-    list_test = test_list("test_main.py")
-    print(list_test)
+# if __name__ == "__main__":
+#     list_test = test_list("test_main.py")
+#     print(list_test)
