@@ -1,0 +1,12 @@
+[url]
+https://www.qa-practice.com/
+https://demoqa.com/dynamic-properties
+https://www.qa-practice.com/elements/iframe/iframe_page
+https://www.qa-practice.com/elements/dragndrop/boxes
+https://www.qa-practice.com/elements/button/disabled
+https://magento.softwaretestingboard.com/
+[login]
+
+[password]
+
+[email]

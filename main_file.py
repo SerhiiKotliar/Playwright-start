@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtCore import Qt
 from pyside_dialog import MyDialog  # твоя PySide форма
 import os
+from tkinter import ttk
 # from tkinter import simpledialog
 # from helper import debug
 # _root = None  # глобальная ссылка на root
@@ -382,10 +383,11 @@ FIELDS_CONFIG = [
     {"label": "Пароль:", "name": "password", "default": "", "allow_func": allow_password_value},
     {"label": "Email:", "name": "email", "default": "", "allow_func": allow_email_value},
 ]
-
+input_data = make_input_data("file_input_data.txt")
+list_of_tests = test_list("test_main.py")
 
 class InputDialog(tk.Toplevel):
-    def __init__(self, parent, init_url=None):
+    def __init__(self, parent, input_url=None, input_login=None, input_password=None, input_email=None):
         super().__init__(parent)
         self.title("Введення тестових даних")
         self.attributes("-topmost", True)
@@ -394,36 +396,71 @@ class InputDialog(tk.Toplevel):
         self.required_vars = {}
         self.labels = {}
 
+        # for row, field in enumerate(FIELDS_CONFIG):
+        #     label_text = field["label"]
+        #     name = field["name"]
+        #     default = field["default"]
+        #     allow_func = field["allow_func"]
+        #
+        #     tk.Label(self, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=5)
+        #     self.labels[name] = label_text
+        #
+        #     entry = tk.Entry(self)
+        #     entry.insert(0, default)
+        #     entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray", state=tk.DISABLED)
+        #
+        #     if allow_func:
+        #         vcmd = self._vcmd_factory(entry, allow_func)
+        #         entry.config(validate="key", validatecommand=vcmd)
+        #
+        #     entry.grid(row=row, column=1, sticky="we", padx=5, pady=5)
+        #     self.entries[name] = entry
+        #     setattr(self, name, entry)
         for row, field in enumerate(FIELDS_CONFIG):
             label_text = field["label"]
             name = field["name"]
             default = field["default"]
-            allow_func = field["allow_func"]
+            allow_func = field.get("allow_func")
+            values = field.get("values", [])
 
             tk.Label(self, text=label_text).grid(row=row, column=0, sticky="w", padx=5, pady=5)
             self.labels[name] = label_text
 
-            entry = tk.Entry(self)
-            # if name == 'url':
-            #     entry.insert(0, init_url)
-            # else:
-            entry.insert(0, default)
-            entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray", state=tk.DISABLED)
+            # создаём комбинированный список
+            combobox = ttk.Combobox(self, values=values)
+            combobox.set(default)  # значение по умолчанию
+            combobox.config(state="readonly")  # чтобы пользователь выбирал только из списка
 
             if allow_func:
-                vcmd = self._vcmd_factory(entry, allow_func)
-                entry.config(validate="key", validatecommand=vcmd)
+                # для Combobox валидация работает иначе, можно использовать bind("<<ComboboxSelected>>", ...)
+                combobox.bind("<<ComboboxSelected>>", lambda e, func=allow_func: func(e.widget.get()))
 
-            entry.grid(row=row, column=1, sticky="we", padx=5, pady=5)
-            self.entries[name] = entry
-            setattr(self, name, entry)
+            combobox.grid(row=row, column=1, sticky="we", padx=5, pady=5)
+            self.entries[name] = combobox
+            setattr(self, name, combobox)
+            if name == 'url':
+                # обновляем список вариантов
+                self.entries['url'].config(values=input_url)
+                # при желании можно установить значение по умолчанию
+                if len(input_url) > 0:
+                    self.entries['url'].set(input_url[0])
+            if name == 'login':
+                self.entries['login'].config(values=input_login)
+                if len(input_login) > 0:
+                    self.entries['login'].set(input_login[0])
+            if name == 'password':
+                self.entries['password'].config(values=input_password)
+                if len(input_password) > 0:
+                    self.entries['password'].set(input_password[0])
+            if name == 'email':
+                self.entries['email'].config(values=input_email)
+                if len(input_email) > 0:
+                    self.entries['email'].set(input_email[0])
 
             var = tk.BooleanVar(master=self, value=(name in ("login", "password")))
             self.required_vars[name] = var
             chk = tk.Checkbutton(self, text="Обов'язкове", variable=var,
                                  command=lambda name=name: self.on_toggle(name, var))
-            # записываем начальное состояние
-            # self.required_vars[name] = var.get()
             chk.grid(row=row, column=2, sticky="w", padx=5, pady=5)
             # кнопка для виклику toggle_rule
             btn = tk.Button(self, text="Правила",
@@ -452,10 +489,6 @@ class InputDialog(tk.Toplevel):
 
     def on_toggle(self, name, var):
         self.required_vars[name].get()
-        # print(f"{name}: {self.required_vars[name].get()}")
-        # self.required_vars[name] = val
-        # self.required_vars[name] = var.get()
-        # print(f"{name} → {self.required_vars[name].get()}")# теперь в словаре всегда True/False
 
     # --- validatecommand factory ---
     def _vcmd_factory(self, entry, allow_func):
@@ -581,7 +614,7 @@ def get_user_input():
     # Пример простой формы через askstring
     # url = simpledialog.askstring("Ввод URL", "Введите URL:", parent=root)
     # debug("Открываем форму InputDialog", "INFO")
-    dlg = InputDialog(root, url)
+    dlg = InputDialog(root, input_data['url'], input_data['login'], input_data['password'], input_data['email'])
     dlg.grab_set()
     root.wait_window(dlg)
     # debug(f"Форма закрыта, результат: {dlg.result}", "INFO")
