@@ -40,7 +40,7 @@ class MyDialog(QDialog, Ui_Dialog):
         # Чекбокси
         cyfry = self.chkbCyfry.isChecked()
         spec = self.chkbSpecS.isChecked()
-        if spec:
+        if spec and self.tbSpec.text() != "":
             spec = self.tbSpec.text()
         probel = self.chkbProbel.isChecked()
         email_in = self.chkbEmail.isChecked()

@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import messagebox
 import re
 import string
+# from tkinter.ttk import Combobox
+
 # from urllib.parse import urlparse
 from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtCore import Qt
@@ -34,19 +36,19 @@ both_reg = False
 digits_str = ""
 spec_escaped = ""
 is_probel = False
-pattern = ""
-patterne = ""
-patternu = ""
+pattern: str = ""
+patterne: str = ""
+patternu: str = ""
 patternlog: str = ""
 patternpas: str = ""
-chars = ""
+chars: str = ""
 both_reg_log = False
 digits_str_log = ""
 spec_escaped_log = ""
 both_reg_p = False
 digits_str_p = ""
 spec_escaped_p = ""
-
+number_of_test = 0
 
 def entries_rules(fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, patternlog, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, spec, digits_str, patterne, patternu
@@ -120,27 +122,27 @@ def entries_rules(fame, **kwargs):
         #     r'(#[A-Za-z0-9._~%!$&\'()*+,;=:@/?-]*)?$'  # fragment
         # )
 
-    # собираем разрешённые символы
-    parts = []
-    if local:
-        parts.append(local)
-    if spec_escaped:
-        parts.append(spec_escaped)
-    if digits_str:
-        parts.append(digits_str)
-    if is_probel:
-        parts.append(r'^\s')
+    # # собираем разрешённые символы
+    # parts = []
+    # if local:
+    #     parts.append(local)
+    # if spec_escaped:
+    #     parts.append(spec_escaped)
+    # if digits_str:
+    #     parts.append(digits_str)
+    # if is_probel:
+    #     parts.append(r'^\s')
     # if email:
     #     parts.append(email)
     # if url:
     #     parts.append(url)
 
-    chars = "".join(parts) or "."  # если ничего не выбрано — разрешаем всё
+    # chars = "".join(parts) or "."  # если ничего не выбрано — разрешаем всё
     if email:
         # parts.append(email)
         # chars = r"A-Za-z0-9@._-"
         chars = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
-    if url:
+    elif url:
         # parts.append(url)
         chars = r"(http?://[^\s/$.?#].[^\s])"
         # chars = re.compile(
@@ -152,13 +154,22 @@ def entries_rules(fame, **kwargs):
         #     r'(\?[A-Za-z0-9._~%!$&\'()*+,;=:@/?-]*)?'  # query
         #     r'(#[A-Za-z0-9._~%!$&\'()*+,;=:@/?-]*)?$'  # fragment
         # )
+    else:
+        # собираем разрешённые символы
+        parts = []
+        if local:
+            parts.append(local)
+        if spec_escaped:
+            parts.append(spec_escaped)
+        if digits_str:
+            parts.append(digits_str)
+        if is_probel:
+            parts.append(r'^\s')
+        chars = "".join(parts) or "."  # если ничего не выбрано — разрешаем всё
     # финальный паттерн с учётом длины
     pattern = r"[{chars}]*"
     # print("✅ Готовый паттерн:", pattern)
     if fame == "login":
-        # if not email:
-        #     patternlog = pattern
-        # else:
         lenminlog = len_min
         lenmaxlog = len_max
         patternlog = pattern
@@ -387,10 +398,13 @@ input_data = make_input_data("file_input_data.txt")
 list_of_tests = test_list("test_main.py")
 
 class InputDialog(tk.Toplevel):
-    def __init__(self, parent, input_url=None, input_login=None, input_password=None, input_email=None):
+    def __init__(self, parent, input_url=None, input_login=None, input_password=None, input_email=None, name_of_test=""):
         super().__init__(parent)
-        self.title("Введення тестових даних")
+        self.title("Введення даних у тест    "+name_of_test)
         self.attributes("-topmost", True)
+        style = ttk.Style()
+        style.configure("Error.TCombobox", fieldbackground="misty rose")
+        style.configure("Ok.TCombobox", fieldbackground="white")
 
         self.entries = {}
         self.required_vars = {}
@@ -429,7 +443,8 @@ class InputDialog(tk.Toplevel):
             # создаём комбинированный список
             combobox = ttk.Combobox(self, values=values)
             combobox.set(default)  # значение по умолчанию
-            combobox.config(state="readonly")  # чтобы пользователь выбирал только из списка
+            # combobox.config(state="readonly")  # чтобы пользователь выбирал только из списка
+            combobox.config()
 
             if allow_func:
                 # для Combobox валидация работает иначе, можно использовать bind("<<ComboboxSelected>>", ...)
@@ -438,6 +453,14 @@ class InputDialog(tk.Toplevel):
             combobox.grid(row=row, column=1, sticky="we", padx=5, pady=5)
             self.entries[name] = combobox
             setattr(self, name, combobox)
+
+            # # биндим проверку при выборе и при потере фокуса
+            # self.combobox.bind("<<ComboboxSelected>>", self._validate_combo)
+            # self.combobox.bind("<FocusOut>", self._validate_combo)
+            # биндим проверку на САМ combobox, а не на self.combobox
+            combobox.bind("<<ComboboxSelected>>", lambda e, func=allow_func, w=combobox: self._validate_combo(w, func))
+            combobox.bind("<FocusOut>", lambda e, func=allow_func, w=combobox: self._validate_combo(w, func))
+
             if name == 'url':
                 # обновляем список вариантов
                 self.entries['url'].config(values=input_url)
@@ -490,22 +513,76 @@ class InputDialog(tk.Toplevel):
     def on_toggle(self, name, var):
         self.required_vars[name].get()
 
-    # --- validatecommand factory ---
-    def _vcmd_factory(self, entry, allow_func):
-        def _vcmd(new_value):
-            if allow_func(new_value):
-                entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
+    # # --- validatecommand factory ---
+    # def _vcmd_factory(self, entry, allow_func):
+    #     def _vcmd(new_value):
+    #         if allow_func(new_value):
+    #             entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
+    #         else:
+    #             entry.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
+    #         return True
+    #
+    #     return (self.register(_vcmd), "%P")
+
+    # def _set_err(self, entry):
+    #     entry.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
+    #
+    # def _set_ok(self, entry):
+    #     entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
+
+    # def _set_err(self, widget):
+    #     widget.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
+    #
+    # def _set_ok(self, widget):
+    #     widget.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
+
+    def _set_err(self, widget):
+        if isinstance(widget, ttk.Combobox):  # сначала проверяем Combobox
+            style = ttk.Style()
+            style.configure("Error.TCombobox", fieldbackground="misty rose")
+            widget.configure(style="Error.TCombobox")
+        elif isinstance(widget, tk.Entry):  # потом Entry
+            widget.config(highlightthickness=2,
+                          highlightbackground="red",
+                          highlightcolor="red")
+
+    def _set_ok(self, widget):
+        if isinstance(widget, ttk.Combobox):
+            style = ttk.Style()
+            style.configure("Ok.TCombobox", fieldbackground="white")
+            widget.configure(style="Ok.TCombobox")
+        elif isinstance(widget, tk.Entry):
+            widget.config(highlightthickness=1,
+                          highlightbackground="gray",
+                          highlightcolor="gray")
+
+    # def _validate_combo(self, event=None):
+    #     value = self.combo_var.get()
+    #     if self.allow_func(value):
+    #         self._set_ok(self.combo)
+    #     else:
+    #         self._set_err(self.combo)
+    # def _validate_combo(self, widget, allow_func):
+    #     value = widget.get()
+    #     if allow_func and allow_func(value):
+    #         widget.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
+    #     else:
+    #         widget.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
+
+    def _validate_combo(self, widget, allow_func):
+        value = widget.get().strip()
+
+        if isinstance(widget, ttk.Combobox):  # это combobox
+            if allow_func and allow_func(value):
+                self._set_ok(widget)
             else:
-                entry.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
-            return True
+                self._set_err(widget)
 
-        return (self.register(_vcmd), "%P")
-
-    def _set_err(self, entry):
-        entry.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
-
-    def _set_ok(self, entry):
-        entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
+        elif isinstance(widget, tk.Entry):  # это entry
+            if allow_func and allow_func(value):
+                self._set_ok(widget)
+            else:
+                self._set_err(widget)
 
     def center_window(self, width, height):
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
@@ -535,16 +612,44 @@ class InputDialog(tk.Toplevel):
             entries_rules(field_name, entries=cur_rules)
 
     def on_ok(self):
-        empty_fields = [name for name, entry in self.entries.items() if not entry.get().strip()]
-        # if not "email" in empty_fields:
-        #     empty_email = False
-        missing = [name for name, var in self.required_vars.items() if var.get() and self.entries[name].get() == ""]
-        for name in missing:
-            if not self.entries[name].get():
-                self._set_err(self.entries[name])
+        # empty_fields = [name for name, entry in self.entries.items() if not entry.get().strip()]
+        # # if not "email" in empty_fields:
+        # #     empty_email = False
+        # missing = [name for name, var in self.required_vars.items() if var.get() and self.entries[name].get() == ""]
+        # for name in missing:
+        #     if not self.entries[name].get():
+        #         self._set_err(self.entries[name])
+        # if missing:
+        #     messagebox.showerror("Помилка", "Будь ласка, заповніть обов'язкові поля:\n" +
+        #                          "\n".join(self.labels[n] for n in missing), parent=self)
+        #     return
+        empty_fields = []
+        missing = []
+
+        for name, widget in self.entries.items():
+            value = widget.get().strip()
+
+            if self.required_vars[name].get():
+                if value == "":
+                    missing.append(name)
+                    self._set_err(widget)  # подсветим красным
+                else:
+                    self._set_ok(widget)  # подсветим серым (валидное поле)
+            else:
+                # необязательное поле: если есть значение → серое, иначе оставляем как есть
+                if value != "":
+                    self._set_ok(widget)
+
+            if value == "":
+                empty_fields.append(name)
+
         if missing:
-            messagebox.showerror("Помилка", "Будь ласка, заповніть обов'язкові поля:\n" +
-                                 "\n".join(self.labels[n] for n in missing), parent=self)
+            messagebox.showerror(
+                "Помилка",
+                "Будь ласка, заповніть обов'язкові поля:\n" +
+                "\n".join(self.labels[n] for n in missing),
+                parent=self
+            )
             return
 
         login_val = self.login.get()
@@ -556,7 +661,7 @@ class InputDialog(tk.Toplevel):
             if not allow_login_value(login_val) or errlog:
                 self._set_err(self.login)
                 messagebox.showerror("Помилка", errlog or "Логін містить недопустимі символи.", parent=self)
-                self.entries['login'].delete(0, tk.END)
+                self.entries['login'].set('')
                 self.login.focus_set()
                 return
             self._set_ok(self.login)
@@ -567,7 +672,8 @@ class InputDialog(tk.Toplevel):
             if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
                 messagebox.showerror("Помилка", errp or "Пароль містить недопустимі символи.", parent=self)
-                self.entries['password'].delete(0, tk.END)
+                # self.entries['password'].delete(0, tk.END)
+                self.entries['password'].set('')
                 self.password.focus_set()
                 return
             self._set_ok(self.password)
@@ -578,7 +684,7 @@ class InputDialog(tk.Toplevel):
             if erru:
                 self._set_err(self.url)
                 messagebox.showerror("Помилка", erru, parent=self)
-                self.entries['url'].delete(0, tk.END)
+                self.entries['url'].set('')
                 self.url.focus_set()
                 return
             self._set_ok(self.url)
@@ -590,7 +696,7 @@ class InputDialog(tk.Toplevel):
             if not allow_email_value(email_val) or erre:
                 self._set_err(self.email)
                 messagebox.showerror("Помилка", erre or "Email містить недопустимі символи.", parent=self)
-                self.entries['email'].delete(0, tk.END)
+                self.entries['email'].set('')
                 self.email.focus_set()
                 return
             self._set_ok(self.email)
@@ -609,14 +715,16 @@ class InputDialog(tk.Toplevel):
 # --- вызов диалога ---
 def get_user_input():
     # debug("Создаём форму Tkinter...", "INFO")
+    global number_of_test
     root = tk.Tk()
     root.withdraw()
     # Пример простой формы через askstring
     # url = simpledialog.askstring("Ввод URL", "Введите URL:", parent=root)
     # debug("Открываем форму InputDialog", "INFO")
-    dlg = InputDialog(root, input_data['url'], input_data['login'], input_data['password'], input_data['email'])
+    dlg = InputDialog(root, input_data['url'], input_data['login'], input_data['password'], input_data['email'], list_of_tests[number_of_test])
     dlg.grab_set()
     root.wait_window(dlg)
+    number_of_test += 1
     # debug(f"Форма закрыта, результат: {dlg.result}", "INFO")
     return dlg.result
 

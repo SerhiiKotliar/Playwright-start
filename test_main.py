@@ -73,7 +73,7 @@ def test_example(page: Page, page_open) -> None:
 
 
 
-# @pytest.mark.skip('Site doesn\'t work')
+@pytest.mark.skip('Site doesn\'t work')
 def test_dynamic_props(page_open) -> None:
     # page.goto('https://demoqa.com/dynamic-properties')
     button = page_open().locator('#visibleAfter')
