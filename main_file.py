@@ -141,10 +141,10 @@ def entries_rules(fame, **kwargs):
     if email:
         # parts.append(email)
         # chars = r"A-Za-z0-9@._-"
-        chars = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+        chars = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     elif url:
         # parts.append(url)
-        chars = r"(http?://[^\s/$.?#].[^\s])"
+        chars = "http?://[^\s/$.?#].[^\s]"
         # chars = re.compile(
         #     r'^[A-Za-z][A-Za-z0-9+.-]*://'  # схема (http, https, ftp…)
         #     r'([A-Za-z0-9._~%!$&\'()*+,;=-]+@)?'  # user:pass@
@@ -210,7 +210,7 @@ def allow_login_value(new_value: str) -> bool:
     if chars == ".":
         return True
     if email:
-        patternlog = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$)"
+        patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
     return bool(re.fullmatch(patternlog, new_value))
 
 
@@ -243,7 +243,7 @@ def allow_email_value(new_value: str) -> bool:
         return True
     # простой паттерн для "live" проверки: разрешаем буквы, цифры, @, ., -, _
     # pattern = r"[A-Za-z0-9@._\-]*"
-    pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$)"
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
     return bool(re.fullmatch(pattern, new_value))
 
 
@@ -253,7 +253,7 @@ def validate_email_rules(email_t: str):
     if not email_t:
         return "Email не може бути порожнім."
     # RFC 5322 упрощённая проверка
-    pattern = r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$)"
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
     if not re.fullmatch(pattern, email_t):
         return "Неправильний формат Email."
     return None
@@ -443,8 +443,8 @@ class InputDialog(tk.Toplevel):
             # создаём комбинированный список
             combobox = ttk.Combobox(self, values=values)
             combobox.set(default)  # значение по умолчанию
-            # combobox.config(state="readonly")  # чтобы пользователь выбирал только из списка
-            combobox.config()
+            combobox.config(state="disabled")
+            # combobox.config()
 
             if allow_func:
                 # для Combobox валидация работает иначе, можно использовать bind("<<ComboboxSelected>>", ...)
@@ -454,31 +454,32 @@ class InputDialog(tk.Toplevel):
             self.entries[name] = combobox
             setattr(self, name, combobox)
 
-            # # биндим проверку при выборе и при потере фокуса
-            # self.combobox.bind("<<ComboboxSelected>>", self._validate_combo)
-            # self.combobox.bind("<FocusOut>", self._validate_combo)
             # биндим проверку на САМ combobox, а не на self.combobox
             combobox.bind("<<ComboboxSelected>>", lambda e, func=allow_func, w=combobox: self._validate_combo(w, func))
             combobox.bind("<FocusOut>", lambda e, func=allow_func, w=combobox: self._validate_combo(w, func))
 
             if name == 'url':
                 # обновляем список вариантов
-                self.entries['url'].config(values=input_url)
+                # self.entries['url'].config(values=input_url)
                 # при желании можно установить значение по умолчанию
                 if len(input_url) > 0:
                     self.entries['url'].set(input_url[0])
+                # self.entries['url'].setFocus(False)
             if name == 'login':
                 self.entries['login'].config(values=input_login)
                 if len(input_login) > 0:
                     self.entries['login'].set(input_login[0])
+                # self.entries['login'].setFocus(False)
             if name == 'password':
                 self.entries['password'].config(values=input_password)
                 if len(input_password) > 0:
                     self.entries['password'].set(input_password[0])
+                # self.entries['password'].setFocus(False)
             if name == 'email':
                 self.entries['email'].config(values=input_email)
                 if len(input_email) > 0:
                     self.entries['email'].set(input_email[0])
+                # self.entries['email'].setFocus(False)
 
             var = tk.BooleanVar(master=self, value=(name in ("login", "password")))
             self.required_vars[name] = var
@@ -502,8 +503,15 @@ class InputDialog(tk.Toplevel):
         self.update_idletasks()
         self.center_window(600, self.winfo_reqheight() + 20)
 
-        first_field = FIELDS_CONFIG[0]["name"]
-        self.entries[first_field].focus_set()
+        # first_field = FIELDS_CONFIG[0]["name"]
+        # self.entries[first_field].focus_set()
+        # # --- ВАЖНО: здесь добавляем логику "снять фокус" ---
+        # for cb in self.entries.values():
+        #     if isinstance(cb, ttk.Combobox):
+        #         cb.configure(takefocus=0)  # запрещаем автофокус
+        #
+        # # сброс фокуса после отрисовки окна
+        # self.after(100, lambda: self.focus_set())
 
 
     # def set_url(self, url_value):
@@ -593,12 +601,25 @@ class InputDialog(tk.Toplevel):
     # відкриття форми з налаштуваннями тестів
     def toggle_rule(self, field_name):
         global patternl, patternpas, pattern
-        for en in self.entries.values():
-            if en['state'] == tk.NORMAL:
-                en.config(state=tk.DISABLED)
+        # for en in self.entries.values():
+        #     if en['state'] == tk.NORMAL:
+        #         en.config(state=tk.DISABLED)
+        # entry = self.entries[field_name]
+        # entry.config(state=tk.NORMAL)
+        # entry.focus_set()
+        for widget in self.entries.values():
+            if isinstance(widget, ttk.Combobox):
+                widget.config(state="disabled")
+            elif isinstance(widget, tk.Entry):
+                widget.config(state=tk.DISABLED)
+
         entry = self.entries[field_name]
-        entry.config(state=tk.NORMAL)
+        if isinstance(entry, ttk.Combobox):
+            entry.config(state="normal")  # включено
+        elif isinstance(entry, tk.Entry):
+            entry.config(state=tk.NORMAL)  # включено
         entry.focus_set()
+
         global len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
         app = QApplication.instance()
         if not app:

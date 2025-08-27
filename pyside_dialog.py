@@ -22,12 +22,27 @@ class MyDialog(QDialog, Ui_Dialog):
         # --- нове: вмикаємо/вимикаємо tbSpec по чекбоксу ---
         self.tbSpec.setEnabled(False)  # початково вимкнене
         self.chkbSpecS.toggled.connect(self.on_spec_toggled)
+        self.chkbEmail.toggled.connect(self.on_CHKE_toggled)
+        self.chkbURL.toggled.connect(self.on_CHKU_toggled)
+
 
     def on_spec_toggled(self, checked: bool):
         """Увімкнення/вимкнення поля tbSpec"""
         self.tbSpec.setEnabled(checked)
         if self.tbSpec.isEnabled() == False:
             self.tbSpec.setText("")
+
+    def on_CHKE_toggled(self, checked: bool):
+        if self.chkbEmail.isChecked():
+            self.chkbURL.setChecked(False)
+        else:
+            self.chkbURL.setChecked(True)
+
+    def on_CHKU_toggled(self, checked: bool):
+        if self.chkbURL.isChecked():
+            self.chkbEmail.setChecked(False)
+        else:
+            self.chkbEmail.setChecked(True)
 
     def on_ok(self):
         """Читаємо дані з форми"""
