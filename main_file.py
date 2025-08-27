@@ -93,7 +93,7 @@ def entries_rules(fame, **kwargs):
             if isinstance(value, str):
                 spec_escaped = "".join(re.escape(ch) for ch in value)
             else:
-                spec = "-!@#$%^&*()_=+[]{};:,.<>/?\\|"
+                spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
                 spec_escaped = "".join(re.escape(ch) for ch in spec)
 
         elif key == "probel":
@@ -141,10 +141,11 @@ def entries_rules(fame, **kwargs):
     if email:
         # parts.append(email)
         # chars = r"A-Za-z0-9@._-"
-        chars = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        # chars = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
     elif url:
         # parts.append(url)
-        chars = "http?://[^\s/$.?#].[^\s]"
+        chars = "http?://[^\s/$.?#].[^\s"
         # chars = re.compile(
         #     r'^[A-Za-z][A-Za-z0-9+.-]*://'  # схема (http, https, ftp…)
         #     r'([A-Za-z0-9._~%!$&\'()*+,;=-]+@)?'  # user:pass@
@@ -159,15 +160,18 @@ def entries_rules(fame, **kwargs):
         parts = []
         if local:
             parts.append(local)
-        if spec_escaped:
-            parts.append(spec_escaped)
         if digits_str:
             parts.append(digits_str)
-        if is_probel:
-            parts.append(r'^\s')
-        chars = "".join(parts) or "."  # если ничего не выбрано — разрешаем всё
+        if not is_probel:
+            parts.append('\s')
+            # chars = "^["+f"{chars}"+"]+$*"
+        if spec_escaped:
+            parts.append(spec_escaped)
+        chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
+
     # финальный паттерн с учётом длины
-    pattern = r"[{chars}]*"
+    # pattern = f"{chars}*"
+    pattern = "^["+f"{chars}"+"]+$"
     # print("✅ Готовый паттерн:", pattern)
     if fame == "login":
         lenminlog = len_min
@@ -184,9 +188,11 @@ def entries_rules(fame, **kwargs):
         digits_str_p = digits_str
         spec_escaped_p = spec_escaped
     if fame == "email":
+        # patterne = f"^["+f"{chars}"+"]+$"
         patterne = pattern
     if fame == "url":
-        patternu = pattern
+        patternu = f"{chars}"+"]+$"
+        # patternu = pattern
     return pattern
 
 
@@ -211,6 +217,7 @@ def allow_login_value(new_value: str) -> bool:
         return True
     if email:
         patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
+    # messagebox.showerror("Паттерн", str(bool(re.fullmatch(patternlog, new_value))), parent=_root)
     return bool(re.fullmatch(patternlog, new_value))
 
 
@@ -243,8 +250,8 @@ def allow_email_value(new_value: str) -> bool:
         return True
     # простой паттерн для "live" проверки: разрешаем буквы, цифры, @, ., -, _
     # pattern = r"[A-Za-z0-9@._\-]*"
-    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
-    return bool(re.fullmatch(pattern, new_value))
+    # pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
+    return bool(re.fullmatch(patterne, new_value))
 
 
 def validate_email_rules(email_t: str):
@@ -253,8 +260,8 @@ def validate_email_rules(email_t: str):
     if not email_t:
         return "Email не може бути порожнім."
     # RFC 5322 упрощённая проверка
-    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
-    if not re.fullmatch(pattern, email_t):
+    # pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
+    if not re.fullmatch(patterne, email_t):
         return "Неправильний формат Email."
     return None
 
@@ -405,7 +412,7 @@ class InputDialog(tk.Toplevel):
         style = ttk.Style()
         style.configure("Error.TCombobox", fieldbackground="misty rose")
         style.configure("Ok.TCombobox", fieldbackground="white")
-
+        self.cur_name = ""
         self.entries = {}
         self.required_vars = {}
         self.labels = {}
@@ -460,7 +467,7 @@ class InputDialog(tk.Toplevel):
 
             if name == 'url':
                 # обновляем список вариантов
-                # self.entries['url'].config(values=input_url)
+                self.entries['url'].config(values=input_url)
                 # при желании можно установить значение по умолчанию
                 if len(input_url) > 0:
                     self.entries['url'].set(input_url[0])
@@ -492,6 +499,7 @@ class InputDialog(tk.Toplevel):
             btn.grid(row=row, column=3, sticky="w", padx=5, pady=5)
 
         self.submit_button = tk.Button(self, text="OK", command=self.on_ok)
+        # self.submit_button = tk.Button(self, text="OK", command=lambda n=self.cur_name: self.on_ok())
         self.submit_button.grid(row=len(FIELDS_CONFIG), column=0, padx=5, pady=10, sticky="we")
 
         self.cancel_button = tk.Button(self, text="Cancel", command=self.on_cancel)
@@ -600,7 +608,9 @@ class InputDialog(tk.Toplevel):
 
     # відкриття форми з налаштуваннями тестів
     def toggle_rule(self, field_name):
-        global patternl, patternpas, pattern
+        # messagebox.showerror("Имя элемента", f"Ім'я елементу  {field_name}", parent=self)
+        self.cur_name = field_name
+        global patternl, patternpas, pattern, len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
         # for en in self.entries.values():
         #     if en['state'] == tk.NORMAL:
         #         en.config(state=tk.DISABLED)
@@ -620,7 +630,6 @@ class InputDialog(tk.Toplevel):
             entry.config(state=tk.NORMAL)  # включено
         entry.focus_set()
 
-        global len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
         app = QApplication.instance()
         if not app:
             app = QApplication([])
@@ -647,12 +656,12 @@ class InputDialog(tk.Toplevel):
         empty_fields = []
         missing = []
 
-        for name, widget in self.entries.items():
+        for name_m, widget in self.entries.items():
             value = widget.get().strip()
 
-            if self.required_vars[name].get():
+            if self.required_vars[name_m].get():
                 if value == "":
-                    missing.append(name)
+                    missing.append(name_m)
                     self._set_err(widget)  # подсветим красным
                 else:
                     self._set_ok(widget)  # подсветим серым (валидное поле)
@@ -662,7 +671,7 @@ class InputDialog(tk.Toplevel):
                     self._set_ok(widget)
 
             if value == "":
-                empty_fields.append(name)
+                empty_fields.append(name_m)
 
         if missing:
             messagebox.showerror(
@@ -672,9 +681,10 @@ class InputDialog(tk.Toplevel):
                 parent=self
             )
             return
-
+        # messagebox.showerror("Шаблон", f"Склад шаблонуу  {pattern}", parent=self)
         login_val = self.login.get()
-        if "login" in self.required_vars and login_val != "":
+        if self.cur_name == "login" and self.required_vars[self.cur_name].get():
+        # if "login" in self.required_vars and login_val != "":
             if email: #and self.entries["email"].get() == "":
                 errlog = validate_email_rules(login_val)
             else:
@@ -688,7 +698,8 @@ class InputDialog(tk.Toplevel):
             self._set_ok(self.login)
 
         pw = self.password.get()
-        if "password" in self.required_vars and pw != "":
+        # if "password" in self.required_vars and pw != "":
+        if self.cur_name == "password" and self.required_vars[self.cur_name].get():
             errp = validate_password_rules(pw)
             if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
@@ -700,7 +711,8 @@ class InputDialog(tk.Toplevel):
             self._set_ok(self.password)
 
         url_val = self.url.get()
-        if "url" in self.required_vars and url_val != "":
+        # if "url" in self.required_vars and url_val != "":
+        if self.cur_name == "url" and self.required_vars[self.cur_name].get():
             erru = validate_url_value(url_val)
             if erru:
                 self._set_err(self.url)
@@ -712,7 +724,8 @@ class InputDialog(tk.Toplevel):
 
         # проверка Email
         email_val = self.email.get()
-        if "email" in self.required_vars and email_val != "":
+        # if "email" in self.required_vars and email_val != "":
+        if self.cur_name == "email" and self.required_vars[self.cur_name].get():
             erre = validate_email_rules(email_val)
             if not allow_email_value(email_val) or erre:
                 self._set_err(self.email)
