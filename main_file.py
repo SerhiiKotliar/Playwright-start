@@ -488,7 +488,8 @@ class InputDialog(tk.Toplevel):
                     self.entries['email'].set(input_email[0])
                 # self.entries['email'].setFocus(False)
 
-            var = tk.BooleanVar(master=self, value=(name in ("login", "password")))
+            # var = tk.BooleanVar(master=self, value=(name in ("login", "password")))
+            var = tk.BooleanVar(master=self)
             self.required_vars[name] = var
             chk = tk.Checkbutton(self, text="Обов'язкове", variable=var,
                                  command=lambda name=name: self.on_toggle(name, var))
@@ -511,8 +512,8 @@ class InputDialog(tk.Toplevel):
         self.update_idletasks()
         self.center_window(600, self.winfo_reqheight() + 20)
 
-        # first_field = FIELDS_CONFIG[0]["name"]
-        # self.entries[first_field].focus_set()
+        first_field = FIELDS_CONFIG[0]["name"]
+        self.entries[first_field].focus_set()
         # # --- ВАЖНО: здесь добавляем логику "снять фокус" ---
         # for cb in self.entries.values():
         #     if isinstance(cb, ttk.Combobox):

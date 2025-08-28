@@ -58,6 +58,7 @@ import allure
 #     #     return messagebox.askretrycancel(title, text)
 #
 #     # root.destroy()  # корректно закрываем скрытый root
+@pytest.mark.timeout(5000)
 @allure.feature("тестування декількох сайтів")
 @allure.story("перебіг функціональних елементів на сторінках сайту https://www.qa-practice.com/")
 def test_example(page: Page, page_open) -> None:
@@ -85,8 +86,8 @@ def test_example(page: Page, page_open) -> None:
         page.get_by_text("You selected Python").screenshot(path="screenshots/Python.png")
         debug("Збережений скрін Python.png з вибраною мовою", "Скрін сторінки")
 
-
-@pytest.mark.skip('Сайт не працює')
+@pytest.mark.timeout(5000)
+@pytest.mark.skip(reason="Поки не потрібен")
 @allure.story("натискання кнопки на сайті https://demoqa.com/dynamic-properties")
 def test_dynamic_props(page_open) -> None:
     # page.goto('https://demoqa.com/dynamic-properties')
@@ -98,7 +99,7 @@ def test_dynamic_props(page_open) -> None:
     with  allure.step("перевірка видимісті тексту вибраної мови, зберігання скріну малюнку, що підтверджує вибрану мову"):
         page_open.screenshot(type='jpeg', path='screenshots/shot.jpg')
         debug("Збережений скрін shot.jpg", "Скрін сторінки")
-
+@pytest.mark.timeout(5000)
 @allure.story("перехід і натискання рамки на сайті https://www.qa-practice.com/elements/iframe/iframe_page")
 def test_iframe(page_open):
     # page.goto('https://www.qa-practice.com/elements/iframe/iframe_page')
@@ -110,7 +111,7 @@ def test_iframe(page_open):
     with  allure.step("зберігання скріну малюнку toggler.jpg"):
         page_open.screenshot(type='jpeg', path='screenshots/toggler.jpg')
         debug("Збережений скрін toggler.jpg", "Скрін сторінки")
-
+@pytest.mark.timeout(5000)
 @allure.story("перевірка перетаскування елементів на сайті https://www.qa-practice.com/elements/dragndrop/boxes")
 def test_drag( page_open):
     # page.goto('https://www.qa-practice.com/elements/dragndrop/boxes')
@@ -120,6 +121,7 @@ def test_drag( page_open):
         page_open.screenshot(type='jpeg', path='screenshots/drag.jpg')
         debug("Збережений скрін drag.jpg", "Скрін сторінки")
 
+@pytest.mark.timeout(5000)
 @allure.story("переведення елементу в інший стан вибором зі списку сайті https://www.qa-practice.com/elements/button/disabled")
 def test_select(page_open):
     # page.goto('https://www.qa-practice.com/elements/button/disabled')
@@ -128,7 +130,8 @@ def test_select(page_open):
         debug("вибран стан зі списку", "Зміна стану")
         page_open.screenshot(type='jpeg', path='screenshots/select.jpg')
         debug("Збережений скрін select.jpg", "Скрін сторінки")
-
+@pytest.mark.timeout(5000)
+@pytest.mark.skip(reason="Поки не потрібен")
 @allure.story("переведення миші по елементам спеціального сайту для автоматизації тестування сайті https://magento.softwaretestingboard.com/")
 def test_hover(page_open):
     # page.goto('https://magento.softwaretestingboard.com/')
