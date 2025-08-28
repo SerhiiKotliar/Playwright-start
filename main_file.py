@@ -402,7 +402,7 @@ FIELDS_CONFIG = [
     {"label": "Email:", "name": "email", "default": "", "allow_func": allow_email_value},
 ]
 input_data = make_input_data("file_input_data.txt")
-list_of_tests = test_list("test_main.py")
+list_of_tests = test_list("tests/test_main.py")
 
 class InputDialog(tk.Toplevel):
     def __init__(self, parent, input_url=None, input_login=None, input_password=None, input_email=None, name_of_test=""):

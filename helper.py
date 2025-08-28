@@ -1,25 +1,5 @@
 import allure
 from datetime import datetime
-# from main_file import test_list
-# def debug(value, description="DEBUG"):
-#     """
-#     Универсальный вывод для отладки:
-#     - печатает в консоль
-#     - прикрепляет в Allure-отчёт
-#     """
-#     # Вывод в консоль
-#     print(f"[{description}] {value}")
-#
-#     # Вывод в Allure
-#     try:
-#         allure.attach(
-#             str(value),
-#             name=description,
-#             attachment_type=allure.attachment_type.TEXT
-#         )
-#     except Exception:
-#         # если Allure не подключён — просто пропускаем
-#         pass
 
 def debug(value, description="DEBUG"):
     """
@@ -45,5 +25,5 @@ def debug(value, description="DEBUG"):
 
 
 # if __name__ == "__main__":
-#     list_test = test_list("test_main.py")
+#     list_test = test_list("tests\test_main.py")
 #     print(list_test)
