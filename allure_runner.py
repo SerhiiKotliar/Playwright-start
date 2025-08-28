@@ -23,24 +23,26 @@ def find_free_port(start_port=8080, max_port=9000):
                 port += 1
     raise RuntimeError("Не удалось найти свободный порт")
 
-def run_tests_allure():
-    """Запуск встроенной команды pytest"""
-    subprocess.run(["pytest", "-v", "-s", "allure_dir", RESULT_DIR])
+
+def run_tests():
+    """Запуск всех тестов pytest с выводом в allure result"""
+    cmd = f"python -m pytest -v -s --alluredir {RESULT_DIR}"
+    subprocess.run(cmd, shell=True)
+
 
 def run_allure_serve():
     """Запуск встроенной команды allure serve"""
-    subprocess.run(["allure", "serve", RESULT_DIR])
+    cmd = f"allure serve {RESULT_DIR}"
+    subprocess.run(cmd, shell=True)
 
 
 def run_allure_generate_and_open():
     """Генерация отчёта и запуск локального сервера"""
-    # Генерация
-    subprocess.run(["allure", "generate", RESULT_DIR, "-o", REPORT_DIR, "--clean"])
+    cmd = f"allure generate {RESULT_DIR} -o {REPORT_DIR} --clean"
+    subprocess.run(cmd, shell=True)
 
-    # Ищем свободный порт
     port = find_free_port(START_PORT)
 
-    # Запуск сервера Python
     os.chdir(REPORT_DIR)
     handler = http.server.SimpleHTTPRequestHandler
 
@@ -51,9 +53,21 @@ def run_allure_generate_and_open():
         httpd.serve_forever()
 
 
+def run_all():
+    """Запуск тестов, генерация отчёта и сервер"""
+    run_tests()
+    run_allure_generate_and_open()
+
+
 if __name__ == "__main__":
-    run_allure_serve()
-    if len(sys.argv) > 1 and sys.argv[1] == "serve":
-        run_allure_serve()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "serve":
+            run_allure_serve()
+        elif sys.argv[1] == "tests":
+            run_tests()
+        elif sys.argv[1] == "all":
+            run_all()
+        else:
+            print("Неизвестная команда. Используй: tests | serve | generate | all")
     else:
         run_allure_generate_and_open()
