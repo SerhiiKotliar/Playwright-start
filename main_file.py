@@ -11,7 +11,7 @@ from pyside_dialog import MyDialog  # твоя PySide форма
 import os
 from tkinter import ttk
 # from tkinter import simpledialog
-# from helper import debug
+from helper import debug
 # _root = None  # глобальная ссылка на root
 
 
@@ -683,8 +683,8 @@ class InputDialog(tk.Toplevel):
             return
         # messagebox.showerror("Шаблон", f"Склад шаблонуу  {pattern}", parent=self)
         login_val = self.login.get()
-        if self.cur_name == "login" and self.required_vars[self.cur_name].get():
-        # if "login" in self.required_vars and login_val != "":
+        # задані вимоги для поля, поле обов'язкове або не пусте
+        if self.cur_name == "login" and self.required_vars[self.cur_name].get() or login_val != "":
             if email: #and self.entries["email"].get() == "":
                 errlog = validate_email_rules(login_val)
             else:
@@ -698,8 +698,7 @@ class InputDialog(tk.Toplevel):
             self._set_ok(self.login)
 
         pw = self.password.get()
-        # if "password" in self.required_vars and pw != "":
-        if self.cur_name == "password" and self.required_vars[self.cur_name].get():
+        if self.cur_name == "password" and self.required_vars[self.cur_name].get() or pw != "":
             errp = validate_password_rules(pw)
             if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
@@ -711,8 +710,8 @@ class InputDialog(tk.Toplevel):
             self._set_ok(self.password)
 
         url_val = self.url.get()
-        # if "url" in self.required_vars and url_val != "":
-        if self.cur_name == "url" and self.required_vars[self.cur_name].get():
+        # задані вимоги для поля, поле обов'язкове або не пусте
+        if self.cur_name == "url" and self.required_vars[self.cur_name].get() or url_val != "":
             erru = validate_url_value(url_val)
             if erru:
                 self._set_err(self.url)
@@ -724,8 +723,7 @@ class InputDialog(tk.Toplevel):
 
         # проверка Email
         email_val = self.email.get()
-        # if "email" in self.required_vars and email_val != "":
-        if self.cur_name == "email" and self.required_vars[self.cur_name].get():
+        if self.cur_name == "email" and self.required_vars[self.cur_name].get() or email_val != "":
             erre = validate_email_rules(email_val)
             if not allow_email_value(email_val) or erre:
                 self._set_err(self.email)
@@ -758,7 +756,7 @@ def get_user_input():
     dlg = InputDialog(root, input_data['url'], input_data['login'], input_data['password'], input_data['email'], list_of_tests[number_of_test])
     dlg.grab_set()
     root.wait_window(dlg)
+    debug(f"Початок тесту {list_of_tests[number_of_test]} зі сторінки з адресою : {input_data['url'][number_of_test]}", "INFO")
     number_of_test += 1
-    # debug(f"Форма закрыта, результат: {dlg.result}", "INFO")
     return dlg.result
 

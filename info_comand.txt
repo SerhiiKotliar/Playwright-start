@@ -1,0 +1,6 @@
+//запускает тесты и отчёты по ним в папку
+python -m pytest -v -s --alluredir result
+//открывает в браузере отчёт
+allure serve result
+//генерирует файлы отчёта в папку
+allure generate result
