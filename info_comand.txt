@@ -6,24 +6,19 @@ allure serve result
 allure generate report
 //открывает сохранённый отчёт в папке report
 allure open report
-
+///////////////////////////////////////////////////////////////
 //Как использовать файл allure_runner.py
-
 //Запуск всех тестов
-
 python allure_runner.py tests
-
-
 //Открыть отчёт напрямую через allure serve
-
 python allure_runner.py serve
-
-
 //Сгенерировать отчёт и открыть в браузере (Python-сервер)
-
 python allure_runner.py
-
-
 //Запустить всё сразу (тесты → отчёт → сервер)
-
 python allure_runner.py all
+////////////////////////////////////////////////////////////////
+//Создай requirements.txt
+pip freeze > requirements.txt
+
+//Установка библиотек из requirements.txt
+pip install -r requirements.txt
