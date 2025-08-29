@@ -21,6 +21,8 @@ len_min = 4
 len_max = 16
 lenminlog = 4
 lenmaxlog = 16
+lenminlog_l = 1
+lenmaxlog_l = 30
 lenminpas = 8
 lenmaxpas = 20
 local = ""
@@ -40,18 +42,22 @@ pattern: str = ""
 patterne: str = ""
 patternu: str = ""
 patternlog: str = ""
+patternlog_l: str = ""
 patternpas: str = ""
 chars: str = ""
 both_reg_log = False
+both_reg_log_l = False
 digits_str_log = ""
+digits_str_log_l = ""
 spec_escaped_log = ""
+spec_escaped_log_l = ""
 both_reg_p = False
 digits_str_p = ""
 spec_escaped_p = ""
 number_of_test = 0
 
 def entries_rules(fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, patternlog, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, spec, digits_str, patterne, patternu
+    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu
 
     entries = kwargs["entries"]
 
@@ -180,6 +186,13 @@ def entries_rules(fame, **kwargs):
         both_reg_log = both_reg
         digits_str_log = digits_str
         spec_escaped_log = spec_escaped
+    if fame == "login_l":
+        lenminlog_l = len_min
+        lenmaxlog_l = len_max
+        patternlog_l = pattern
+        both_reg_log_l = both_reg
+        digits_str_log_l = digits_str
+        spec_escaped_log_l = spec_escaped
     if fame == "password":
         lenminpas = len_min
         lenmaxpas = len_max
@@ -220,9 +233,21 @@ def allow_login_value(new_value: str) -> bool:
     # messagebox.showerror("Паттерн", str(bool(re.fullmatch(patternlog, new_value))), parent=_root)
     return bool(re.fullmatch(patternlog, new_value))
 
+def allow_login_l_value(new_value: str) -> bool:
+    global chars, patternlog_l
+    if not new_value:
+        return True
+    # если chars == ".", разрешаем всё
+    if chars == ".":
+        return True
+    # if email:
+    #     patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
+    # messagebox.showerror("Паттерн", str(bool(re.fullmatch(patternlog, new_value))), parent=_root)
+    return bool(re.fullmatch(patternlog_l, new_value))
+
 
 def allow_password_value(new_value: str) -> bool:
-    global pattern, chars, patternpas
+    global chars, patternpas
     if not new_value:
         return True
     # если chars == ".", разрешаем всё
@@ -286,6 +311,27 @@ def validate_login_rules(log: str):
     if spec_escaped_log:
         if not any(c in string.punctuation for c in log):
             return "Логін має містити принаймні один спеціальний символ."
+    return None
+
+def validate_login_l_rules(log: str):
+    global both_reg_log_l, digits_str_log_l, spec_escaped_log_l, lenminlog_l, lenmaxlog_l
+    if not log:
+        return "Прізвище не може бути порожнім."
+    if len(log) < lenminlog_l or len(log) > lenmaxlog_l:
+        return f"Прізвище має бути від {lenminlog_l} до {lenmaxlog_l} символів включно"
+    if email or url:
+        return "Помилка, Прізвище не може форматуватись як Email або URL адреса."
+    if both_reg_log_l:
+        if not any(c.islower() for c in log):
+            return "Прізвище має містити принаймні одну маленьку літеру."
+        if not any(c.isupper() for c in log):
+            return "Прізвище має містити принаймні одну велику літеру."
+    if digits_str_log_l:
+        if not any(c.isdigit() for c in log):
+            return "Прізвище має містити принаймні одну цифру."
+    if spec_escaped_log_l:
+        if not any(c in string.punctuation for c in log):
+            return "Прізвище має містити принаймні один спеціальний символ."
     return None
 
 
@@ -357,6 +403,7 @@ def make_input_data(file_name):
     data = {
         "url": [],
         "login": [],
+        "login_l": [],
         "password": [],
         "email": []
     }
@@ -393,20 +440,38 @@ def test_list(file_test):
 
 # https://www.qa-practice.com/
 # https://en.wikipedia.org/wiki/Main_Page
+# root = Tk()
+_root.withdraw()  # ховаємо головне вікно
+
+result = messagebox.askyesno("Вибір типу тестів", "Ви тестуватимете реєстрацію екаунту?")
+# if result:
+#     print("Обрано: Так")
+# else:
+#     print("Обрано: Ні")
 # --- конфиг полей ---
-FIELDS_CONFIG = [
-    {"label": "Адреса (URL):", "name": "url", "default": "",
-         "allow_func": allow_url_value},
-    {"label": "Логін:", "name": "login", "default": "", "allow_func": allow_login_value},
-    {"label": "Пароль:", "name": "password", "default": "", "allow_func": allow_password_value},
-    {"label": "Email:", "name": "email", "default": "", "allow_func": allow_email_value},
-]
+if result:
+    FIELDS_CONFIG = [
+        {"label": "Адреса (URL):", "name": "url", "default": "", "allow_func": allow_url_value},
+        {"label": "Ім'я:", "name": "login", "default": "", "allow_func": allow_login_l_value},
+        {"label": "Прізвище:", "name": "login_l", "default": "", "allow_func": allow_login_l_value},
+        {"label": "Пароль:", "name": "password", "default": "", "allow_func": allow_password_value},
+        {"label": "Email:", "name": "email", "default": "", "allow_func": allow_email_value},
+    ]
+else:
+    FIELDS_CONFIG = [
+        {"label": "Адреса (URL):", "name": "url", "default": "", "allow_func": allow_url_value},
+        {"label": "Логін:", "name": "login", "default": "", "allow_func": allow_login_value},
+        {"label": "Пароль:", "name": "password", "default": "", "allow_func": allow_password_value},
+        {"label": "Email:", "name": "email", "default": "", "allow_func": allow_email_value},
+    ]
+
 input_data = make_input_data("file_input_data.txt")
 list_of_tests = test_list("tests/test_main.py")
 
 class InputDialog(tk.Toplevel):
-    def __init__(self, parent, input_url=None, input_login=None, input_password=None, input_email=None, name_of_test=""):
+    def __init__(self, parent, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test=""):
         super().__init__(parent)
+        # self.login = None
         self.title("Введення даних у тест    "+name_of_test)
         self.attributes("-topmost", True)
         style = ttk.Style()
@@ -476,6 +541,10 @@ class InputDialog(tk.Toplevel):
                 self.entries['login'].config(values=input_login)
                 if len(input_login) > 0:
                     self.entries['login'].set(input_login[0])
+            if name == 'login_l':
+                self.entries['login_l'].config(values=input_login_l)
+                if len(input_login_l) > 0:
+                    self.entries['login_l'].set(input_login_l[0])
                 # self.entries['login'].setFocus(False)
             if name == 'password':
                 self.entries['password'].config(values=input_password)
@@ -530,28 +599,6 @@ class InputDialog(tk.Toplevel):
     def on_toggle(self, name, var):
         self.required_vars[name].get()
 
-    # # --- validatecommand factory ---
-    # def _vcmd_factory(self, entry, allow_func):
-    #     def _vcmd(new_value):
-    #         if allow_func(new_value):
-    #             entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
-    #         else:
-    #             entry.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
-    #         return True
-    #
-    #     return (self.register(_vcmd), "%P")
-
-    # def _set_err(self, entry):
-    #     entry.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
-    #
-    # def _set_ok(self, entry):
-    #     entry.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
-
-    # def _set_err(self, widget):
-    #     widget.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
-    #
-    # def _set_ok(self, widget):
-    #     widget.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
 
     def _set_err(self, widget):
         if isinstance(widget, ttk.Combobox):  # сначала проверяем Combobox
@@ -573,18 +620,6 @@ class InputDialog(tk.Toplevel):
                           highlightbackground="gray",
                           highlightcolor="gray")
 
-    # def _validate_combo(self, event=None):
-    #     value = self.combo_var.get()
-    #     if self.allow_func(value):
-    #         self._set_ok(self.combo)
-    #     else:
-    #         self._set_err(self.combo)
-    # def _validate_combo(self, widget, allow_func):
-    #     value = widget.get()
-    #     if allow_func and allow_func(value):
-    #         widget.config(highlightthickness=1, highlightbackground="gray", highlightcolor="gray")
-    #     else:
-    #         widget.config(highlightthickness=2, highlightbackground="red", highlightcolor="red")
 
     def _validate_combo(self, widget, allow_func):
         value = widget.get().strip()
@@ -609,9 +644,9 @@ class InputDialog(tk.Toplevel):
 
     # відкриття форми з налаштуваннями тестів
     def toggle_rule(self, field_name):
-        # messagebox.showerror("Имя элемента", f"Ім'я елементу  {field_name}", parent=self)
+        messagebox.showerror("Имя элементу після вводу", f"Ім'я елементу  {field_name}", parent=self)
         self.cur_name = field_name
-        global patternl, patternpas, pattern, len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
+        # global patternl, patternpas, pattern, len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
         # for en in self.entries.values():
         #     if en['state'] == tk.NORMAL:
         #         en.config(state=tk.DISABLED)
@@ -643,17 +678,7 @@ class InputDialog(tk.Toplevel):
             entries_rules(field_name, entries=cur_rules)
 
     def on_ok(self):
-        # empty_fields = [name for name, entry in self.entries.items() if not entry.get().strip()]
-        # # if not "email" in empty_fields:
-        # #     empty_email = False
-        # missing = [name for name, var in self.required_vars.items() if var.get() and self.entries[name].get() == ""]
-        # for name in missing:
-        #     if not self.entries[name].get():
-        #         self._set_err(self.entries[name])
-        # if missing:
-        #     messagebox.showerror("Помилка", "Будь ласка, заповніть обов'язкові поля:\n" +
-        #                          "\n".join(self.labels[n] for n in missing), parent=self)
-        #     return
+        messagebox.showerror("Имя элементу при закритті форми", f"Ім'я елементу  {self.cur_name}", parent=self)
         empty_fields = []
         missing = []
 
@@ -685,7 +710,7 @@ class InputDialog(tk.Toplevel):
         # messagebox.showerror("Шаблон", f"Склад шаблонуу  {pattern}", parent=self)
         login_val = self.login.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
-        if self.cur_name == "login" and self.required_vars[self.cur_name].get() or login_val != "":
+        if self.cur_name == "login" and self.required_vars[self.cur_name].get() and login_val != "":
             if email: #and self.entries["email"].get() == "":
                 errlog = validate_email_rules(login_val)
             else:
@@ -698,8 +723,20 @@ class InputDialog(tk.Toplevel):
                 return
             self._set_ok(self.login)
 
+        login_l_val = self.login_l.get()
+        # задані вимоги для поля, поле обов'язкове або не пусте
+        if self.cur_name == "login_l" and self.required_vars[self.cur_name].get() and login_l_val != "":
+            errlog_l = validate_login_l_rules(login_l_val)
+            if not allow_login_l_value(login_l_val) or errlog_l:
+                self._set_err(self.login_l)
+                messagebox.showerror("Помилка", errlog_l or "Прізвище містить недопустимі символи.", parent=self)
+                self.entries['login_l'].set('')
+                self.login_l.focus_set()
+                return
+            self._set_ok(self.login_l)
+
         pw = self.password.get()
-        if self.cur_name == "password" and self.required_vars[self.cur_name].get() or pw != "":
+        if self.cur_name == "password" and self.required_vars[self.cur_name].get() and pw != "":
             errp = validate_password_rules(pw)
             if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
@@ -712,7 +749,7 @@ class InputDialog(tk.Toplevel):
 
         url_val = self.url.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
-        if self.cur_name == "url" and self.required_vars[self.cur_name].get() or url_val != "":
+        if self.cur_name == "url" and self.required_vars[self.cur_name].get() and url_val != "":
             erru = validate_url_value(url_val)
             if erru:
                 self._set_err(self.url)
@@ -724,7 +761,7 @@ class InputDialog(tk.Toplevel):
 
         # проверка Email
         email_val = self.email.get()
-        if self.cur_name == "email" and self.required_vars[self.cur_name].get() or email_val != "":
+        if self.cur_name == "email" and self.required_vars[self.cur_name].get() and email_val != "":
             erre = validate_email_rules(email_val)
             if not allow_email_value(email_val) or erre:
                 self._set_err(self.email)
@@ -734,7 +771,7 @@ class InputDialog(tk.Toplevel):
                 return
             self._set_ok(self.email)
 
-        self.result = {"login": login_val, "password": pw, "url": url_val, "email": email_val}
+        self.result = {"login": login_val, "login_l": login_l_val, "password": pw, "url": url_val, "email": email_val}
         self.destroy()
 
     def on_cancel(self):
@@ -749,14 +786,14 @@ class InputDialog(tk.Toplevel):
 def get_user_input():
     # debug("Создаём форму Tkinter...", "INFO")
     global number_of_test
-    root = tk.Tk()
-    root.withdraw()
+    # root = tk.Tk()
+    # root.withdraw()
     # Пример простой формы через askstring
     # url = simpledialog.askstring("Ввод URL", "Введите URL:", parent=root)
     # debug("Открываем форму InputDialog", "INFO")
-    dlg = InputDialog(root, input_data['url'], input_data['login'], input_data['password'], input_data['email'], list_of_tests[number_of_test])
+    dlg = InputDialog(_root, input_url=input_data['url'], input_login=input_data['login'], input_login_l=input_data['login_l'], input_password=input_data['password'], input_email=input_data['email'], name_of_test=list_of_tests[number_of_test])
     dlg.grab_set()
-    root.wait_window(dlg)
+    _root.wait_window(dlg)
     debug(f"Початок тесту {list_of_tests[number_of_test]} зі сторінки з адресою : {input_data['url'][number_of_test]}", "INFO")
     number_of_test += 1
     return dlg.result

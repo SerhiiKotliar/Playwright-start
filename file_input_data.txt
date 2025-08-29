@@ -7,6 +7,8 @@ https://www.qa-practice.com/elements/button/disabled
 https://magento.softwaretestingboard.com/
 [login]
 
+[login_l]
+
 [password]
 
 [email]
