@@ -44,6 +44,41 @@ def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip")
     # зупиняємо тест
     pytest.fail(message, pytrace=False)
 
+def report_about(message: str, page_open=None, name="screenshot_of_final"):
+    # додаємо повідомлення у Allure
+    allure.attach(message, name="Тест пройдено", attachment_type=allure.attachment_type.TEXT)
+    filename = ""
+    if page_open:
+        try:
+            # створюємо папку screenshots (якщо немає)
+            os.makedirs("screenshots", exist_ok=True)
+
+            # унікальне ім’я файлу
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"screenshots/{name}_{timestamp}.png"
+
+            # робимо скріншот у файл
+            page_open.screenshot(path=filename)
+
+            # прикріплюємо цей файл у Allure
+            allure.attach.file(
+                filename,
+                name=name,
+                attachment_type=allure.attachment_type.PNG
+            )
+
+        except Exception as e:
+            # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
+            allure.attach(
+                page_open.screenshot(),
+                name=f"{name}_fallback",
+                attachment_type=allure.attachment_type.PNG
+            )
+            print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
+
+    # зупиняємо тест
+    # pytest.fail(message, pytrace=False)
+
 @pytest.mark.timeout(5000)
 @allure.feature("тестування декількох сайтів")
 @allure.story("перебіг функціональних елементів на сторінках сайту https://www.qa-practice.com/")
@@ -69,7 +104,7 @@ def test_example(page: Page, page_open) -> None:
     with  allure.step("перевірка видимісті тексту вибраної мови, зберігання скріну малюнку, що підтверджує вибрану мову"):
         expect(page.get_by_text("You selected Python")).to_be_visible()
         debug("Після вибору мови та кліку видна вибрана мова", "Вибір мови")
-        page.get_by_text("You selected Python").screenshot(path="../screenshots/Python.png")
+        page.get_by_text("You selected Python").screenshot(path="screenshots/Python.png")
         debug("Збережений скрін Python.png з вибраною мовою", "Скрін сторінки")
 
 @pytest.mark.timeout(5000)
@@ -95,7 +130,7 @@ def test_iframe(page_open):
         toggler.click()
         debug("Здійснено клік на рамку", "Клік на рамці")
     with  allure.step("зберігання скріну малюнку toggler.jpg"):
-        page_open.screenshot(type='jpeg', path='../screenshots/toggler.jpg')
+        page_open.screenshot(type='jpeg', path='screenshots/toggler.jpg')
         debug("Збережений скрін toggler.jpg", "Скрін сторінки")
 @pytest.mark.timeout(5000)
 @allure.story("перевірка перетаскування елементів на сайті https://www.qa-practice.com/elements/dragndrop/boxes")
@@ -104,7 +139,7 @@ def test_drag( page_open):
     with  allure.step("перетаскування"):
         page_open.drag_and_drop('#rect-draggable', '#rect-droppable')
         debug("елемент перетягнуто", "Клік на рамці")
-        page_open.screenshot(type='jpeg', path='../screenshots/drag.jpg')
+        page_open.screenshot(type='jpeg', path='screenshots/drag.jpg')
         debug("Збережений скрін drag.jpg", "Скрін сторінки")
 
 @pytest.mark.timeout(5000)
@@ -114,7 +149,7 @@ def test_select(page_open):
     with  allure.step("переведення вибором стану зі списку"):
         page_open.locator('#id_select_state').select_option('enabled')
         debug("вибран стан зі списку", "Зміна стану")
-        page_open.screenshot(type='jpeg', path='../screenshots/select.jpg')
+        page_open.screenshot(type='jpeg', path='screenshots/select.jpg')
         debug("Збережений скрін select.jpg", "Скрін сторінки")
 @pytest.mark.timeout(5000)
 @pytest.mark.skip(reason="Поки не потрібен")
@@ -126,72 +161,8 @@ def test_hover(page_open):
         debug("переведена на елемент ui-id-4", "Переведення миші")
         page_open.locator('#ui-id-9').hover()
         debug("переведена на елемент ui-id-9", "Переведення миші")
-        page_open.screenshot(type='jpeg', path='../screenshots/hover.jpg')
+        page_open.screenshot(type='jpeg', path='screenshots/hover.jpg')
         debug("Збережений скрін hover.jpg", "Скрін сторінки")
 
-@pytest.mark.timeout(10000)
-@allure.story("створення екаунту на сайті https://magento.softwaretestingboard.com/")
-def test_creat_account(page_open, user_data):
-    # page.goto('https://magento.softwaretestingboard.com/')
-    with allure.step('перехід на посилання створення екаунту та клік на ньому'):
-        # page.goto("https://magento.softwaretestingboard.com/")
-        expect(page_open.get_by_role("link", name="Create an Account")).to_be_visible(timeout=10000)
-        debug("перехід на посилання створення екаунту", "Посилання створення екаунту")
-        page_open.get_by_role("link", name="Create an Account").click()
-        # page_open.get_by_text("Create New Customer Account").click()
-        debug("клік на посиланні створення екаунту", "Посилання створення екаунту")
-    with allure.step('перевірка заголовку, чи це сторінка створення екаунту'):
-        expect(page_open.get_by_role("heading")).to_contain_text("Create New Customer Account", timeout=10000)
-        debug("здійснено перехід на сторінку створення екаунту", "Сторінка створення екаунту")
-    with allure.step('пошук і перехід на поле імені та введення його'):
-        expect(page_open.get_by_role("textbox", name="First Name*")).to_be_visible()
-        debug("знайдено поле імені", "Поле імені")
-        page_open.get_by_role("textbox", name="First Name*").fill(user_data['login'])
-        # page_open.get_by_role("textbox", name="First Name*").fill('Serhii1')
-        debug("введені дані в поле імені", "Поле імені")
-    with allure.step('пошук і перехід на поле прізвища та введення його'):
-        expect(page_open.get_by_role("textbox", name="Last Name*")).to_be_visible()
-        debug("знайдено поле прізвища", "Поле прізвища")
-        page_open.get_by_role("textbox", name="Last Name*").fill(user_data['login_l'])
-        # page_open.get_by_role("textbox", name="Last Name*").fill('Kotliar1')
-        debug("введені дані в поле прізвища", "Поле прізвища")
-    with allure.step('пошук і перехід на поле email та введення його'):
-        expect(page_open.get_by_role("textbox", name="Email*")).to_be_visible()
-        debug("знайдене поле email", "Поле email")
-        page_open.get_by_role("textbox", name="Email*").fill(user_data['email'])
-        # page_open.get_by_role("textbox", name="Email*").fill('arecserg1@gmail.com')
-        debug("введені дані в поле email", "Поле email")
-    with allure.step('пошук і перехід на поле паролю та введення його'):
-        expect(page_open.get_by_role("textbox", name="Password*", exact=True)).to_be_visible()
-        debug("знайдене поле паролю", "Поле паролю")
-        page_open.get_by_role("textbox", name="Password*", exact=True).fill(user_data['password'])
-        # page_open.get_by_role("textbox", name="Password*", exact=True).fill('1980Pfgflyfz#1')
-        debug("введені дані в поле паролю", "Поле паролю")
-    with allure.step('пошук і перехід на поле підтвердження паролю та введення його'):
-        expect(page_open.get_by_role("textbox", name="Confirm Password*")).to_be_visible()
-        debug("знайдене поле підтвердження паролю", "Підтвердження паролю")
-        page_open.get_by_role("textbox", name="Confirm Password*").fill(user_data['password'])
-        # page_open.get_by_role("textbox", name="Confirm Password*").fill('1980Pfgflyfz#1')
-        debug("введені дані в поле підтвердження паролю", "Підтвердження паролю")
-    with allure.step('перевірка наявності кнопки підтвердження відкриття екаунту та клік на ній'):
-        expect(page_open.get_by_role("button", name="Create an Account")).to_be_visible()
-        debug("знайдена кнопка підтвердження створення екаунту", "Підтвердження створення екаунту")
-        page_open.get_by_role("button", name="Create an Account").click()
-        debug("зроблено клік на кнопці підтвердження створення екаунту", "Підтвердження створення екаунту")
-    with allure.step('перевірка переходу на сторінку створенного екаунту'):
-        if page_open.get_by_role("heading", name="My Account").is_visible():
-            debug("здійснено перехід на сторінку створеного екаунту", "Сторінка створеного екаунту")
-        else:
-            debug("не здійснено перехід на сторінку створеного екаунту. такі дані екаунту вже є в базі", "Сторінка створеного екаунту")
-            report_bug_and_stop("Екаунт з такими даними вже існує", page_open)
-    with allure.step('перевірка співпадіння даних екаунту на сайті з введеними даними'):
-        expect(page_open.get_by_text(f"{user_data['login']} {user_data['login_l']} {user_data['email']}")).to_be_visible()
-        # expect(page_open.get_by_text("Serhii1 Kotliar1 arecserg1@gmail.com")).to_be_visible()
-        debug("знайдено введені при створенні дані екаунту", "Дані екаунту")
-        # expect(page_open.locator("#maincontent")).to_contain_text("Serhii1 Kotliar1 arecserg1@gmail.com")
-        expect(page_open.locator("#maincontent")).to_contain_text(
-            f"{user_data['login']} {user_data['login_l']} {user_data['email']}")
-        debug("дані екаунту співпадають з введеннми при створенні екаунту", "Дані екаунту")
-        # debug("екаунт вже створено раніше з такими даними", "Дані екаунту")
 
 

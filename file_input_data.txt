@@ -6,9 +6,10 @@ https://www.qa-practice.com/elements/dragndrop/boxes
 https://www.qa-practice.com/elements/button/disabled
 https://magento.softwaretestingboard.com/
 [login]
-
+Валентин
 [login_l]
-
+Валентиненко
 [password]
-
+uytrUYTR4567_-#4
 [email]
+dfghgfdhgf@rtyut.ghj

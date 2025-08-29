@@ -55,6 +55,7 @@ both_reg_p = False
 digits_str_p = ""
 spec_escaped_p = ""
 number_of_test = 0
+create_acc = False
 
 def entries_rules(fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu
@@ -450,6 +451,7 @@ result = messagebox.askyesno("Вибір типу тестів", "Ви тест�
 #     print("Обрано: Ні")
 # --- конфиг полей ---
 if result:
+    create_acc = True
     FIELDS_CONFIG = [
         {"label": "Адреса (URL):", "name": "url", "default": "", "allow_func": allow_url_value},
         {"label": "Ім'я:", "name": "login", "default": "", "allow_func": allow_login_l_value},
@@ -644,7 +646,7 @@ class InputDialog(tk.Toplevel):
 
     # відкриття форми з налаштуваннями тестів
     def toggle_rule(self, field_name):
-        messagebox.showerror("Имя элементу після вводу", f"Ім'я елементу  {field_name}", parent=self)
+        # messagebox.showerror("Имя элементу після вводу", f"Ім'я елементу  {field_name}", parent=self)
         self.cur_name = field_name
         # global patternl, patternpas, pattern, len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
         # for en in self.entries.values():
@@ -678,7 +680,7 @@ class InputDialog(tk.Toplevel):
             entries_rules(field_name, entries=cur_rules)
 
     def on_ok(self):
-        messagebox.showerror("Имя элементу при закритті форми", f"Ім'я елементу  {self.cur_name}", parent=self)
+        # messagebox.showerror("Имя элементу при закритті форми", f"Ім'я елементу  {self.cur_name}", parent=self)
         empty_fields = []
         missing = []
 
@@ -723,7 +725,8 @@ class InputDialog(tk.Toplevel):
                 return
             self._set_ok(self.login)
 
-        login_l_val = self.login_l.get()
+        if create_acc:
+            login_l_val = self.login_l.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
         if self.cur_name == "login_l" and self.required_vars[self.cur_name].get() and login_l_val != "":
             errlog_l = validate_login_l_rules(login_l_val)
@@ -770,7 +773,8 @@ class InputDialog(tk.Toplevel):
                 self.email.focus_set()
                 return
             self._set_ok(self.email)
-
+        if not create_acc:
+            login_l_val = ""
         self.result = {"login": login_val, "login_l": login_l_val, "password": pw, "url": url_val, "email": email_val}
         self.destroy()
 
