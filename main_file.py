@@ -2,8 +2,11 @@ import tkinter as tk
 from tkinter import messagebox
 import re
 import string
-# from tkinter.ttk import Combobox
+import os
+from datetime import datetime
 
+import pytest
+import allure
 # from urllib.parse import urlparse
 from PySide6.QtWidgets import QApplication, QDialog
 from PySide6.QtCore import Qt
@@ -56,6 +59,79 @@ digits_str_p = ""
 spec_escaped_p = ""
 number_of_test = 0
 create_acc = False
+
+
+def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
+    # додаємо повідомлення у Allure
+    allure.attach(message, name="Причина зупинки", attachment_type=allure.attachment_type.TEXT)
+    filename = ""
+    if page_open:
+        try:
+            # створюємо папку screenshots (якщо немає)
+            os.makedirs("screenshots", exist_ok=True)
+
+            # унікальне ім’я файлу
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"screenshots/{name}_{timestamp}.png"
+
+            # робимо скріншот у файл
+            page_open.screenshot(path=filename, timeout=40000)
+
+            # прикріплюємо цей файл у Allure
+            allure.attach.file(
+                filename,
+                name=name,
+                attachment_type=allure.attachment_type.PNG
+            )
+
+        except Exception as e:
+            # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
+            allure.attach(
+                page_open.screenshot(),
+                name=f"{name}_fallback",
+                attachment_type=allure.attachment_type.PNG
+            )
+            print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
+
+    # зупиняємо тест
+    pytest.fail(message, pytrace=False)
+
+def report_about(message: str, page_open=None, name="screenshot_of_final"):
+    # додаємо повідомлення у Allure
+    allure.attach(message, name="Тест пройдено", attachment_type=allure.attachment_type.TEXT)
+    filename = ""
+    if page_open:
+        try:
+            # створюємо папку screenshots (якщо немає)
+            os.makedirs("screenshots", exist_ok=True)
+
+            # унікальне ім’я файлу
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"screenshots/{name}_{timestamp}.png"
+
+            # робимо скріншот у файл
+            page_open.screenshot(path=filename, timeout=40000)
+
+            # прикріплюємо цей файл у Allure
+            allure.attach.file(
+                filename,
+                name=name,
+                attachment_type=allure.attachment_type.PNG
+            )
+
+        except Exception as e:
+            # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
+            allure.attach(
+                page_open.screenshot(),
+                name=f"{name}_fallback",
+                attachment_type=allure.attachment_type.PNG
+            )
+            print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
+
+    # зупиняємо тест
+    # pytest.fail(message, pytrace=False)
+
+
 
 def entries_rules(fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu

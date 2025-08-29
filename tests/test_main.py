@@ -2,82 +2,13 @@ import pytest
 from playwright.sync_api import Page, expect
 import os
 from datetime import datetime
-
+from main_file import report_about, report_bug_and_stop
 from twisted.internet.defer import timeout
 
 from conftest import user_data
 from helper import debug
 import allure
 
-def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
-    # додаємо повідомлення у Allure
-    allure.attach(message, name="Причина зупинки", attachment_type=allure.attachment_type.TEXT)
-    filename = ""
-    if page_open:
-        try:
-            # створюємо папку screenshots (якщо немає)
-            os.makedirs("screenshots", exist_ok=True)
-
-            # унікальне ім’я файлу
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"screenshots/{name}_{timestamp}.png"
-
-            # робимо скріншот у файл
-            page_open.screenshot(path=filename)
-
-            # прикріплюємо цей файл у Allure
-            allure.attach.file(
-                filename,
-                name=name,
-                attachment_type=allure.attachment_type.PNG
-            )
-
-        except Exception as e:
-            # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
-            allure.attach(
-                page_open.screenshot(),
-                name=f"{name}_fallback",
-                attachment_type=allure.attachment_type.PNG
-            )
-            print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
-
-    # зупиняємо тест
-    pytest.fail(message, pytrace=False)
-
-def report_about(message: str, page_open=None, name="screenshot_of_final"):
-    # додаємо повідомлення у Allure
-    allure.attach(message, name="Тест пройдено", attachment_type=allure.attachment_type.TEXT)
-    filename = ""
-    if page_open:
-        try:
-            # створюємо папку screenshots (якщо немає)
-            os.makedirs("screenshots", exist_ok=True)
-
-            # унікальне ім’я файлу
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"screenshots/{name}_{timestamp}.png"
-
-            # робимо скріншот у файл
-            page_open.screenshot(path=filename)
-
-            # прикріплюємо цей файл у Allure
-            allure.attach.file(
-                filename,
-                name=name,
-                attachment_type=allure.attachment_type.PNG
-            )
-
-        except Exception as e:
-            # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
-            allure.attach(
-                page_open.screenshot(),
-                name=f"{name}_fallback",
-                attachment_type=allure.attachment_type.PNG
-            )
-            print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
-
-    # зупиняємо тест
-    # pytest.fail(message, pytrace=False)
 
 @pytest.mark.timeout(5000)
 @allure.feature("тестування декількох сайтів")

@@ -8,7 +8,7 @@ from playwright.sync_api import Page, expect
 from conftest import user_data
 from helper import debug
 import allure
-
+from main_file import report_about, report_bug_and_stop
 
 
 
