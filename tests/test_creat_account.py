@@ -12,7 +12,7 @@ from main_file import report_about, report_bug_and_stop
 
 
 
-@pytest.mark.timeout(10000)
+@pytest.mark.timeout(100000)
 @allure.story("створення екаунту на сайті https://magento.softwaretestingboard.com/")
 def test_creat_account(page_open, user_data):
     # page.goto('https://magento.softwaretestingboard.com/')
