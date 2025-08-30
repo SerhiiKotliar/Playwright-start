@@ -33,7 +33,6 @@ def test_creat_account(page_open, user_data):
         expect(page_open.get_by_role("textbox", name="First Name*")).to_be_visible()
         debug("знайдено поле імені", "Поле імені")
         page_open.get_by_role("textbox", name="First Name*").fill(user_data['login'])
-        # page_open.get_by_role("textbox", name="First Name*").fill('Serhii1')
         debug("введені дані в поле імені", "Поле імені")
     with allure.step('пошук і перехід на поле прізвища та введення його'):
         expect(page_open.get_by_role("textbox", name="Last Name*")).to_be_visible()
