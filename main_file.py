@@ -504,7 +504,7 @@ def make_input_data(file_name):
                 data[current_section].append(line)
     return data
 
-def test_list(file_test):
+def fortest_list(file_test):
     test_names = []
     with open(file_test, "r", encoding="utf-8") as f:
         for line in f:
@@ -544,7 +544,8 @@ else:
     ]
 
 input_data = make_input_data("file_input_data.txt")
-list_of_tests = test_list("tests/test_main.py")
+# list_of_tests = test_list("tests/test_main.py")
+list_of_tests = fortest_list("tests/test_experiment.py")
 
 class InputDialog(tk.Toplevel):
     def __init__(self, parent, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test=""):
@@ -871,10 +872,17 @@ def get_user_input():
     # Пример простой формы через askstring
     # url = simpledialog.askstring("Ввод URL", "Введите URL:", parent=root)
     # debug("Открываем форму InputDialog", "INFO")
-    dlg = InputDialog(_root, input_url=input_data['url'], input_login=input_data['login'], input_login_l=input_data['login_l'], input_password=input_data['password'], input_email=input_data['email'], name_of_test=list_of_tests[number_of_test])
+    if create_acc:
+        # dlg = InputDialog(_root, input_url=input_data['url'], input_login=input_data['login'], input_login_l=input_data['login_l'], input_password=input_data['password'], input_email=input_data['email'], name_of_test=list_of_tests[number_of_test])
+        dlg = InputDialog(_root, input_url=input_data['url'], input_login=input_data['login'],
+                          input_login_l=input_data['login_l'], input_password=input_data['password'],
+                          input_email=input_data['email'], name_of_test="test_first_name_field_visible")
+    else:
+        dlg = InputDialog(_root, input_url=input_data['url'], input_login=input_data['login'], input_password=input_data['password'], input_email=input_data['email'], name_of_test=list_of_tests[number_of_test])
     dlg.grab_set()
     _root.wait_window(dlg)
-    debug(f"Початок тесту {list_of_tests[number_of_test]} зі сторінки з адресою : {input_data['url'][number_of_test]}", "INFO")
+
+    # debug(f"Початок тесту {list_of_tests[number_of_test]} зі сторінки з адресою : {input_data['url'][number_of_test]}", "INFO")
+    debug(f"Початок тесту test_first_name_field_visible зі сторінки з адресою : {dlg.result['url']}", "INFO")
     number_of_test += 1
     return dlg.result
-

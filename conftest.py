@@ -16,7 +16,7 @@ from helper import debug
 #     data["_root"] = root
 #     return data
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='session')
 def user_data():
     # debug("Фикстура user_data запускается", "FIXTURE")
 
