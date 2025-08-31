@@ -29,20 +29,23 @@ def test_first_name_field_visible(page_open, scenario, user_data):
 
             # Если попали на рекламу — возвращаемся назад
             if "google_vignette" in page_open.url or "ad.doubleclick" in page_open.url:
-                page_open.go_back()
-                expect(link).to_be_visible(timeout=20000)
-                link.click()
-            close_button = page_open.locator("text=Close").first
-            if close_button.is_visible():
-                close_button.click()
-            # if page_open.locator("text=Close").is_visible():
-            #     page_open.locator("text=Close").click()
-            if "google_vignette" in page_open.url:
                 debug("Виявлено рекламу google_vignette. Повертаємось назад...", "WARNING")
                 page_open.go_back()
                 expect(link).to_be_visible(timeout=20000)
                 link.click()
                 debug("повторний клік після реклами", "INFO")
+            # close_button = page_open.locator("text=Close").first
+            close_button = page_open.get_by_role("button", name="Close").first
+            if close_button.is_visible():
+                close_button.click()
+            # if page_open.locator("text=Close").is_visible():
+            #     page_open.locator("text=Close").click()
+            # if "google_vignette" in page_open.url:
+            #     debug("Виявлено рекламу google_vignette. Повертаємось назад...", "WARNING")
+            #     page_open.go_back()
+            #     expect(link).to_be_visible(timeout=20000)
+            #     link.click()
+            #     debug("повторний клік після реклами", "INFO")
 
         with allure.step('перевірка заголовку, чи це сторінка створення екаунту'):
             # page_cr_ac = page_open.get_by_role("heading", name="Create New Customer Account")
