@@ -21,10 +21,10 @@ def user_data():
     # debug("Фикстура user_data запускается", "FIXTURE")
 
     # debug("Форма откроется сейчас", "FIXTURE")
-    result = get_user_input()  # открытие формы
+    result, result_inv = get_user_input()  # открытие формы
 
-    debug(f"Дані для введення отримані: {result}", "FIXTURE")
-    return result
+    debug(f"Дані для тестів отримані: {result}\n{result_inv}", "FIXTURE")
+    return result, result_inv  # возвращаем введённые данные
 
 # @pytest.fixture(scope="session")
 # def browser():
@@ -68,7 +68,7 @@ def user_data():
 
 @pytest.fixture(autouse=True, scope="function")
 def page_open(page: Page, user_data):
-    page.goto(user_data['url'])
+    page.goto(user_data[0]['url'])
     return page
 
 # @pytest.fixture(autouse=True, scope="function")

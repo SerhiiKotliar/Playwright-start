@@ -66,6 +66,7 @@ class MyDialog(QDialog, Ui_Dialog):
         len_max = self.spinBoxLenMax.value()
 
         self.result = {
+            "no_absent": False,
             "register": register,
             "localiz": localiz,
             "cyfry": cyfry,
