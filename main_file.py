@@ -19,7 +19,15 @@ from helper import debug
 
 
 email = False
+email_login = False
+email_url = False
+email_login_l = False
+email_p = False
 url = False
+url_login = False
+url_p = False
+url_login_l = False
+url_e = False
 len_min = 4
 len_max = 16
 lenminlog = 4
@@ -141,7 +149,8 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
 
 
 def entries_rules(fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu
+    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
+    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log_l, spec_escaped_p, spec_escaped_log_l
 
     entries = kwargs["entries"]
 
@@ -275,6 +284,8 @@ def entries_rules(fame, **kwargs):
         both_reg_log = both_reg
         digits_str_log = digits_str
         spec_escaped_log = spec_escaped
+        email_login = email
+        url_login = url
     if fame == "login_l":
         lenminlog_l = len_min
         lenmaxlog_l = len_max
@@ -282,6 +293,8 @@ def entries_rules(fame, **kwargs):
         both_reg_log_l = both_reg
         digits_str_log_l = digits_str
         spec_escaped_log_l = spec_escaped
+        email_login_l = email
+        url_login_l = url
     if fame == "password":
         lenminpas = len_min
         lenmaxpas = len_max
@@ -289,12 +302,17 @@ def entries_rules(fame, **kwargs):
         both_reg_p = both_reg
         digits_str_p = digits_str
         spec_escaped_p = spec_escaped
+        email_p = email
+        url_p = url
     if fame == "email":
         # patterne = f"^["+f"{chars}"+"]+$"
         patterne = pattern
+        url_e = url
     if fame == "url":
         patternu = f"{chars}"+"]+$"
+        email_url = email
         # patternu = pattern
+    # messagebox.showerror("Шаблон", pattern, parent=_root)
     return pattern
 
 
@@ -369,7 +387,7 @@ def allow_email_value(new_value: str) -> bool:
 
 
 def validate_email_rules(email_t: str):
-    if url:
+    if url_e:
         rule_invalid['email'] = email_invalid.append("url")
         return "Помилка, Email не може форматуватись як URL адреса."
     if not email_t:
@@ -388,10 +406,13 @@ def validate_login_rules(log: str):
     global both_reg_log, digits_str_log, spec_escaped_log, lenminlog, lenmaxlog
     if not log:
         rule_invalid['login'] = login_invalid.append("absent")
+    if url_login:
+        rule_invalid['login'] = login_invalid.append("url")
+        return "Помилка, Логін не може форматуватись як URL адреса."
     if len(log) < lenminlog or len(log) > lenmaxlog:
         rule_invalid['login'] = login_invalid.append(f"len {lenminlog} {lenmaxlog}")
         return f"Логін має бути від {lenminlog} до {lenmaxlog} символів включно"
-    if email:
+    if email_login:
         rule_invalid['login'] = login_invalid.append("no_email")
         return None
     if both_reg_log:
@@ -434,12 +455,15 @@ def validate_login_l_rules(log: str):
     if not log:
         rule_invalid['login_l'] = login_l_invalid.append("absent")
         return "Прізвище не може бути порожнім."
+    if url_login_l:
+        rule_invalid['login_l'] = login_l_invalid.append("url")
+        return "Помилка, Прізвище не може форматуватись як URL адреса."
     if len(log) < lenminlog_l or len(log) > lenmaxlog_l:
         rule_invalid['login_l'] = login_l_invalid.append(f"len {lenminlog_l} {lenmaxlog_l}")
         return f"Прізвище має бути від {lenminlog_l} до {lenmaxlog_l} символів включно"
-    if email or url:
-        rule_invalid['login_l'] = login_l_invalid.append("no_email_url")
-        return "Помилка, Прізвище не може форматуватись як Email або URL адреса."
+    if email_login_l:
+        rule_invalid['login_l'] = login_l_invalid.append("email")
+        return "Помилка, Прізвище не може форматуватись як Email адреса."
     if both_reg_log_l:
         if not any(c.islower() for c in log):
             rule_invalid['login_l'] = login_l_invalid.append("no_lower")
@@ -478,11 +502,11 @@ def validate_login_l_rules(log: str):
 
 def validate_password_rules(pw: str):
     global both_reg_p, digits_str_p, spec_escaped_p
-    if email:
+    if email_p:
         rule_invalid['password'] = password_invalid.append("email")
         # show_error(_root, "Помилка, Пароль не може форматуватись як Email адреса.")
         return "Помилка, Пароль не може форматуватись як Email адреса."
-    if url:
+    if url_p:
         rule_invalid['password'] = password_invalid.append("url")
         # show_error(_root, "Помилка, Пароль не може форматуватись як Email адреса.")
         return "Помилка, Пароль не може форматуватись як URL адреса."
@@ -532,7 +556,7 @@ def validate_url_value(url: str):
     if not url:
         rule_invalid['url'] = url_invalid.append("absent")
         return "URL не може бути порожнім."
-    if email:
+    if email_url:
         rule_invalid['url'] = url_invalid.append("email")
         # show_error(_root, "Помилка, URL не може форматуватись як Email адреса.")
         return "Помилка, URL не може форматуватись як Email адреса."
@@ -899,8 +923,10 @@ class InputDialog(tk.Toplevel):
         # messagebox.showerror("Шаблон", f"Склад шаблонуу  {pattern}", parent=self)
         login_val = self.login.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
-        if self.cur_name == "login" and self.required_vars[self.cur_name].get() and login_val != "":
-            if email: #and self.entries["email"].get() == "":
+        # if self.cur_name == "login" and self.required_vars[self.cur_name].get() and login_val != "":
+        # if self.required_vars[self.cur_name].get() and login_val !="":
+        if self.required_vars['login'].get() and login_val != "":
+            if email_login: #and self.entries["email"].get() == "":
                 errlog = validate_email_rules(login_val)
             else:
                 errlog = validate_login_rules(login_val)
@@ -915,8 +941,15 @@ class InputDialog(tk.Toplevel):
         if create_acc:
             login_l_val = self.login_l.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
-        if self.cur_name == "login_l" and self.required_vars[self.cur_name].get() and login_l_val != "":
-            errlog_l = validate_login_l_rules(login_l_val)
+        # if self.cur_name == "login_l" and self.required_vars[self.cur_name].get() and login_l_val != "":
+        if self.required_vars["login_l"].get() and login_l_val != "":
+            if email_login_l:
+                messagebox.showerror("Помилка", "Прізвище містить недопустимі символи.", parent=self)
+                self.entries['login_l'].set('')
+                self.login_l.focus_set()
+                return
+            else:
+                errlog_l = validate_login_l_rules(login_l_val)
             if not allow_login_l_value(login_l_val) or errlog_l:
                 self._set_err(self.login_l)
                 messagebox.showerror("Помилка", errlog_l or "Прізвище містить недопустимі символи.", parent=self)
@@ -926,7 +959,7 @@ class InputDialog(tk.Toplevel):
             self._set_ok(self.login_l)
 
         pw = self.password.get()
-        if self.cur_name == "password" and self.required_vars[self.cur_name].get() and pw != "":
+        if self.required_vars['password'].get() and pw != "":
             errp = validate_password_rules(pw)
             if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
@@ -939,8 +972,14 @@ class InputDialog(tk.Toplevel):
 
         url_val = self.url.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
-        if self.cur_name == "url" and self.required_vars[self.cur_name].get() and url_val != "":
-            erru = validate_url_value(url_val)
+        if self.required_vars['url'].get() and url_val != "":
+            if email_url:
+                messagebox.showerror("Помилка", "URL містить недопустимі символи.", parent=self)
+                self.entries['url'].set('')
+                self.url.focus_set()
+                return
+            else:
+                erru = validate_url_value(url_val)
             if erru:
                 self._set_err(self.url)
                 messagebox.showerror("Помилка", erru, parent=self)
@@ -951,7 +990,7 @@ class InputDialog(tk.Toplevel):
 
         # проверка Email
         email_val = self.email.get()
-        if self.cur_name == "email" and self.required_vars[self.cur_name].get() and email_val != "":
+        if self.required_vars['email'].get() and email_val != "":
             erre = validate_email_rules(email_val)
             if not allow_email_value(email_val) or erre:
                 self._set_err(self.email)
