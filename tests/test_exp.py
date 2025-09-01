@@ -14,6 +14,7 @@ names_data_for_fields = {"First Name*": "login", "Last Name*": "login_l", "Email
     #("hidden", "FAIL"),
 ])
 def test_first_name_field(page_open, scenario, expected_result, user_data):
+    #
     # if scenario == "valid":
     #     with allure.step('перехід на посилання створення екаунту та клік на ньому'):
     #         link = page_open.get_by_role("link", name="Create an Account")
@@ -161,6 +162,13 @@ def test_first_name_field(page_open, scenario, expected_result, user_data):
                 debug("інформація про екаунт відповідає введеним даним", "Сторінка екаунту")
                 debug(account_text, "Отриманий текст:")
                 debug(expected_text, "Очікуваний текст:")
+            # Скриншот страницы
+            screenshot = page_open.screenshot()
+            allure.attach(
+                screenshot,
+                name=f"Скриншот останньої сторінки ({scenario})",
+                attachment_type=allure.attachment_type.PNG
+            )
 
         except AssertionError as e:
             debug("Тест провалено: позитивний сценарій не пройдено", "ERROR")
@@ -185,6 +193,13 @@ def test_first_name_field(page_open, scenario, expected_result, user_data):
             if errors:
                 debug("Знайдено помилки при введенні даних:", "ERROR")
                 debug(errors, "Errors list:")
+            # Скриншот страницы
+            screenshot = page_open.screenshot()
+            allure.attach(
+                screenshot,
+                name=f"Скриншот падіння або помилки ({scenario})",
+                attachment_type=allure.attachment_type.PNG
+            )
 
             # debug текущего текста страницы для анализа
             try:

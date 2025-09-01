@@ -74,7 +74,11 @@ url_invalid = []
 email_invalid = []
 password_invalid = []
 no_absent = False
-
+check_login = False
+check_login_l = False
+check_p = False
+check_url = False
+check_email = False
 
 def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
     # додаємо повідомлення у Allure
@@ -335,7 +339,7 @@ def allow_login_value(new_value: str) -> bool:
     # если chars == ".", разрешаем всё
     if chars == ".":
         return True
-    if email:
+    if email_login:
         patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
     # messagebox.showerror("Паттерн", str(bool(re.fullmatch(patternlog, new_value))), parent=_root)
     return bool(re.fullmatch(patternlog, new_value))
@@ -891,6 +895,7 @@ class InputDialog(tk.Toplevel):
             entries_rules(field_name, entries=cur_rules)
 
     def on_ok(self):
+        global check_login, check_login_l, check_p, check_url, check_email
         # messagebox.showerror("Имя элементу при закритті форми", f"Ім'я елементу  {self.cur_name}", parent=self)
         empty_fields = []
         missing = []
@@ -925,7 +930,7 @@ class InputDialog(tk.Toplevel):
         # задані вимоги для поля, поле обов'язкове або не пусте
         # if self.cur_name == "login" and self.required_vars[self.cur_name].get() and login_val != "":
         # if self.required_vars[self.cur_name].get() and login_val !="":
-        if self.required_vars['login'].get() and login_val != "":
+        if self.required_vars['login'].get() and login_val != "" and not check_login:
             if email_login: #and self.entries["email"].get() == "":
                 errlog = validate_email_rules(login_val)
             else:
@@ -937,12 +942,13 @@ class InputDialog(tk.Toplevel):
                 self.login.focus_set()
                 return
             self._set_ok(self.login)
+            check_login = True
 
         if create_acc:
             login_l_val = self.login_l.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
         # if self.cur_name == "login_l" and self.required_vars[self.cur_name].get() and login_l_val != "":
-        if self.required_vars["login_l"].get() and login_l_val != "":
+        if self.required_vars["login_l"].get() and login_l_val != "" and not check_login_l:
             if email_login_l:
                 messagebox.showerror("Помилка", "Прізвище містить недопустимі символи.", parent=self)
                 self.entries['login_l'].set('')
@@ -957,9 +963,10 @@ class InputDialog(tk.Toplevel):
                 self.login_l.focus_set()
                 return
             self._set_ok(self.login_l)
+            check_login_l = True
 
         pw = self.password.get()
-        if self.required_vars['password'].get() and pw != "":
+        if self.required_vars['password'].get() and pw != "" and not check_p:
             errp = validate_password_rules(pw)
             if not allow_password_value(pw) or errp:
                 self._set_err(self.password)
@@ -969,10 +976,11 @@ class InputDialog(tk.Toplevel):
                 self.password.focus_set()
                 return
             self._set_ok(self.password)
+            check_p = True
 
         url_val = self.url.get()
         # задані вимоги для поля, поле обов'язкове або не пусте
-        if self.required_vars['url'].get() and url_val != "":
+        if self.required_vars['url'].get() and url_val != "" and not check_url:
             if email_url:
                 messagebox.showerror("Помилка", "URL містить недопустимі символи.", parent=self)
                 self.entries['url'].set('')
@@ -987,10 +995,11 @@ class InputDialog(tk.Toplevel):
                 self.url.focus_set()
                 return
             self._set_ok(self.url)
+            check_url = True
 
         # проверка Email
         email_val = self.email.get()
-        if self.required_vars['email'].get() and email_val != "":
+        if self.required_vars['email'].get() and email_val != "" and not check_email:
             erre = validate_email_rules(email_val)
             if not allow_email_value(email_val) or erre:
                 self._set_err(self.email)
@@ -999,6 +1008,7 @@ class InputDialog(tk.Toplevel):
                 self.email.focus_set()
                 return
             self._set_ok(self.email)
+            check_email = True
         if not create_acc:
             login_l_val = ""
         self.result = {"login": login_val, "login_l": login_l_val, "password": pw, "url": url_val, "email": email_val}
