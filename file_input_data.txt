@@ -12,4 +12,4 @@ https://magento.softwaretestingboard.com/
 [password]
 uytrUYTR4567_-#4
 [email]
-dfghgfdhgf@rtyut.ghj
+example@gmail.com
