@@ -80,6 +80,7 @@ check_p = False
 check_url = False
 check_email = False
 
+
 def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
     # додаємо повідомлення у Allure
     allure.attach(message, name="Причина зупинки", attachment_type=allure.attachment_type.TEXT)
@@ -861,6 +862,7 @@ class InputDialog(tk.Toplevel):
 
     # відкриття форми з налаштуваннями тестів
     def toggle_rule(self, field_name):
+        global check_login, check_login_l, check_p, check_url, check_email
         # messagebox.showerror("Имя элементу після вводу", f"Ім'я елементу  {field_name}", parent=self)
         self.cur_name = field_name
         # global patternl, patternpas, pattern, len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
@@ -882,6 +884,16 @@ class InputDialog(tk.Toplevel):
         elif isinstance(entry, tk.Entry):
             entry.config(state=tk.NORMAL)  # включено
         entry.focus_set()
+        if field_name == "login":
+            check_login = False
+        if field_name == "login_l":
+            check_login_l = False
+        if field_name == "password":
+            check_p = False
+        if field_name == "url":
+            check_url = False
+        if field_name == "email":
+            check_email = False
 
         app = QApplication.instance()
         if not app:
