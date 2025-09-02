@@ -20,21 +20,21 @@ def in_inv(cur_name: str, el: str, user_data):
         # tb.fill(user_data[0]['url'])
         return user_data[0]['url'], el
     elif el[:3] == 'len':
-        lminmax = el[3:]
+        lminmax = el[4:]
         lmin = int(lminmax.split(" ", 1)[0])
         lmax = int(lminmax.split(" ", 1)[1])
         # tb.fill(user_data[0][cur_name] * 6[:(lmin - 2)])
         # tb.fill(user_data[0][cur_name] * 6[:(lmax + 2)])
-        return user_data[0][cur_name] * 6[:(lmin - 2)] +" "+ user_data[0][cur_name] * 6[:(lmax + 2)], el
+        return user_data[0][names_data_for_fields[cur_name]] * 6[:(lmin - 2)] +" "+ user_data[0][names_data_for_fields[cur_name]] * 6[:(lmax + 2)], el
     elif el == 'no_email':
         # tb.fill(user_data[0]['email'])
         return user_data[0]['email'], el
     elif el == 'no_lower':
         # tb.fill(user_data[0][cur_name].upper())
-        return user_data[0][cur_name].upper(), el
+        return user_data[0][names_data_for_fields[cur_name]].upper(), el
     elif el == 'no_upper':
         # tb.fill(user_data[0][cur_name].lower())
-        return user_data[0][cur_name].lower(), el
+        return user_data[0][names_data_for_fields[cur_name]].lower(), el
     elif el == 'no_digit':
         res = re.sub(r"\d", "", el)
         # tb.fill(res + 'ab')
@@ -45,7 +45,7 @@ def in_inv(cur_name: str, el: str, user_data):
         return res + '1f', el
     elif el == 'probel':
         # tb.fill(user_data[0][cur_name][:2] + ' ' + user_data[0][cur_name][2:])
-        return user_data[0][cur_name][:2] + ' ' + user_data[0][cur_name][2:], el
+        return user_data[0][names_data_for_fields[cur_name]][:2] + ' ' + user_data[0][names_data_for_fields[cur_name]][2:], el
     elif el == 'Cyrillic':
         ru = "йцукенгшщзхъфывапролджэячсмитьбю"
         en = "qwertyuiopdfasdfghjkldfzxcvbnmdf"
@@ -106,7 +106,7 @@ def in_inv(cur_name: str, el: str, user_data):
         return converted, el
     elif el == 'one_reg_log':
         # tb.fill(user_data[0][cur_name].upper())
-        return user_data[0][cur_name].upper(), el
+        return user_data[0][names_data_for_fields[cur_name]].upper(), el
     else:
         # tb.fill(el)
         return el, el
@@ -232,7 +232,9 @@ def test_first_name_field(page_open, scenario, expected_result, user_data):
             raise e
             # page_open(user_data[0]['url']
     elif scenario == "no_valid":
+        debug("Початок негативних тестів", "Негативні тести")
         page_open.goto(user_data[0]['url'])
+        debug("здійснено перехід на головну сторінку сайту", "Сайт для тренування")
         try:
             with allure.step('Перехід на посилання створення екаунту та клік на ньому'):
                 link = page_open.get_by_role("link", name="Create an Account")
@@ -278,39 +280,39 @@ def test_first_name_field(page_open, scenario, expected_result, user_data):
                         else:
                             tb.fill(in_inv(cur_name, el_l_inv, user_data)[0])
                             debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
-                    with allure.step('Перехід на кнопку створення екаунту та клік на ній'):
-                        btnS = page_open.get_by_role("button", name="Create an Account")
-                        expect(btnS).to_be_visible(timeout=10000)
-                        debug("здійснено перехід на кнопку створення екаунту", "Кнопка створення екаунту")
-                        btnS.click()
-                        debug("здійснено клік на кнопку створення екаунту", "Кнопка створення екаунту")
+            with allure.step('Перехід на кнопку створення екаунту та клік на ній'):
+                btnS = page_open.get_by_role("button", name="Create an Account")
+                expect(btnS).to_be_visible(timeout=10000)
+                debug("здійснено перехід на кнопку створення екаунту", "Кнопка створення екаунту")
+                btnS.click()
+                debug("здійснено клік на кнопку створення екаунту", "Кнопка створення екаунту")
 
-                    with allure.step('Перевірка переходу на сторінку My Account'):
-                        expect(page_open.locator("h1")).to_contain_text("My Account", timeout=40000)
-                        debug("здійснено перехід на сторінку зареєстрованого екаунту", "Сторінка екаунту")
+            with allure.step('Перевірка переходу на сторінку My Account'):
+                expect(page_open.locator("h1")).to_contain_text("My Account", timeout=40000)
+                debug("здійснено перехід на сторінку зареєстрованого екаунту", "Сторінка екаунту")
 
-                        # Перевіряємо наявність інформації про акаунт
-                        assert page_open.get_by_role("strong").filter(has_text="Account Information").is_visible(), \
-                            "BUG: Відсутня інформація про екаунт"
+                # Перевіряємо наявність інформації про акаунт
+                assert page_open.get_by_role("strong").filter(has_text="Account Information").is_visible(), \
+                    "BUG: Відсутня інформація про екаунт"
 
-                        account_text = page_open.locator("#maincontent").inner_text(timeout=5000)
-                        expected_text = f"{user_data[0]['login']} {user_data[0]['login_l']}\n{user_data[0]['email']}"
+                account_text = page_open.locator("#maincontent").inner_text(timeout=5000)
+                expected_text = f"{user_data[0]['login']} {user_data[0]['login_l']}\n{user_data[0]['email']}"
 
-                        assert expected_text in account_text, \
-                            f"BUG: Інформація про екаунт не відповідає введеним даним"
+                assert expected_text in account_text, \
+                    f"BUG: Інформація про екаунт не відповідає введеним даним"
 
-                        # --- debug для позитивного сценарію ---
-                        debug("інформація про екаунт відповідає введеним даним", "Сторінка екаунту")
-                        report_about("Тест пройдено: негативний сценарій успішно виконано", page_open)
-                        debug(account_text, "Отриманий текст:")
-                        debug(expected_text, "Очікуваний текст:")
-                    # Скриншот страницы
-                    screenshot = page_open.screenshot()
-                    allure.attach(
-                        screenshot,
-                        name=f"Скриншот останньої сторінки ({scenario})",
-                        attachment_type=allure.attachment_type.PNG
-                    )
+                # --- debug для позитивного сценарію ---
+                debug("інформація про екаунт відповідає введеним даним", "Сторінка екаунту")
+                report_about("Тест пройдено: негативний сценарій успішно виконано", page_open)
+                debug(account_text, "Отриманий текст:")
+                debug(expected_text, "Очікуваний текст:")
+            # Скриншот страницы
+            screenshot = page_open.screenshot()
+            allure.attach(
+                screenshot,
+                name=f"Скриншот останньої сторінки ({scenario})",
+                attachment_type=allure.attachment_type.PNG
+            )
         except AssertionError as e:
             debug("Тест провалено: негативний сценарій не пройдено", "ERROR")
             report_bug_and_stop("Тест провалено: негативний сценарій не пройдено", page_open)
