@@ -260,26 +260,69 @@ def test_first_name_field(page_open, scenario, expected_result, user_data):
                     "Create New Customer Account", timeout=40000
                 )
                 debug("здійснено перехід на сторінку створення екаунту", "Сторінка створення екаунту")
-
             for cur_name in names_fields:
                 ind = names_data_for_fields[cur_name]
-                list_inv = []
                 list_inv = user_data[1][ind]
+
                 for el_l_inv in list_inv:
-                    allure.dynamic.title(f"Негативний тест: поле {cur_name} відображається → {expected_result}")
+                    allure.dynamic.title(f"Негативний тест: поле {cur_name} → {expected_result}")
+
                     with allure.step(f"Пошук і заповнення поля {cur_name}"):
-                        tb = page_open.get_by_role("textbox", name=cur_name, exact=True)
-                        expect(tb).to_be_visible()
-                        if in_inv(cur_name, el_l_inv, user_data)[1] == 'len':
-                            resultl = in_inv(cur_name, el_l_inv, user_data)[0].split(" ", 1)[0]
-                            tb.fill(resultl)
-                            debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
-                            resultl = in_inv(cur_name, el_l_inv, user_data)[0].split(" ", 1)[1]
-                            tb.fill(resultl)
-                            debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
-                        else:
-                            tb.fill(in_inv(cur_name, el_l_inv, user_data)[0])
-                            debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
+                        try:
+                            tb = page_open.get_by_role("textbox", name=cur_name, exact=True)
+                            expect(tb).to_be_visible()
+
+                            value, mode = in_inv(cur_name, el_l_inv, user_data)
+
+                            if mode == "len":
+                                first, second = value.split(" ", 1)
+                                tb.fill(first)
+                                debug(f"заповнено перше значення для {cur_name}", f"{cur_name}")
+                                tb.fill(second)
+                                debug(f"заповнено друге значення для {cur_name}", f"{cur_name}")
+                            else:
+                                tb.fill(value)
+                                debug(f"заповнено поле {cur_name}", f"{cur_name}")
+
+                            # тут можно добавить явную проверку, что ошибка отображается
+                            # expect(page_open.get_by_text("Error")).to_be_visible()
+
+                        except Exception as e:
+                            # прикрепляем ошибку к отчёту
+                            allure.attach(
+                                str(e),
+                                name=f"Помилка у полі {cur_name}",
+                                attachment_type=allure.attachment_type.TEXT
+                            )
+                            debug(f"{str(e)}", f"Помилка у полі {cur_name}")
+                            # фиксируем fail, но не кидаем исключение дальше
+                            allure.attach("Очікуваний негативний результат", name="Результат")
+                            debug(f"очікуваний негативний результат у полі {cur_name}", f"{cur_name}")
+
+                            # помечаем в Allure шаг как fail
+                            pytest.fail(
+                                f"Негативний тест для поля {cur_name} відпрацював з фейлом",
+                                pytrace=False
+                            )
+            # for cur_name in names_fields:
+            #     ind = names_data_for_fields[cur_name]
+            #     # list_inv = []
+            #     list_inv = user_data[1][ind]
+            #     for el_l_inv in list_inv:
+            #         allure.dynamic.title(f"Негативний тест: поле {cur_name} відображається → {expected_result}")
+            #         with allure.step(f"Пошук і заповнення поля {cur_name}"):
+            #             tb = page_open.get_by_role("textbox", name=cur_name, exact=True)
+            #             expect(tb).to_be_visible()
+            #             if in_inv(cur_name, el_l_inv, user_data)[1] == 'len':
+            #                 resultl = in_inv(cur_name, el_l_inv, user_data)[0].split(" ", 1)[0]
+            #                 tb.fill(resultl)
+            #                 debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
+            #                 resultl = in_inv(cur_name, el_l_inv, user_data)[0].split(" ", 1)[1]
+            #                 tb.fill(resultl)
+            #                 debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
+            #             else:
+            #                 tb.fill(in_inv(cur_name, el_l_inv, user_data)[0])
+            #                 debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
             with allure.step('Перехід на кнопку створення екаунту та клік на ній'):
                 btnS = page_open.get_by_role("button", name="Create an Account")
                 expect(btnS).to_be_visible(timeout=10000)
