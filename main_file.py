@@ -155,7 +155,7 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
 
 def entries_rules(fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
-    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log_l, spec_escaped_p, spec_escaped_log_l
+    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log_l, spec_escaped_p, spec_escaped_log_l, local
 
     entries = kwargs["entries"]
 
@@ -174,13 +174,7 @@ def entries_rules(fame, **kwargs):
 
 
     for key, value in entries.items():
-        if key == 'localiz':
-            if value == 'латиниця':
-                local = latin
-            elif value == 'кирилиця':
-                local = Cyrillic
-
-        elif key == 'register':
+        if key == 'register':
             if value == 'великий':
                 latin = upreglat
                 Cyrillic = upregcyr
@@ -189,6 +183,12 @@ def entries_rules(fame, **kwargs):
                 Cyrillic = lowregcyr
             elif value == "обидва":
                 both_reg = True
+
+        elif key == 'localiz':
+            if value == 'латиниця':
+                local = latin
+            elif value == 'кирилиця':
+                local = Cyrillic
 
         elif key == "cyfry" and value:
             digits_str = "0-9"
@@ -408,51 +408,53 @@ def validate_email_rules(email_t: str):
 
 # --- проверки при OK ---
 def validate_login_rules(log: str):
-    global both_reg_log, digits_str_log, spec_escaped_log, lenminlog, lenmaxlog
+    global both_reg_log, digits_str_log, spec_escaped_log, lenminlog, lenmaxlog, local, Cyrillic, latin, upreglat, upregcyr, lowreglat, lowregcyr
     if not log:
-        rule_invalid['login'] = login_invalid.append("absent")
+        login_invalid.append("absent")
+        return "Помилка, Логін не може бути пустим."
     if url_login:
-        rule_invalid['login'] = login_invalid.append("url")
+        login_invalid.append("url")
         return "Помилка, Логін не може форматуватись як URL адреса."
     if len(log) < lenminlog or len(log) > lenmaxlog:
-        rule_invalid['login'] = login_invalid.append(f"len {lenminlog} {lenmaxlog}")
+        login_invalid.append(f"len {lenminlog} {lenmaxlog}")
         return f"Логін має бути від {lenminlog} до {lenmaxlog} символів включно"
     if email_login:
-        rule_invalid['login'] = login_invalid.append("no_email")
+        login_invalid.append("no_email")
         return None
     if both_reg_log:
+        login_invalid.append("no_lower")
+        login_invalid.append("no_upper")
         if not any(c.islower() for c in log):
-            rule_invalid['login'] = login_invalid.append("no_lower")
             return "Логін має містити принаймні одну маленьку літеру."
         if not any(c.isupper() for c in log):
-            rule_invalid['login'] = login_invalid.append("no_upper")
             return "Логін має містити принаймні одну велику літеру."
     if digits_str_log:
-        rule_invalid['login'] = login_invalid.append("no_digit")
+        login_invalid.append("no_digit")
         if not any(c.isdigit() for c in log):
             return "Логін має містити принаймні одну цифру."
     if spec_escaped_log:
         if not any(c in spec_escaped_log for c in log):
-            rule_invalid['login'] = login_invalid.append("no_spec")
+            login_invalid.append("no_spec")
             return "Логін має містити принаймні один спеціальний символ."
     if is_probel:
-        rule_invalid['login'] = login_invalid.append("probel")
+        login_invalid.append("probel")
     if local == latin:
-        rule_invalid['login'] = login_invalid.append("Cyrillic")
+        login_invalid.append("Cyrillic")
     elif local == upreglat:
-        rule_invalid['login'] = login_invalid.append("lowreglat")
+        login_invalid.append("lowreglat")
     elif local == lowreglat:
-        rule_invalid['login'] = login_invalid.append("upreglat")
+        login_invalid.append("upreglat")
     elif local == Cyrillic:
-        rule_invalid['login'] = login_invalid.append("latin")
+        login_invalid.append("latin")
     elif local == upregcyr:
-        rule_invalid['login'] = login_invalid.append("lowregcyr")
+        login_invalid.append("lowregcyr")
     elif local == lowregcyr:
-        rule_invalid['login'] = login_invalid.append("upregcyr")
+        login_invalid.append("upregcyr")
     if both_reg_log:
-        rule_invalid['login'] = login_invalid.append("one_reg_log")
+        login_invalid.append("one_reg_log")
     if no_absent:
-        rule_invalid['login'] = ["absent"]
+        login_invalid.append("absent")
+    rule_invalid['login'] = login_invalid
     return None
 
 def validate_login_l_rules(log: str):
