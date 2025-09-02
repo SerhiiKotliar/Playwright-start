@@ -393,14 +393,15 @@ def allow_email_value(new_value: str) -> bool:
 
 def validate_email_rules(email_t: str):
     if url_e:
-        rule_invalid['email'] = email_invalid.append("url")
+        email_invalid.append("url")
         return "Помилка, Email не може форматуватись як URL адреса."
     if not email_t:
-        rule_invalid['email'] = email_invalid.append("absent")
+        email_invalid.append("absent")
         return "Email не може бути порожнім."
-    rule_invalid['email'] = email_invalid.append("no_email")
+    email_invalid.append("no_email")
     # RFC 5322 упрощённая проверка
     # pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
+    rule_invalid['email'] = email_invalid
     if not re.fullmatch(patterne, email_t):
         return "Неправильний формат Email."
     return None
@@ -433,8 +434,8 @@ def validate_login_rules(log: str):
         if not any(c.isdigit() for c in log):
             return "Логін має містити принаймні одну цифру."
     if spec_escaped_log:
+        login_invalid.append("no_spec")
         if not any(c in spec_escaped_log for c in log):
-            login_invalid.append("no_spec")
             return "Логін має містити принаймні один спеціальний символ."
     if is_probel:
         login_invalid.append("probel")
@@ -460,114 +461,114 @@ def validate_login_rules(log: str):
 def validate_login_l_rules(log: str):
     global both_reg_log_l, digits_str_log_l, spec_escaped_log_l, lenminlog_l, lenmaxlog_l
     if not log:
-        rule_invalid['login_l'] = login_l_invalid.append("absent")
+        login_l_invalid.append("absent")
         return "Прізвище не може бути порожнім."
     if url_login_l:
-        rule_invalid['login_l'] = login_l_invalid.append("url")
+        login_l_invalid.append("url")
         return "Помилка, Прізвище не може форматуватись як URL адреса."
     if len(log) < lenminlog_l or len(log) > lenmaxlog_l:
-        rule_invalid['login_l'] = login_l_invalid.append(f"len {lenminlog_l} {lenmaxlog_l}")
+        login_l_invalid.append(f"len {lenminlog_l} {lenmaxlog_l}")
         return f"Прізвище має бути від {lenminlog_l} до {lenmaxlog_l} символів включно"
     if email_login_l:
-        rule_invalid['login_l'] = login_l_invalid.append("email")
+        login_l_invalid.append("email")
         return "Помилка, Прізвище не може форматуватись як Email адреса."
     if both_reg_log_l:
+        login_l_invalid.append("no_lower")
+        login_l_invalid.append("no_upper")
         if not any(c.islower() for c in log):
-            rule_invalid['login_l'] = login_l_invalid.append("no_lower")
             return "Прізвище має містити принаймні одну маленьку літеру."
         if not any(c.isupper() for c in log):
-            rule_invalid['login_l'] = login_l_invalid.append("no_upper")
             return "Прізвище має містити принаймні одну велику літеру."
     if digits_str_log_l:
-        rule_invalid['login_l'] = login_l_invalid.append("no_digit")
+        login_l_invalid.append("no_digit")
         if not any(c.isdigit() for c in log):
             return "Прізвище має містити принаймні одну цифру."
     if spec_escaped_log_l:
+        login_l_invalid.append("no_spec")
         if not any(c in spec_escaped_log_l for c in log):
-            rule_invalid['login_l'] = login_l_invalid.append("no_spec")
             return "Прізвище має містити принаймні один спеціальний символ."
     if is_probel:
-        rule_invalid['login_l'] = login_l_invalid.append("probel")
+        login_l_invalid.append("probel")
     if local == latin:
-        rule_invalid['login_l'] = login_l_invalid.append("Cyrillic")
+        login_l_invalid.append("Cyrillic")
     elif local == upreglat:
-        rule_invalid['login_l'] = login_l_invalid.append("lowreglat")
+        login_l_invalid.append("lowreglat")
     elif local == lowreglat:
-        rule_invalid['login_l'] = login_l_invalid.append("upreglat")
+        login_l_invalid.append("upreglat")
     elif local == Cyrillic:
-        rule_invalid['login_l'] = login_l_invalid.append("latin")
+        login_l_invalid.append("latin")
     elif local == upregcyr:
-        rule_invalid['login_l'] = login_l_invalid.append("lowregcyr")
+        login_l_invalid.append("lowregcyr")
     elif local == lowregcyr:
-        rule_invalid['login_l'] = login_l_invalid.append("upregcyr")
+        login_l_invalid.append("upregcyr")
     if both_reg_log:
-        rule_invalid['login_l'] = login_l_invalid.append("one_reg_log")
+        login_l_invalid.append("one_reg_log")
     if no_absent:
-        rule_invalid['login_l'] = ["absent"]
+        login_l_invalid.append("absent")
+    rule_invalid['login_l'] = login_l_invalid
     return None
 
 
 def validate_password_rules(pw: str):
     global both_reg_p, digits_str_p, spec_escaped_p
     if email_p:
-        rule_invalid['password'] = password_invalid.append("email")
-        # show_error(_root, "Помилка, Пароль не може форматуватись як Email адреса.")
+        password_invalid.append("email")
         return "Помилка, Пароль не може форматуватись як Email адреса."
     if url_p:
-        rule_invalid['password'] = password_invalid.append("url")
-        # show_error(_root, "Помилка, Пароль не може форматуватись як Email адреса.")
+        password_invalid.append("url")
         return "Помилка, Пароль не може форматуватись як URL адреса."
     if not pw:
-        rule_invalid['password'] = password_invalid.append("absent")
+        password_invalid.append("absent")
         return "Пароль не може бути порожнім."
     if len(pw) < lenminpas or len(pw) > lenmaxpas:
-        rule_invalid['password'] = password_invalid.append(f"len {lenminpas} {lenmaxpas}")
+        password_invalid.append(f"len {lenminpas} {lenmaxpas}")
         return f"Пароль має бути від {lenminpas} до {lenmaxpas} символів включно"
     if both_reg_p:
+        password_invalid.append("no_lower")
+        password_invalid.append("no_upper")
         if not any(c.islower() for c in pw):
-            rule_invalid['password'] = password_invalid.append("no_lower")
             return "Пароль має містити принаймні одну маленьку літеру."
         if not any(c.isupper() for c in pw):
-            rule_invalid['password'] = password_invalid.append("no_upper")
             return "Пароль має містити принаймні одну велику літеру."
     if digits_str_p:
-        rule_invalid['password'] = password_invalid.append("no_digit")
+        password_invalid.append("no_digit")
         if not any(c.isdigit() for c in pw):
             return "Пароль має містити принаймні одну цифру."
     if spec_escaped_p:
-        rule_invalid['password'] = password_invalid.append("no_spec")
+        password_invalid.append("no_spec")
         if not any(c in spec_escaped_p for c in pw):
             return "Пароль має містити принаймні один спеціальний символ."
     if is_probel:
-        rule_invalid['password'] = password_invalid.append("probel")
+        password_invalid.append("probel")
     if local == latin:
-        rule_invalid['password'] = password_invalid.append("Cyrillic")
+        password_invalid.append("Cyrillic")
     elif local == upreglat:
-        rule_invalid['password'] = password_invalid.append("lowreglat")
+        password_invalid.append("lowreglat")
     elif local == lowreglat:
-        rule_invalid['password'] = password_invalid.append("upreglat")
+        password_invalid.append("upreglat")
     elif local == Cyrillic:
-        rule_invalid['password'] = password_invalid.append("latin")
+        password_invalid.append("latin")
     elif local == upregcyr:
-        rule_invalid['password'] = password_invalid.append("lowregcyr")
+        password_invalid.append("lowregcyr")
     elif local == lowregcyr:
-        rule_invalid['password'] = password_invalid.append("upregcyr")
+        password_invalid.append("upregcyr")
     if both_reg_log:
-        rule_invalid['password'] = password_invalid.append("one_reg_log")
+        password_invalid.append("one_reg_log")
     if no_absent:
-        rule_invalid['password'] = ["absent"]
+        password_invalid.append("absent")
+    rule_invalid['password'] = password_invalid
     return None
 
 
 def validate_url_value(url: str):
     if not url:
-        rule_invalid['url'] = url_invalid.append("absent")
+        url_invalid.append("absent")
         return "URL не може бути порожнім."
     if email_url:
-        rule_invalid['url'] = url_invalid.append("email")
+        url_invalid.append("email")
         # show_error(_root, "Помилка, URL не може форматуватись як Email адреса.")
         return "Помилка, URL не може форматуватись як Email адреса."
-    rule_invalid['url'] = url_invalid.append("no_url")
+    url_invalid.append("no_url")
     # allowed_pattern = re.compile(
     #     r'^[A-Za-z][A-Za-z0-9+.-]*://'
     #     r'([A-Za-z0-9\-._~%!$&\'()*+,;=]+@)?'
@@ -595,6 +596,7 @@ def validate_url_value(url: str):
     # except Exception:
     #     return "Неправильний формат URL."
     # pattern = r"(http?://[^\s/$.?#].[^\s]*)"
+    rule_invalid['url'] = url_invalid
     if not re.fullmatch(allowed_pattern, url):
         return "Неправильний формат URL."
     return None

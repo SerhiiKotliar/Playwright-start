@@ -268,15 +268,15 @@ def test_first_name_field(page_open, scenario, expected_result, user_data):
                     with allure.step(f"Пошук і заповнення поля {cur_name}"):
                         tb = page_open.get_by_role("textbox", name=cur_name, exact=True)
                         expect(tb).to_be_visible()
-                        if in_inv(cur_name)[1] == 'len':
-                            resultl = in_inv(cur_name, el_l_inv)[0].split(" ", 1)[0]
+                        if in_inv(cur_name, el_l_inv, user_data)[1] == 'len':
+                            resultl = in_inv(cur_name, el_l_inv, user_data)[0].split(" ", 1)[0]
                             tb.fill(resultl)
                             debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
-                            resultl = in_inv(cur_name, el_l_inv)[0].split(" ", 1)[1]
+                            resultl = in_inv(cur_name, el_l_inv, user_data)[0].split(" ", 1)[1]
                             tb.fill(resultl)
                             debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
                         else:
-                            tb.fill(in_inv(cur_name, el_l_inv)[0])
+                            tb.fill(in_inv(cur_name, el_l_inv, user_data)[0])
                             debug(f"знайдено та заповнено поле {cur_name}", f"{cur_name}")
                     with allure.step('Перехід на кнопку створення екаунту та клік на ній'):
                         btnS = page_open.get_by_role("button", name="Create an Account")
