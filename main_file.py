@@ -37,6 +37,9 @@ lenmaxlog_l = 30
 lenminpas = 8
 lenmaxpas = 20
 local = ""
+local_log = ""
+local_log_l = ""
+local_p = ""
 latin = "A-Za-z"
 Cyrillic = "А-Яа-я"
 # spec = "!@#$%^&*()-_=+[]{};:,.<>/?\\|"
@@ -85,14 +88,17 @@ def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip")
     # додаємо повідомлення у Allure
     allure.attach(message, name="Причина зупинки", attachment_type=allure.attachment_type.TEXT)
     filename = ""
+    # унікальне ім’я файлу
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"screenshots/{name}_{timestamp}.png"
     if page_open:
         try:
             # створюємо папку screenshots (якщо немає)
             os.makedirs("screenshots", exist_ok=True)
 
-            # унікальне ім’я файлу
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"screenshots/{name}_{timestamp}.png"
+            # # унікальне ім’я файлу
+            # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # filename = f"screenshots/{name}_{timestamp}.png"
 
             # робимо скріншот у файл
             page_open.screenshot(path=filename, timeout=40000)
@@ -108,7 +114,7 @@ def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip")
             # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
             allure.attach(
                 page_open.screenshot(),
-                name=f"{name}_fallback",
+                name=f"{name}_{timestamp}",
                 attachment_type=allure.attachment_type.PNG
             )
             print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
@@ -120,14 +126,17 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
     # додаємо повідомлення у Allure
     allure.attach(message, name="Тест пройдено", attachment_type=allure.attachment_type.TEXT)
     filename = ""
+    # унікальне ім’я файлу
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"screenshots/{name}_{timestamp}.png"
     if page_open:
         try:
             # створюємо папку screenshots (якщо немає)
             os.makedirs("screenshots", exist_ok=True)
 
-            # унікальне ім’я файлу
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"screenshots/{name}_{timestamp}.png"
+            # # унікальне ім’я файлу
+            # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # filename = f"screenshots/{name}_{timestamp}.png"
 
             # робимо скріншот у файл
             page_open.screenshot(path=filename, timeout=40000)
@@ -143,7 +152,7 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
             # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
             allure.attach(
                 page_open.screenshot(),
-                name=f"{name}_fallback",
+                name=f"{name}_{timestamp}",
                 attachment_type=allure.attachment_type.PNG
             )
             print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
@@ -155,7 +164,7 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
 
 def entries_rules(fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
-    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log_l, spec_escaped_p, spec_escaped_log_l, local
+    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log_l, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l
 
     entries = kwargs["entries"]
 
@@ -291,6 +300,7 @@ def entries_rules(fame, **kwargs):
         spec_escaped_log = spec_escaped
         email_login = email
         url_login = url
+        local_log = local
     if fame == "login_l":
         lenminlog_l = len_min
         lenmaxlog_l = len_max
@@ -300,6 +310,7 @@ def entries_rules(fame, **kwargs):
         spec_escaped_log_l = spec_escaped
         email_login_l = email
         url_login_l = url
+        local_log_l = local
     if fame == "password":
         lenminpas = len_min
         lenmaxpas = len_max
@@ -309,6 +320,7 @@ def entries_rules(fame, **kwargs):
         spec_escaped_p = spec_escaped
         email_p = email
         url_p = url
+        local_p = local
     if fame == "email":
         # patterne = f"^["+f"{chars}"+"]+$"
         patterne = pattern
@@ -439,17 +451,17 @@ def validate_login_rules(log: str):
             return "Логін має містити принаймні один спеціальний символ."
     if is_probel:
         login_invalid.append("probel")
-    if local == latin:
+    if local_log == latin:
         login_invalid.append("Cyrillic")
-    elif local == upreglat:
+    elif local_log == upreglat:
         login_invalid.append("lowreglat")
-    elif local == lowreglat:
+    elif local_log == lowreglat:
         login_invalid.append("upreglat")
-    elif local == Cyrillic:
+    elif local_log == Cyrillic:
         login_invalid.append("latin")
-    elif local == upregcyr:
+    elif local_log == upregcyr:
         login_invalid.append("lowregcyr")
-    elif local == lowregcyr:
+    elif local_log == lowregcyr:
         login_invalid.append("upregcyr")
     if both_reg_log:
         login_invalid.append("one_reg_log")
@@ -489,17 +501,17 @@ def validate_login_l_rules(log: str):
             return "Прізвище має містити принаймні один спеціальний символ."
     if is_probel:
         login_l_invalid.append("probel")
-    if local == latin:
+    if local_log_l == latin:
         login_l_invalid.append("Cyrillic")
-    elif local == upreglat:
+    elif local_log_l == upreglat:
         login_l_invalid.append("lowreglat")
-    elif local == lowreglat:
+    elif local_log_l == lowreglat:
         login_l_invalid.append("upreglat")
-    elif local == Cyrillic:
+    elif local_log_l == Cyrillic:
         login_l_invalid.append("latin")
-    elif local == upregcyr:
+    elif local_log_l == upregcyr:
         login_l_invalid.append("lowregcyr")
-    elif local == lowregcyr:
+    elif local_log_l == lowregcyr:
         login_l_invalid.append("upregcyr")
     if both_reg_log:
         login_l_invalid.append("one_reg_log")
@@ -540,17 +552,17 @@ def validate_password_rules(pw: str):
             return "Пароль має містити принаймні один спеціальний символ."
     if is_probel:
         password_invalid.append("probel")
-    if local == latin:
+    if local_p == latin:
         password_invalid.append("Cyrillic")
-    elif local == upreglat:
+    elif local_p == upreglat:
         password_invalid.append("lowreglat")
-    elif local == lowreglat:
+    elif local_p == lowreglat:
         password_invalid.append("upreglat")
-    elif local == Cyrillic:
+    elif local_p == Cyrillic:
         password_invalid.append("latin")
-    elif local == upregcyr:
+    elif local_p == upregcyr:
         password_invalid.append("lowregcyr")
-    elif local == lowregcyr:
+    elif local_p == lowregcyr:
         password_invalid.append("upregcyr")
     if both_reg_log:
         password_invalid.append("one_reg_log")
