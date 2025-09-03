@@ -902,18 +902,23 @@ class InputDialog(tk.Toplevel):
         entry.focus_set()
         if field_name == "login":
             check_login = False
+            rule_invalid['login'] = []
             login_inv.clear()
         if field_name == "login_l":
             check_login_l = False
+            rule_invalid['login_l'] = []
             login_l_inv.clear()
         if field_name == "password":
             check_p = False
+            rule_invalid['password'] = []
             pw_inv.clear()
         if field_name == "url":
             check_url = False
+            rule_invalid['url'] = []
             url_inv.clear()
         if field_name == "email":
             check_email = False
+            rule_invalid['email'] = []
             email_inv.clear()
 
         app = QApplication.instance()

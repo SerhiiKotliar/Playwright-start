@@ -26,7 +26,7 @@ def find_free_port(start_port=8080, max_port=9000):
 
 def run_tests():
     """Запуск всех тестов pytest с выводом в allure result"""
-    cmd = f"python -m pytest -v -s --alluredir {RESULT_DIR}"
+    cmd = f"python -m pytest -v -s tests --alluredir {RESULT_DIR}"
     subprocess.run(cmd, shell=True)
 
 
