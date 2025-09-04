@@ -1,15 +1,75 @@
+import traceback
+
 import allure
 import pytest
-from playwright.sync_api import expect
-from conftest import page_open
+from playwright.sync_api import expect, Page
 from main_file import report_about, report_bug_and_stop
 from helper import debug
 import re
+from typing import Callable, Pattern, Union, Optional
+from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 
 fields = ["First Name*", "Last Name*", "Email*", "Password*", "Confirm Password*"]
 names_data_for_fields = {"First Name*": "login", "Last Name*": "login_l", "Email*": "email", "Password*": "password", "Confirm Password*": "password"}
 valid_values = []
 invalid_values = {}
+
+URLMatcher = Union[str, Pattern[str], Callable[[str], bool]]
+
+def click_and_wait_url_change(
+    page: Page,
+    do_click: Callable[[], None],
+    url: Optional[URLMatcher] = None,          # шаблон/regex/предикат или None = "любой новый URL"
+    *,
+    timeout: float = 5000,
+    wait_until: str = "commit"                 # "commit" надёжно ловит смену URL без полной загрузки
+) -> tuple[bool, str]:
+    old = page.url
+    # Если шаблон не задан — ждём любой URL, отличный от старого
+    matcher: URLMatcher = (lambda u: u != old) if url is None else url
+
+    do_click()
+    try:
+        page.wait_for_url(matcher, timeout=timeout, wait_until=wait_until)
+        return (page.url != old, page.url)
+    except PlaywrightTimeoutError:
+        return (False, page.url)
+
+
+def fail_on_alert(
+    page: Page,
+    type_: str = "error",
+    timeout: int = 2000
+) -> None:
+    """
+    Проверяет наличие алерта указанного типа и падает тестом, если он найден.
+
+    :param page: объект Playwright Page
+    :param type_: тип сообщения (error, success, warning, info)
+    :param timeout: сколько ждать появления (мс)
+    """
+    # Словарь возможных селекторов (дополняй под свой проект)
+    selectors = {
+        "error": ".alert-danger, .notification.error, .toast-error",
+        "success": ".alert-success, .notification.success, .toast-success",
+        "warning": ".alert-warning, .notification.warning, .toast-warning",
+        "info": ".alert-info, .notification.info, .toast-info",
+    }
+
+    selector = selectors.get(type_)
+    if not selector:
+        debug(f"{type_}", f"Невідомий тип алерта")
+        raise ValueError(f"Невідомий тип алерта: {type_}")
+
+
+    try:
+        # ждём появления элемента
+        el = page.wait_for_selector(selector, timeout=timeout)
+        pytest.fail(f"❌ З'явилось повідомлення типу '{type_}': {el.inner_text()}")
+        debug(f"{el.inner_text()}", f"❌ З'явилось повідомлення типу '{type_}'")
+    except TimeoutError:
+        # если не появилось — всё хорошо
+        pass
 
 # список валидных данных
 def valid_val(user_data):
@@ -146,8 +206,10 @@ def test_positive_form(page_open, user_data):
             link = page_open.get_by_role("link", name="Create an Account")
             expect(link).to_be_visible(timeout=10000)
             debug("здійснено перехід на посилання створення екаунту", "Посилання створення екаунту")
-            link.click()
+            # link.click()
             debug("здійснено клік на посиланні створення екаунту", "Посилання створення екаунту")
+            changed, new_url = click_and_wait_url_change(page_open, lambda: link.click())
+            assert changed, "Не відкрилась сторінка створення екаунту"
 
             # --- обхід реклами ---
             if "google_vignette" in page_open.url or "ad.doubleclick" in page_open.url:
@@ -170,15 +232,19 @@ def test_positive_form(page_open, user_data):
             for field, value in zip(fields, valid_values):
                 tb = page_open.get_by_role("textbox", name=field, exact=True)
                 tb.fill(value)
+                fail_on_alert(page_open)
                 debug("заповнено поле", f"{field}")
                 allure.attach(str(value), name=f"Поле {field}")
         with allure.step('Перехід на кнопку створення екаунту та клік на ній'):
             btnS = page_open.get_by_role("button", name="Create an Account")
             expect(btnS).to_be_visible(timeout=10000)
             debug("здійснено перехід на кнопку створення екаунту", "Кнопка створення екаунту")
-            btnS.click()
+            # btnS.click()
             debug("здійснено клік на кнопку створення екаунту", "Кнопка створення екаунту")
+            changed, new_url = click_and_wait_url_change(page_open, lambda: btnS.click())
+            assert changed, "Не відкрилась сторінка створеного екаунту"
             # expect(page_open.get_by_role("alert").locator("div").first).to_be_visible()
+            fail_on_alert(page_open)
             if page_open.get_by_role("alert").locator("div").first.is_visible(timeout=10000):
                 debug("Помилка створення екаунту", "ПОМИЛКА")
             expect(page_open.get_by_role("alert").locator("div").first).not_to_be_visible(timeout=10000)
@@ -243,8 +309,8 @@ def test_positive_form(page_open, user_data):
         )
 
     except Exception as e:
-        debug(f"Тест провалено: позитивний сценарій не пройдено {e}", "ERROR")
-        report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено {e}", page_open)
+        debug(f"Тест провалено: позитивний сценарій не пройдено з помилкою \"{e}\"", "ERROR")
+        report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено з помилкою {e}", page_open)
         debug(f"Current URL: {page_open.url}", "INFO")
 
         # Логування помилок форми
@@ -258,10 +324,12 @@ def test_positive_form(page_open, user_data):
         ]:
             if page_open.locator(selector).is_visible():
                 errors.append(page_open.locator(selector).inner_text())
+                debug(page_open.locator(selector).inner_text(), "ERROR")
 
         alert = page_open.get_by_role("alert").locator("div").first
         if alert.is_visible():
             errors.append(alert.inner_text())
+            debug(alert.inner_text(), "ERROR")
 
         if errors:
             debug("Знайдено помилки при введенні даних:", "ERROR")
@@ -297,17 +365,23 @@ def test_negative_form(page_open, user_data):
     try:
         with allure.step('Перехід на посилання створення екаунту та клік на ньому'):
             link = page_open.get_by_role("link", name="Create an Account")
-            expect(link).to_be_visible(timeout=40000)
+            expect(link).to_be_visible(timeout=10000)
             print('\n')
             debug("здійснено перехід на посилання створення екаунту", "Посилання створення екаунту")
-            link.click()
+            # link.click()
             debug("здійснено клік на посиланні створення екаунту", "Посилання створення екаунту")
+            changed, new_url = click_and_wait_url_change(page_open, lambda: link.click())
+            assert changed, "Не відкрилась сторінка створеня екаунту"
+            fail_on_alert(page_open)
+            if page_open.get_by_role("alert").locator("div").first.is_visible(timeout=10000):
+                debug("Помилка створення екаунту", "ПОМИЛКА")
+            expect(page_open.get_by_role("alert").locator("div").first).not_to_be_visible(timeout=10000)
 
             # --- обхід реклами ---
             if "google_vignette" in page_open.url or "ad.doubleclick" in page_open.url:
                 debug("Виявлено рекламу google_vignette. Повертаємось назад...", "WARNING")
                 page_open.go_back()
-                expect(link).to_be_visible(timeout=20000)
+                expect(link).to_be_visible(timeout=10000)
                 link.click()
                 debug("повторний клік після реклами", "INFO")
 
@@ -317,7 +391,7 @@ def test_negative_form(page_open, user_data):
                 debug("Виявлено рекламу з кнопкою Close. Натиснуто на Close", "WARNING")
 
         with allure.step('Перевірка заголовку, чи це сторінка створення екаунту'):
-            expect(page_open.get_by_text("Create New Customer Account")).to_be_visible(timeout=40000)
+            expect(page_open.get_by_text("Create New Customer Account")).to_be_visible(timeout=10000)
             debug("здійснено перехід на сторінку створення екаунту", "Сторінка створення екаунту")
 
         list_inv_fields = generate_negative_cases()
@@ -351,6 +425,13 @@ def test_negative_form(page_open, user_data):
                     expect(btnS).to_be_visible(timeout=10000)
                     btnS.click()
 
+                    changed, new_url = click_and_wait_url_change(page_open, lambda: btnS.click())
+                    assert changed, "Не відкрилась сторінка створеного екаунту"
+                    fail_on_alert(page_open)
+                    if page_open.get_by_role("alert").locator("div").first.is_visible(timeout=10000):
+                        debug("Помилка створення екаунту", "ПОМИЛКА")
+                    expect(page_open.get_by_role("alert").locator("div").first).not_to_be_visible(timeout=10000)
+
                     # тут навмисно ставимо "невірне" очікування,
                     # щоб тест зловив помилку, якщо акаунт створився
                     # expect(page_open.get_by_role("alert")).to_contain_text(
@@ -369,10 +450,10 @@ def test_negative_form(page_open, user_data):
                 debug(f"Негативний тест пройдено для поля {invalid_field} зі значенням \"{inv_value}\"", "TEST FAIL")
                 failed_cases.append((invalid_field, inv_value, str(e)))
 
-                alert = page_open.get_by_role("alert").locator("div").first
-                if alert.is_visible():
-                    errors.append(alert.inner_text())
-                    debug(alert.inner_text(), "ERROR")
+                # alert = page_open.get_by_role("alert").locator("div").first
+                # if alert.is_visible():
+                #     errors.append(alert.inner_text())
+                #     debug(alert.inner_text(), "ERROR")
 
 
             except Exception as e:
@@ -396,6 +477,7 @@ def test_negative_form(page_open, user_data):
 
                 if errors:
                     failed_cases.append((invalid_field, inv_value, "; ".join(errors)))
+                    debug(errors, "ERROR")
 
                 screenshot = page_open.screenshot()
                 allure.attach(screenshot, name="Скриншот падіння або помилки", attachment_type=allure.attachment_type.PNG)
@@ -404,4 +486,5 @@ def test_negative_form(page_open, user_data):
         # після всіх ітерацій: якщо були фейли — завалюємо тест 1 раз
         if failed_cases:
             msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
+            debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
             raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")

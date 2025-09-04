@@ -26,3 +26,7 @@ pip install -r requirements.txt
 //////////////////////////////////////////////////////////////
 //Запуск генерирования тестов
 playwright codegen https://example_sight.first_page.com/
+
+////////////////////////////////////////////////////////////
+//Установка расширения dependency
+pip install pytest-dependency
