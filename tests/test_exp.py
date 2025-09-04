@@ -3,7 +3,6 @@ import traceback
 import allure
 import pytest
 from playwright.sync_api import expect, Page
-# from conftest import page_open
 from main_file import report_about, report_bug_and_stop
 from helper import debug
 import re
