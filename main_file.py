@@ -82,6 +82,11 @@ check_login_l = False
 check_p = False
 check_url = False
 check_email = False
+condition_login = False
+condition_login_l = False
+condition_p = False
+condition_url = False
+condition_email = False
 
 
 def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
@@ -164,7 +169,7 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
 
 def entries_rules(fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
-    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log_l, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l
+    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log_l, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l, no_absent
 
     entries = kwargs["entries"]
 
@@ -228,49 +233,11 @@ def entries_rules(fame, **kwargs):
         elif key == "no_absent":
             no_absent = value
 
-        #     url = re.compile(
-        #     r'^[A-Za-z][A-Za-z0-9+.-]*://'  # схема (http, https, ftp…)
-        #     r'([A-Za-z0-9._~%!$&\'()*+,;=-]+@)?'  # user:pass@
-        #     r'([A-Za-z0-9._~%+-]+|\[[0-9a-fA-F:.]+\])'  # хост або IPv6
-        #     r'(:[0-9]+)?'  # порт
-        #     r'(/[A-Za-z0-9._~%!$&\'()*+,;=:@-]*)*'  # шлях
-        #     r'(\?[A-Za-z0-9._~%!$&\'()*+,;=:@/?-]*)?'  # query
-        #     r'(#[A-Za-z0-9._~%!$&\'()*+,;=:@/?-]*)?$'  # fragment
-        # )
 
-    # # собираем разрешённые символы
-    # parts = []
-    # if local:
-    #     parts.append(local)
-    # if spec_escaped:
-    #     parts.append(spec_escaped)
-    # if digits_str:
-    #     parts.append(digits_str)
-    # if is_probel:
-    #     parts.append(r'^\s')
-    # if email:
-    #     parts.append(email)
-    # if url:
-    #     parts.append(url)
-
-    # chars = "".join(parts) or "."  # если ничего не выбрано — разрешаем всё
     if email:
-        # parts.append(email)
-        # chars = r"A-Za-z0-9@._-"
-        # chars = "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
         chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
     elif url:
-        # parts.append(url)
         chars = "http?://[^\s/$.?#].[^\s"
-        # chars = re.compile(
-        #     r'^[A-Za-z][A-Za-z0-9+.-]*://'  # схема (http, https, ftp…)
-        #     r'([A-Za-z0-9._~%!$&\'()*+,;=-]+@)?'  # user:pass@
-        #     r'([A-Za-z0-9._~%+-]+|\[[0-9a-fA-F:.]+\])'  # хост або IPv6
-        #     r'(:[0-9]+)?'  # порт
-        #     r'(/[A-Za-z0-9._~%!$&\'()*+,;=:@-]*)*'  # шлях
-        #     r'(\?[A-Za-z0-9._~%!$&\'()*+,;=:@/?-]*)?'  # query
-        #     r'(#[A-Za-z0-9._~%!$&\'()*+,;=:@/?-]*)?$'  # fragment
-        # )
     elif no_absent:
         chars = "."
     else:
@@ -286,10 +253,11 @@ def entries_rules(fame, **kwargs):
         if spec_escaped:
             parts.append(spec_escaped)
         chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
-
+    messagebox.showerror("Регуляр", chars, parent=_root)
     # финальный паттерн с учётом длины
     # pattern = f"{chars}*"
     pattern = "^["+f"{chars}"+"]+$"
+    messagebox.showerror("Шаблон", pattern, parent=_root)
     # print("✅ Готовый паттерн:", pattern)
     if fame == "login":
         lenminlog = len_min
@@ -329,7 +297,7 @@ def entries_rules(fame, **kwargs):
         patternu = f"{chars}"+"]+$"
         email_url = email
         # patternu = pattern
-    # messagebox.showerror("Шаблон", pattern, parent=_root)
+    messagebox.showerror("Шаблон", pattern, parent=_root)
     return pattern
 
 
@@ -878,7 +846,7 @@ class InputDialog(tk.Toplevel):
 
     # відкриття форми з налаштуваннями тестів
     def toggle_rule(self, field_name):
-        global check_login, check_login_l, check_p, check_url, check_email
+        global check_login, check_login_l, check_p, check_url, check_email, condition_login, condition_login_l, condition_p, condition_url, condition_email
         # messagebox.showerror("Имя элементу після вводу", f"Ім'я елементу  {field_name}", parent=self)
         self.cur_name = field_name
         # global patternl, patternpas, pattern, len_max, len_min, lenminlog, lenmaxlog, lenminpas, lenmaxpas
@@ -893,6 +861,16 @@ class InputDialog(tk.Toplevel):
                 widget.config(state="disabled")
             elif isinstance(widget, tk.Entry):
                 widget.config(state=tk.DISABLED)
+            if field_name == "login":
+                condition_login = False
+            if field_name == "login_l":
+                condition_login = False
+            if field_name == "password":
+                condition_p = False
+            if field_name == "url":
+                condition_url = False
+            if field_name == "email":
+                condition_email = False
 
         entry = self.entries[field_name]
         if isinstance(entry, ttk.Combobox):
@@ -904,22 +882,27 @@ class InputDialog(tk.Toplevel):
             check_login = False
             rule_invalid['login'] = []
             login_inv.clear()
+            condition_login = True
         if field_name == "login_l":
             check_login_l = False
             rule_invalid['login_l'] = []
             login_l_inv.clear()
+            condition_login = True
         if field_name == "password":
             check_p = False
             rule_invalid['password'] = []
             pw_inv.clear()
+            condition_p = True
         if field_name == "url":
             check_url = False
             rule_invalid['url'] = []
             url_inv.clear()
+            condition_url = True
         if field_name == "email":
             check_email = False
             rule_invalid['email'] = []
             email_inv.clear()
+            condition_email = True
 
         app = QApplication.instance()
         if not app:
@@ -1049,6 +1032,17 @@ class InputDialog(tk.Toplevel):
             check_email = True
         if not create_acc:
             login_l_val = ""
+        if not condition_login:
+            login_val = ""
+        if not condition_login_l:
+            login_l_val = ""
+        if not condition_p:
+            pw = ""
+        if not condition_url:
+            url_val = ""
+        if not condition_email:
+            email_val = ""
+
         self.result = {"login": login_val, "login_l": login_l_val, "password": pw, "url": url_val, "email": email_val}
         # if create_acc:
         #     self.result_invalid = {"login": login_inv, "login_l": login_l_inv, "password": pw_inv, "url": url_inv, "email": email_inv}

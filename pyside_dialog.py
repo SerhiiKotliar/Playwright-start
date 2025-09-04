@@ -60,13 +60,14 @@ class MyDialog(QDialog, Ui_Dialog):
         probel = self.chkbProbel.isChecked()
         email_in = self.chkbEmail.isChecked()
         url_in = self.chkbURL.isChecked()
+        absent_in = self.chkbNo_absent.isChecked()
 
         # Спінбокси
         len_min = self.spinBoxLenMin.value()
         len_max = self.spinBoxLenMax.value()
 
         self.result = {
-            "no_absent": False,
+            "no_absent": absent_in,
             "register": register,
             "localiz": localiz,
             "cyfry": cyfry,
