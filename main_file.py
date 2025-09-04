@@ -253,11 +253,9 @@ def entries_rules(fame, **kwargs):
         if spec_escaped:
             parts.append(spec_escaped)
         chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
-    messagebox.showerror("Регуляр", chars, parent=_root)
     # финальный паттерн с учётом длины
     # pattern = f"{chars}*"
     pattern = "^["+f"{chars}"+"]+$"
-    messagebox.showerror("Шаблон", pattern, parent=_root)
     # print("✅ Готовый паттерн:", pattern)
     if fame == "login":
         lenminlog = len_min
@@ -297,7 +295,7 @@ def entries_rules(fame, **kwargs):
         patternu = f"{chars}"+"]+$"
         email_url = email
         # patternu = pattern
-    messagebox.showerror("Шаблон", pattern, parent=_root)
+    # messagebox.showerror("Шаблон", pattern, parent=_root)
     return pattern
 
 
