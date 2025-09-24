@@ -1,41 +1,41 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QLocale
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QApplication, QDialog, QVBoxLayout, QHBoxLayout, QSpinBox,
-    QLabel, QLineEdit, QPushButton, QWidget
+    QApplication, QDialog, QSpinBox, QVBoxLayout, QHBoxLayout,
+    QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
+    QComboBox, QCheckBox, QScrollArea
 )
 
-
+# ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
-    """Форма для ввода конфигурации GroupBox-ов"""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Конфігурація груп")
         self.resize(400, 200)
 
-        self.main_layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
-        # Количество групп
+        # количество групп
         cnt_layout = QHBoxLayout()
         cnt_layout.addWidget(QLabel("Кількість груп:"))
         self.spin = QSpinBox()
         self.spin.setMinimum(1)
         self.spin.setMaximum(20)
         cnt_layout.addWidget(self.spin)
-        self.main_layout.addLayout(cnt_layout)
+        main_layout.addLayout(cnt_layout)
 
-        # Контейнер для полей title/name
+        # контейнер для полей title/name
         self.entries_layout = QVBoxLayout()
-        self.main_layout.addLayout(self.entries_layout)
+        main_layout.addLayout(self.entries_layout)
 
-        # Кнопки
+        # кнопки
         btn_layout = QHBoxLayout()
         self.btnOK = QPushButton("OK")
         self.btnCnl = QPushButton("Скасувати")
         btn_layout.addWidget(self.btnOK)
         btn_layout.addWidget(self.btnCnl)
-        self.main_layout.addLayout(btn_layout)
+        main_layout.addLayout(btn_layout)
 
-        # Связи
         self.spin.valueChanged.connect(self.update_entries)
         self.btnOK.clicked.connect(self.accept)
         self.btnCnl.clicked.connect(self.reject)
@@ -43,8 +43,6 @@ class ConfigInputDialog(QDialog):
         self.update_entries()
 
     def update_entries(self):
-        """Создаем/обновляем поля для ввода title и name"""
-        # очистить старые
         for i in reversed(range(self.entries_layout.count())):
             widget = self.entries_layout.itemAt(i).widget()
             if widget:
@@ -66,20 +64,10 @@ class ConfigInputDialog(QDialog):
             self.line_edits.append((title_edit, name_edit))
 
     def get_config(self):
-        """Возвращает список конфигураций"""
-        config = []
-        for title_edit, name_edit in self.line_edits:
-            config.append({"title": title_edit.text(), "name": name_edit.text()})
-        return config
+        return [{"title": t.text(), "name": n.text()} for t, n in self.line_edits]
 
 
-# ---------------- Динамическая форма из предыдущего примера ----------------
-
-from PySide6.QtCore import QLocale
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QGroupBox, QComboBox, QCheckBox, QPushButton
-
-
+# ---- Wrapper для удобного обращения ----
 class GroupBoxWrapper:
     def __init__(self, gb, cmb, chkb, btn):
         self.gb = gb
@@ -87,59 +75,76 @@ class GroupBoxWrapper:
         self.chkb = chkb
         self.btn = btn
 
+    def set_geometry(self, cmb_geom=None, chkb_geom=None, btn_geom=None):
+        if cmb_geom:
+            self.cmb.setGeometry(*cmb_geom)
+        if chkb_geom:
+            self.chkb.setGeometry(*chkb_geom)
+        if btn_geom:
+            self.btn.setGeometry(*btn_geom)
 
+
+# ---- Динамическая форма ----
 class DynamicDialog(QDialog):
     def __init__(self, config, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Введення даних для тестів")
-        self.resize(600, 120 + 70 * len(config))
+        self.resize(650, 500)
 
         main_layout = QVBoxLayout(self)
-        self.gb = {}
 
+        # ---- Scroll area для GroupBox ----
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        main_layout.addWidget(scroll)
+
+        scroll_content = QWidget()
+        scroll.setWidget(scroll_content)
+
+        self.scroll_layout = QVBoxLayout(scroll_content)
+
+        # создаём GroupBox
+        self.gb = {}
         for cfg in config:
             title = cfg.get("title", "")
             name = cfg.get("name", "")
 
-            gb_widget = QGroupBox(title, self)
+            gb_widget = QGroupBox(title, scroll_content)
             gb_widget.setObjectName(name)
             gb_widget.setStyleSheet("background-color: rgb(85, 255, 127);")
             gb_widget.setLocale(QLocale(QLocale.Ukrainian, QLocale.Ukraine))
+            gb_widget.setMinimumHeight(60)
 
-            layout = QHBoxLayout(gb_widget)
-
+            # элементы
             cmb = QComboBox(gb_widget)
-            cmb.setStyleSheet("background-color: white;")
-            layout.addWidget(cmb)
-
             chkb = QCheckBox("Обов'язкове", gb_widget)
-            layout.addWidget(chkb)
-
             btn = QPushButton("Правила", gb_widget)
-            layout.addWidget(btn)
 
-            main_layout.addWidget(gb_widget)
+            # стандартная геометрия
+            cmb.setGeometry(10, 20, 200, 25)
+            chkb.setGeometry(220, 20, 120, 25)
+            btn.setGeometry(350, 15, 100, 30)
+
+            self.scroll_layout.addWidget(gb_widget)
 
             self.gb[name] = GroupBoxWrapper(gb_widget, cmb, chkb, btn)
 
-        # OK/Cancel
+        # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()
         font = QFont()
         font.setBold(True)
 
-        self.btnOK = QPushButton("Введення", self)
+        self.btnOK = QPushButton("Введення")
         self.btnOK.setFont(font)
-        btn_layout.addWidget(self.btnOK)
-
-        self.btnCnl = QPushButton("ВІДМІНА", self)
+        self.btnCnl = QPushButton("Відміна")
         self.btnCnl.setFont(font)
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btnOK)
         btn_layout.addWidget(self.btnCnl)
-
         main_layout.addLayout(btn_layout)
 
 
-# ---------------- Основной запуск ----------------
-
+# ---- Основной запуск ----
 if __name__ == "__main__":
     import sys
 
@@ -151,5 +156,9 @@ if __name__ == "__main__":
         dlg = DynamicDialog(config)
         dlg.show()
 
+        # пример изменения размеров элементов
+        dlg.gb["group1"].set_geometry(cmb_geom=(10, 10, 250, 30),
+                                      chkb_geom=(270, 10, 150, 30),
+                                      btn_geom=(430, 10, 120, 30))
+
     sys.exit(app.exec())
-#     gljhgkjhgkjhg
