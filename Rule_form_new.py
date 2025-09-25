@@ -472,7 +472,6 @@ class DynamicDialog(QDialog):
             # сохраняем новое значение как предыдущее
             self.previous_text = text
             return  True
-        # return bool(re.fullmatch(patternlog, new_value))
 
 
 
