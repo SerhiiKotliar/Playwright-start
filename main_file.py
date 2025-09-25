@@ -587,7 +587,7 @@ if result:
     create_acc = True
     FIELDS_CONFIG = [
         {"label": "Адреса (URL):", "name": "url", "default": "", "allow_func": allow_url_value},
-        {"label": "Ім'я:", "name": "login", "default": "", "allow_func": allow_login_l_value},
+        {"label": "Ім'я:", "name": "login", "default": "", "allow_func": allow_login_value},
         {"label": "Прізвище:", "name": "login_l", "default": "", "allow_func": allow_login_l_value},
         {"label": "Пароль:", "name": "password", "default": "", "allow_func": allow_password_value},
         {"label": "Email:", "name": "email", "default": "", "allow_func": allow_email_value},
@@ -969,3 +969,7 @@ def get_user_input():
     _root.wait_window(dlg)
     number_of_test += 1
     return dlg.result, dlg.result_invalid
+
+# ---- Основной запуск ----
+if __name__ == "__main__":
+    get_user_input()
