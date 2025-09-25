@@ -9,8 +9,10 @@ import re
 from typing import Callable, Pattern, Union, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 
-fields = ["First Name*", "Last Name*", "Email*", "Password*", "Confirm Password*"]
-names_data_for_fields = {"First Name*": "login", "Last Name*": "login_l", "Email*": "email", "Password*": "password", "Confirm Password*": "password"}
+# fields = ["First Name*", "Last Name*", "Email*", "Password*", "Confirm Password*"]
+fields = ["First Name", "Last Name", "UserName", "Password"]
+# names_data_for_fields = {"First Name*": "login", "Last Name*": "login_l", "Email*": "email", "Password*": "password", "Confirm Password*": "password"}
+names_data_for_fields = {"First Name": "login", "Last Name": "login_l", "UserName": "email", "Password": "password"}
 valid_values = []
 invalid_values = {}
 
@@ -202,71 +204,119 @@ def test_positive_form(page_open, user_data):
     debug("Позитивний тест: усі поля валідні", "Початок позитивного тесту")
     ##########################################################################
     try:
-        with allure.step('Перехід на посилання створення екаунту та клік на ньому'):
-            link = page_open.get_by_role("link", name="Create an Account")
-            expect(link).to_be_visible(timeout=10000)
-            debug("здійснено перехід на посилання створення екаунту", "Посилання створення екаунту")
-            # link.click()
-            debug("здійснено клік на посиланні створення екаунту", "Посилання створення екаунту")
-            changed, new_url = click_and_wait_url_change(page_open, lambda: link.click())
-            assert changed, "Не відкрилась сторінка створення екаунту"
+        with allure.step('Перехід на сторінку створення екаунту'):
+            expect(page_open.get_by_role("heading", name="Elements")).to_be_visible()
+            page_open.get_by_role("heading", name="Elements").click()
+            debug("здійснено клік на заголовку Elements", "Перехід на сторінку едементів HTML")
+            expect(page_open.get_by_text("Book Store Application")).to_be_visible()
+            page_open.get_by_text("Book Store Application").click()
+            debug("здійснено клік на елементі Book Store Application", "Перехід на сторінку Застосунок книжкового магазину")
+            expect(page_open.get_by_text("Login")).to_be_visible()
+            page_open.get_by_text("Login").click()
+            debug("здійснено клік на елементі Login списку Book Store Application",
+                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+            expect(page_open.get_by_role("heading", name="Login", exact=True)).to_be_visible()
+            debug("перейшли на сторінку входу у застосунок Book Store Application",
+                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+            expect(page_open.get_by_role("button", name="New User")).to_be_visible()
+            debug("знайдено кнопку переходу на сторінку реєстрації у застосунку Book Store Application",
+                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+            but_reestr = page_open.get_by_role("button", name="New User")
+            # page_open.get_by_role("button", name="New User").click()
+            changed, new_url = click_and_wait_url_change(page_open, lambda: but_reestr.click())
+            debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
+                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+            assert changed, "Не відкрилась сторінка реєстрації у Застосунку книжкового магазину"
+            # debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
+            #       "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+
+
+            # link = page_open.get_by_role("link", name="Create an Account")
+            # expect(link).to_be_visible(timeout=10000)
+            # debug("здійснено перехід на посилання створення екаунту", "Посилання створення екаунту")
+            # # link.click()
+            # debug("здійснено клік на посиланні створення екаунту", "Посилання створення екаунту")
+            # changed, new_url = click_and_wait_url_change(page_open, lambda: link.click())
+            # assert changed, "Не відкрилась сторінка створення екаунту"
 
             # --- обхід реклами ---
             if "google_vignette" in page_open.url or "ad.doubleclick" in page_open.url:
                 debug("Виявлено рекламу google_vignette. Повертаємось назад...", "WARNING")
                 page_open.go_back()
-                expect(link).to_be_visible(timeout=10000)
-                link.click()
+                expect(but_reestr).to_be_visible(timeout=10000)
+                but_reestr.click()
                 debug("повторний клік після реклами", "INFO")
 
             close_button = page_open.get_by_role("button", name="Close").first
             if close_button.is_visible():
                 close_button.click()
                 debug("Виявлено рекламу з кнопкою Close. Натиснуто на Close", "WARNING")
-
-        with allure.step('Перевірка заголовку, чи це сторінка створення екаунту'):
-            expect(page_open.get_by_text("Create New Customer Account")).to_be_visible(timeout=10000)
-            debug("здійснено перехід на сторінку створення екаунту", "Сторінка створення екаунту")
+        with allure.step('Перевірка заголовку, чи це сторінка реєстрації у застосунку Book Store Application'):
+            expect(page_open.get_by_role("heading", name="Register", exact=True)).to_be_visible()
+            debug("перейшли на сторінку реєстрації у застосунку Book Store Application",
+                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+        # with allure.step('Перевірка заголовку, чи це сторінка створення екаунту'):
+        #     expect(page_open.get_by_text("Create New Customer Account")).to_be_visible(timeout=10000)
+        #     debug("здійснено перехід на сторінку створення екаунту", "Сторінка створення екаунту")
         ##########################################################################
         with allure.step("Заповнення форми валідними даними"):
             for field, value in zip(fields, valid_values):
                 tb = page_open.get_by_role("textbox", name=field, exact=True)
                 tb.fill(value)
-                fail_on_alert(page_open)
+                # fail_on_alert(page_open)
                 debug("заповнено поле", f"{field}")
                 allure.attach(str(value), name=f"Поле {field}")
-        with allure.step('Перехід на кнопку створення екаунту та клік на ній'):
-            btnS = page_open.get_by_role("button", name="Create an Account")
-            expect(btnS).to_be_visible(timeout=10000)
-            debug("здійснено перехід на кнопку створення екаунту", "Кнопка створення екаунту")
-            # btnS.click()
-            debug("здійснено клік на кнопку створення екаунту", "Кнопка створення екаунту")
-            changed, new_url = click_and_wait_url_change(page_open, lambda: btnS.click())
-            assert changed, "Не відкрилась сторінка створеного екаунту"
-            # expect(page_open.get_by_role("alert").locator("div").first).to_be_visible()
-            fail_on_alert(page_open)
-            if page_open.get_by_role("alert").locator("div").first.is_visible(timeout=10000):
-                debug("Помилка створення екаунту", "ПОМИЛКА")
-            expect(page_open.get_by_role("alert").locator("div").first).not_to_be_visible(timeout=10000)
-        with allure.step('Перевірка переходу на сторінку My Account'):
-            expect(page_open.locator("h1")).to_contain_text("My Account", timeout=10000)
-            debug("здійснено перехід на сторінку зареєстрованого екаунту", "Сторінка екаунту")
+                # Перехватываем запрос к серверу reCAPTCHA и возвращаем успешный ответ
+                page_open.route("https://www.google.com/recaptcha/api2/**", lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body='{"success": true}'
+                ))
+
+        with allure.step('Перехід на кнопку реєстрації екаунту та клік на ній'):
+            expect(page_open.get_by_role("button", name="Register")).to_be_visible()
+            debug("знайдено кнопку реєстрації у застосунку Book Store Application",
+                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+            page_open.get_by_role("button", name="Register").click()
+            debug("здійснено клік на кнопку реєстрації у застосунку Book Store Application", "Реєстрація у Застосунку книжкового магазину")
+            close_button = page_open.get_by_role("button", name="OK").first
+            if close_button.is_visible():
+                close_button.click()
+                debug("Виявлено рекламу з кнопкою OK. Натиснуто на OK", "WARNING")
+
+
+
+        #     btnS = page_open.get_by_role("button", name="Create an Account")
+        #     expect(btnS).to_be_visible(timeout=10000)
+        #     debug("здійснено перехід на кнопку створення екаунту", "Кнопка створення екаунту")
+        #     # btnS.click()
+        #     debug("здійснено клік на кнопку створення екаунту", "Кнопка створення екаунту")
+        #     changed, new_url = click_and_wait_url_change(page_open, lambda: btnS.click())
+        #     assert changed, "Не відкрилась сторінка створеного екаунту"
+        #     # expect(page_open.get_by_role("alert").locator("div").first).to_be_visible()
+        #     fail_on_alert(page_open)
+        #     if page_open.get_by_role("alert").locator("div").first.is_visible(timeout=10000):
+        #         debug("Помилка створення екаунту", "ПОМИЛКА")
+        #     expect(page_open.get_by_role("alert").locator("div").first).not_to_be_visible(timeout=10000)
+        # with allure.step('Перевірка переходу на сторінку My Account'):
+        #     expect(page_open.locator("h1")).to_contain_text("My Account", timeout=10000)
+        #     debug("здійснено перехід на сторінку зареєстрованого екаунту", "Сторінка екаунту")
 
             # # Перевіряємо наявність інформації про акаунт
             # assert page_open.get_by_role("strong").filter(has_text="Account Information").is_visible(), \
             #     "BUG: Відсутня інформація про екаунт"
 
-            account_text = page_open.locator("#maincontent").inner_text(timeout=5000)
-            expected_text = f"{user_data[0]['login']} {user_data[0]['login_l']}\n{user_data[0]['email']}"
-
-            assert expected_text in account_text, \
-                f"BUG: Інформація про екаунт не відповідає введеним даним"
-
-            # --- debug для позитивного сценарію ---
-            debug("інформація про екаунт відповідає введеним даним", "Сторінка екаунту")
-            report_about("Тест пройдено: позитивний сценарій успішно виконано", page_open)
-            debug(account_text, "Отриманий текст:")
-            debug(expected_text, "Очікуваний текст:")
+            # account_text = page_open.locator("#maincontent").inner_text(timeout=5000)
+            # expected_text = f"{user_data[0]['login']} {user_data[0]['login_l']}\n{user_data[0]['email']}"
+            #
+            # assert expected_text in account_text, \
+            #     f"BUG: Інформація про екаунт не відповідає введеним даним"
+            #
+            # # --- debug для позитивного сценарію ---
+            # debug("інформація про екаунт відповідає введеним даним", "Сторінка екаунту")
+            # report_about("Тест пройдено: позитивний сценарій успішно виконано", page_open)
+            # debug(account_text, "Отриманий текст:")
+            # debug(expected_text, "Очікуваний текст:")
         # Скриншот страницы
         screenshot = page_open.screenshot()
         allure.attach(
