@@ -3,7 +3,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QApplication, QDialog, QSpinBox, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
-    QComboBox, QCheckBox, QScrollArea
+    QComboBox, QCheckBox, QMessageBox
 )
 import re
 from pyside_dialog import MyDialog
@@ -281,6 +281,15 @@ def make_input_data(file_name):
 # файл у якому перелічені вхідні дані
 input_data = make_input_data("file_input_data.txt")
 
+def diff_char(bigger: str, smaller: str) -> str:
+    # ищем первую позицию, где строки расходятся
+    for i, (c1, c2) in enumerate(zip(bigger, smaller)):
+        if c1 != c2:
+            return c1  # символ из "большей" строки
+
+    # если отличий не нашли, то "лишний" символ — в конце
+    return bigger[len(smaller)]
+
 # --- проверки при вводе ---
 def allow_login_value(new_value: str) -> bool:
     global chars, patternlog
@@ -413,14 +422,13 @@ class DynamicDialog(QDialog):
             self.scroll_layout.addWidget(gb_widget)
             self.gb[name] = GroupBoxWrapper(gb_widget, cmb, chkb, btn)
             # подключаем событие изменения чекбокса (с правильным захватом имени)
-            # chkb.toggled.connect(lambda state, n=name: self.on_required_toggled(n, state))
             chkb.toggled.connect(partial(self.on_required_toggled, name))
-            # подключаем кнопку "Правила" (обработчик с правильным захватом имени)
-            # btn.clicked.connect(lambda _, n=name: self.on_rules_clicked(n))
-            # btn.clicked.connect(partial(self.on_rules_clicked, name))
-            # btn.clicked.connect(self.on_rules_clicked)
             # подключаем сигнал с передачей combo и имени
             btn.clicked.connect(lambda _, c=cmb, n=name: self.on_rules_clicked(c, n))
+            # запоминаем старое значение
+            self.previous_text = cmb.currentText()
+            # событие изменения текста
+            cmb.editTextChanged.connect(self.on_text_changed)
 
         # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()
@@ -441,6 +449,33 @@ class DynamicDialog(QDialog):
         self.btnCnl.clicked.connect(self.reject)
 
         # ---- обработчики ----
+
+    def on_text_changed(self, text: str) -> bool:
+        combo = self.sender()  # тот QComboBox, который вызвал сигнал
+        global chars, pattern
+        if not text:
+            return True
+        # если chars == ".", разрешаем всё
+        if chars == ".":
+            return True
+        # if email_login:
+        #     patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
+        if not bool(re.fullmatch(pattern, text)):
+            diff_simv = diff_char(text, self.previous_text)
+            QMessageBox.warning(self, "Помилка вводу", f"Неприпустимий символ: '{diff_simv}'")
+            # откатываем на предыдущее значение
+            combo.blockSignals(True)  # блокируем сигналы, чтобы не зациклиться
+            combo.setCurrentText(self.previous_text)
+            combo.blockSignals(False)  # разблокируем сигналы
+            return False
+        else:
+            # сохраняем новое значение как предыдущее
+            self.previous_text = text
+            return  True
+        # return bool(re.fullmatch(patternlog, new_value))
+
+
+
 
     def on_required_toggled(self, name, state):
         """Срабатывает при изменении чекбокса."""
