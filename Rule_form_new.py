@@ -231,26 +231,6 @@ def entries_rules(fame, **kwargs):
     # messagebox.showerror("Шаблон", pattern, parent=_root)
     return pattern
 
-# def validate_text(text: str, pattern_f: str, mode: str = "full") -> bool:
-#     """
-#     Проверка текста по регулярному выражению.
-#
-#     :param text: строка для проверки
-#     :param pattern: шаблон (регулярка)
-#     :param mode: "full" — проверка полного совпадения,
-#                  "chars" — проверка только допустимых символов
-#     :return: True, если строка проходит проверку
-#     """
-#     if mode == "full":
-#         return re.fullmatch(pattern_f, text) is not None
-#     elif mode == "chars":
-#         # преобразуем шаблон в класс символов
-#         # например, если pattern = "a-z0-9", получится r"[a-z0-9]+"
-#         regex = f"[{pattern_f}]+"
-#         return re.fullmatch(regex, text) is not None
-#     else:
-#         raise ValueError(f"Невідомй режим перевірки: {mode}")
-
 from typing import Tuple, Set, Optional
 
 def _parse_allowed_string(allowed: str) -> Tuple[str, Set[str]]:
