@@ -10,6 +10,7 @@ from pyside_dialog import MyDialog
 from functools import partial
 # from PyQt6.QtCore import pyqtSignal
 from mycombo import QComboBox, WhichBinding
+from mygroupbox_dynamic import MyGroupBox
 import sys
 
 rule_invalid = {}
@@ -483,8 +484,8 @@ class DynamicDialog(QDialog):
             name = cfg.get("name", "")
             required = cfg.get("required")
 
-            # gb_widget = QGroupBox(title, scroll_content)
-            gb_widget = QGroupBox(title)
+            gb_widget = MyGroupBox(title)
+            # gb_widget = QGroupBox(title)
             gb_widget.setObjectName(name)
             gb_widget.setStyleSheet("background-color: rgb(85, 255, 127);")
             gb_widget.setLocale(QLocale(QLocale.Ukrainian, QLocale.Ukraine))
@@ -495,7 +496,7 @@ class DynamicDialog(QDialog):
             cmb.setEditable(False)
             chkb = QCheckBox("Обов'язкове", gb_widget)
             # привязываем чекбокс к комбобоксу
-            cmb.checkbox = chkb
+            # cmb.checkbox = chkb
             if name == 'url':
                 cmb.addItems(input_url)
                 cmb.setCurrentText(input_url[0])
@@ -517,6 +518,16 @@ class DynamicDialog(QDialog):
 
             btn = QPushButton("Правила", gb_widget)
 
+            # прикрепляем ссылки внутрь gb_widget
+            gb_widget.cmb = cmb
+            gb_widget.chkb = chkb
+            gb_widget.btn = btn
+            # Обязательно зарегистрировать виджеты в MyGroupBox,
+            # чтобы он отслеживал их FocusOut:
+            gb_widget.watch_widget(cmb)
+            gb_widget.watch_widget(chkb)
+            gb_widget.watch_widget(btn)
+
             # стандартная геометрия
             cmb.setGeometry(10, 20, 400, 25)
             chkb.setGeometry(420, 20, 100, 25)
@@ -533,7 +544,9 @@ class DynamicDialog(QDialog):
             # событие изменения текста
             cmb.editTextChanged.connect(self.on_text_changed)
             # событие потери фокуса комбобоксом
-            cmb.focusOut.connect(self.on_focusOut)
+            # cmb.focusOut.connect(self.on_focusOut)
+            # событие потери фокуса групбоксом
+            gb_widget.focusLeft.connect(self.on_gb_focus_left)
 
         # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()
@@ -566,24 +579,43 @@ class DynamicDialog(QDialog):
         # if email_login:
         #     patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
         if not bool(re.fullmatch(pattern, text)):
-            diff_simv = diff_char(text, self.previous_text)
+            if len(combo.currentText()) > len(self.previous_text):
+                big_text = combo.currentText()
+                small_text = self.previous_text
+            else:
+                big_text = self.previous_text
+                small_text = combo.currentText()
+            # if big_text != small_text:
+            diff_simv = diff_char(big_text, small_text)
             QMessageBox.warning(self, "Помилка вводу", f"Неприпустимий символ: '{diff_simv}'")
-            # откатываем на предыдущее значение
-            combo.blockSignals(True)  # блокируем сигналы, чтобы не зациклиться
+            combo.blockSignals(True)  # блокування сигналів, щоб не зациклитися
             combo.setCurrentText(self.previous_text)
-            combo.blockSignals(False)  # разблокируем сигналы
+            combo.blockSignals(False)
             return False
         else:
             # сохраняем новое значение как предыдущее
             self.previous_text = text
             return  True
 
-    def on_focusOut(self) -> None:
-        combo = self.sender()
-        if combo.checkbox.isChecked():
-            pass
-        else:
-            pass
+    def on_gb_focus_left(self):
+        gb = self.sender()
+        global chars, pattern
+        gr_t = gb.title()
+        if gb.chkb.isChecked() and gb.cmb.currentText() == "":
+            QMessageBox.warning(self, "Обов'язкове поле", f"Введіть дані у обов'язкове поле: '{gr_t}'")
+            gb.cmb.setFocus(True)
+            return False
+        # Якщо chars == ".", дозволяємо все
+        if chars == ".":
+            self.previous_text = gb.cmb.currentText()
+            return True
+        # Перевірка на відповідність pattern
+        if not bool(re.fullmatch(pattern, gb.cmb.currentText())):
+            QMessageBox.warning(self, "Помилка вводу", "Видаліть неприпустимі символи")
+            return False
+        # Якщо все добре, зберігаємо нове значення
+        self.previous_text = gb.cmb.currentText()
+        return True
 
 
     def on_required_toggled(self, name, state):
