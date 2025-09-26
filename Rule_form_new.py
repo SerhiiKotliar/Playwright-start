@@ -231,6 +231,89 @@ def entries_rules(fame, **kwargs):
     # messagebox.showerror("Шаблон", pattern, parent=_root)
     return pattern
 
+# def validate_text(text: str, pattern_f: str, mode: str = "full") -> bool:
+#     """
+#     Проверка текста по регулярному выражению.
+#
+#     :param text: строка для проверки
+#     :param pattern: шаблон (регулярка)
+#     :param mode: "full" — проверка полного совпадения,
+#                  "chars" — проверка только допустимых символов
+#     :return: True, если строка проходит проверку
+#     """
+#     if mode == "full":
+#         return re.fullmatch(pattern_f, text) is not None
+#     elif mode == "chars":
+#         # преобразуем шаблон в класс символов
+#         # например, если pattern = "a-z0-9", получится r"[a-z0-9]+"
+#         regex = f"[{pattern_f}]+"
+#         return re.fullmatch(regex, text) is not None
+#     else:
+#         raise ValueError(f"Невідомй режим перевірки: {mode}")
+
+from typing import Tuple, Set, Optional
+
+def _parse_allowed_string(allowed: str) -> Tuple[str, Set[str]]:
+    """
+    Разбирает строку allowed, извлекая диапазоны вида a-z и одиночные символы.
+    Возвращает (charclass_string_for_regex, set_of_allowed_chars).
+    Пример allowed: "a-zA-Z0-9_.@+-"
+    """
+    ranges = []
+    singles = []
+    s = allowed
+    i = 0
+    while i < len(s):
+        # детектим простой диапазон вида X-Y где X и Y — цифра/буква
+        if i + 2 < len(s) and s[i+1] == '-' and re.match(r'[A-Za-z0-9]', s[i]) and re.match(r'[A-Za-z0-9]', s[i+2]):
+            ranges.append((s[i], s[i+2]))
+            i += 3
+        else:
+            # одиночный символ (может быть спецсимвол)
+            singles.append(s[i])
+            i += 1
+
+    # Собираем класс символов и множество разрешённых символов
+    parts = []
+    allowed_set = set()
+
+    for a, b in ranges:
+        # диапазон в виде a-b оставляем как есть в классе
+        parts.append(f"{a}-{b}")
+        for code in range(ord(a), ord(b) + 1):
+            allowed_set.add(chr(code))
+
+    for ch in singles:
+        parts.append(re.escape(ch))
+        allowed_set.add(ch)
+
+    charclass = "".join(parts)
+    return charclass, allowed_set
+
+
+def validate_chars_mode(text: str, allowed: str) -> Tuple[bool, Optional[str]]:
+    """
+    Проверка текста в режиме 'chars'.
+    :param text: входная строка
+    :param allowed: строка описания допустимых символов, например "a-zA-Z0-9_.@+-"
+    :return: (True, None) если OK, иначе (False, first_invalid_char)
+    """
+    if text == "":
+        return True, None
+
+    charclass, allowed_set = _parse_allowed_string(allowed)
+    regex = fr'^[{charclass}]*$'   # разрешаем пустую строку; можно заменить * на + если нельзя пустую
+    if re.fullmatch(regex, text):
+        return True, None
+
+    # обнаружим первый недопустимый символ (быстро через множество)
+    for ch in text:
+        if ch not in allowed_set:
+            return False, ch
+
+    # запасной вариант (маловероятно)
+    return False, text[0]
+
 
 def make_input_data(file_name):
     # Словарь для хранения данных
@@ -388,6 +471,7 @@ def entries_rules(fame, **kwargs):
         email_url = email
         patternu = pattern
     # messagebox.showerror("Шаблон", pattern, parent=_root)
+    # QMessageBox.information(None, "Шаблон", pattern)
     return pattern
 
 
@@ -576,26 +660,15 @@ class DynamicDialog(QDialog):
         # если chars == ".", разрешаем всё
         if chars == ".":
             return True
-        # if email_login:
-        #     patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
-        if not bool(re.fullmatch(pattern, text)):
-            if len(combo.currentText()) > len(self.previous_text):
-                big_text = combo.currentText()
-                small_text = self.previous_text
-            else:
-                big_text = self.previous_text
-                small_text = combo.currentText()
-            # if big_text != small_text:
-            diff_simv = diff_char(big_text, small_text)
-            QMessageBox.warning(self, "Помилка вводу", f"Неприпустимий символ: '{diff_simv}'")
-            combo.blockSignals(True)  # блокування сигналів, щоб не зациклитися
+        ok, bad = validate_chars_mode(text, chars)
+        if not ok:
+            QMessageBox.warning(self, "Помилка вводу", f"Недопустимий символ: '{bad}'")
+            combo.blockSignals(True)
             combo.setCurrentText(self.previous_text)
             combo.blockSignals(False)
-            return False
         else:
-            # сохраняем новое значение как предыдущее
+            # всё ок — обновляем previous_text
             self.previous_text = text
-            return  True
 
     def on_gb_focus_left(self):
         gb = self.sender()
@@ -610,8 +683,8 @@ class DynamicDialog(QDialog):
             self.previous_text = gb.cmb.currentText()
             return True
         # Перевірка на відповідність pattern
-        if not bool(re.fullmatch(pattern, gb.cmb.currentText())):
-            QMessageBox.warning(self, "Помилка вводу", "Видаліть неприпустимі символи")
+        if not bool(re.fullmatch(pattern, gb.cmb.currentText())) and gb.cmb.currentText() != "":
+            QMessageBox.warning(self, "Помилка вводу", "Видаліть неприпустимі символи або додайте необхідні")
             return False
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
