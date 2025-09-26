@@ -8,6 +8,9 @@ from PySide6.QtWidgets import (
 import re
 from pyside_dialog import MyDialog
 from functools import partial
+# from PyQt6.QtCore import pyqtSignal
+from mycombo import QComboBox, WhichBinding
+import sys
 
 rule_invalid = {}
 login_invalid = []
@@ -19,6 +22,8 @@ upregcyr = "А-Я"
 lowregcyr = "а-я"
 upreglat = "A-Z"
 lowreglat = "a-z"
+pattern: str = ""
+chars: str = ""
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -55,29 +60,6 @@ class ConfigInputDialog(QDialog):
 
         self.update_entries()
 
-    # def update_entries(self):
-    #     for i in reversed(range(self.entries_layout.count())):
-    #         widget = self.entries_layout.itemAt(i).widget()
-    #         if widget:
-    #             widget.deleteLater()
-    #
-    #     self.line_edits = []
-    #     for i in range(self.spin.value()):
-    #         container = QWidget()
-    #         h_layout = QHBoxLayout(container)
-    #         h_layout.addWidget(QLabel(f'Поле {i + 1}        Title:'))
-    #         title_edit = QLineEdit(f"Поле {i+1}")
-    #         h_layout.addWidget(title_edit)
-    #
-    #         h_layout.addWidget(QLabel("Name:"))
-    #         name_edit = QLineEdit(f"textbox{i+1}")
-    #         h_layout.addWidget(name_edit)
-    #
-    #         self.entries_layout.addWidget(container)
-    #         self.line_edits.append((title_edit, name_edit))
-    #
-    # def get_config(self):
-    #     return [{"title": t.text(), "name": n.text()} for t, n in self.line_edits]
     def update_entries(self):
         # очистка старых виджетов
         for i in reversed(range(self.entries_layout.count())):
@@ -290,6 +272,125 @@ def diff_char(bigger: str, smaller: str) -> str:
     # если отличий не нашли, то "лишний" символ — в конце
     return bigger[len(smaller)]
 
+# создание шаблона ввода в комбобокс
+def entries_rules(fame, **kwargs):
+    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
+    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l, no_absent
+
+    entries = kwargs["entries"]
+    # инициализация переменных
+    local = ""
+    latin = "A-Za-z"
+    Cyrillic = "А-Яа-я"
+    both_reg = False
+    digits_str = ""
+    spec_escaped = ""
+    is_probel = False
+    len_min = 0
+    len_max = 0
+    email = False
+    url = False
+
+    for key, value in entries.items():
+        if key == 'register':
+            if value == 'великий':
+                latin = upreglat
+                Cyrillic = upregcyr
+            elif value == "малий":
+                latin = lowreglat
+                Cyrillic = lowregcyr
+            elif value == "обидва":
+                both_reg = True
+        elif key == 'localiz':
+            if value == 'латиниця':
+                local = latin
+            elif value == 'кирилиця':
+                local = Cyrillic
+        elif key == "cyfry" and value:
+            digits_str = "0-9"
+        elif key == "spec" and value:
+            if isinstance(value, str):
+                spec_escaped = "".join(re.escape(ch) for ch in value)
+            else:
+                spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
+                spec_escaped = "".join(re.escape(ch) for ch in spec)
+        elif key == "probel":
+            is_probel = value
+        elif key == "len_min":
+            len_min = value
+        elif key == "len_max":
+            len_max = value
+        elif key == "email_in":
+            # email = r"(A-Za-z0-9@._-)"
+            email = value
+        elif key == "url_in":
+            # url = r"(http?://[^\s/$.?#].[^\s])"
+            url = value
+        elif key == "no_absent":
+            no_absent = value
+
+    if email:
+        chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
+    elif url:
+        chars = "http?://[^\s/$.?#].[^\s"
+    elif no_absent:
+        chars = "."
+    else:
+        # собираем разрешённые символы
+        parts = []
+        if local:
+            parts.append(local)
+        if digits_str:
+            parts.append(digits_str)
+        if not is_probel:
+            parts.append('\s')
+            # chars = "^["+f"{chars}"+"]+$*"
+        if spec_escaped:
+            parts.append(spec_escaped)
+        chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
+    pattern = "^["+f"{chars}"+"]+$"
+    if fame == "login":
+        lenminlog = len_min
+        lenmaxlog = len_max
+        patternlog = pattern
+        both_reg_log = both_reg
+        digits_str_log = digits_str
+        spec_escaped_log = spec_escaped
+        email_login = email
+        url_login = url
+        local_log = local
+    if fame == "login_l":
+        lenminlog_l = len_min
+        lenmaxlog_l = len_max
+        patternlog_l = pattern
+        both_reg_log_l = both_reg
+        digits_str_log_l = digits_str
+        spec_escaped_log_l = spec_escaped
+        email_login_l = email
+        url_login_l = url
+        local_log_l = local
+    if fame == "password":
+        lenminpas = len_min
+        lenmaxpas = len_max
+        patternpas = pattern
+        both_reg_p = both_reg
+        digits_str_p = digits_str
+        spec_escaped_p = spec_escaped
+        email_p = email
+        url_p = url
+        local_p = local
+    if fame == "email":
+        patterne = pattern
+        url_e = url
+    if fame == "url":
+        # patternu = f"{chars}"+"]+$"
+        email_url = email
+        patternu = pattern
+    # messagebox.showerror("Шаблон", pattern, parent=_root)
+    return pattern
+
+
+
 # --- проверки при вводе ---
 def allow_login_value(new_value: str) -> bool:
     global chars, patternlog
@@ -393,6 +494,8 @@ class DynamicDialog(QDialog):
             cmb = QComboBox(gb_widget)
             cmb.setEditable(False)
             chkb = QCheckBox("Обов'язкове", gb_widget)
+            # привязываем чекбокс к комбобоксу
+            cmb.checkbox = chkb
             if name == 'url':
                 cmb.addItems(input_url)
                 cmb.setCurrentText(input_url[0])
@@ -429,6 +532,8 @@ class DynamicDialog(QDialog):
             self.previous_text = cmb.currentText()
             # событие изменения текста
             cmb.editTextChanged.connect(self.on_text_changed)
+            # событие потери фокуса комбобоксом
+            cmb.focusOut.connect(self.on_focusOut)
 
         # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()
@@ -473,7 +578,12 @@ class DynamicDialog(QDialog):
             self.previous_text = text
             return  True
 
-
+    def on_focusOut(self) -> None:
+        combo = self.sender()
+        if combo.checkbox.isChecked():
+            pass
+        else:
+            pass
 
 
     def on_required_toggled(self, name, state):
@@ -483,7 +593,7 @@ class DynamicDialog(QDialog):
         # if wrapper:
         #     wrapper.cmb.setEnabled(state)
 
-    # def on_rules_clicked(self, field_name):
+    # нажатие на кнопку Правила
     def on_rules_clicked(self, combo, field_name):
         # combo.setEditable(True)
         for name, wrapper in self.gb.items():
