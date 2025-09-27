@@ -25,10 +25,19 @@ class MyDialog(QDialog, Ui_Dialog):
         self.chkbEmail.toggled.connect(self.on_CHKE_toggled)
         self.chkbURL.toggled.connect(self.on_CHKU_toggled)
         self.chkbNo_absent.setChecked(True)
+        self.chkbNo_absent.toggled.connect(self.on_CHKN_toggled)
+        self.chkbCyfry.toggled.connect(self.on_CHKC_toggled)
+        self.chkbProbel.toggled.connect(self.on_CHKP_toggled)
+        self.cmbLocaliz.activated.connect(self.on_item_activated_localiz)
+        self.cmbLocaliz_2.activated.connect(self.on_item_activated_localiz_2)
+        self.spinBoxLenMin.editingFinished.connect(self.on_editing_finished_min)
+        self.spinBoxLenMax.editingFinished.connect(self.on_editing_finished_max)
+
 
 
     def on_spec_toggled(self, checked: bool):
         """Увімкнення/вимкнення поля tbSpec"""
+        self.chkbNo_absent.setChecked(False)
         self.tbSpec.setEnabled(checked)
         if self.tbSpec.isEnabled() == False:
             self.tbSpec.setText("")
@@ -36,17 +45,44 @@ class MyDialog(QDialog, Ui_Dialog):
     def on_CHKE_toggled(self, checked: bool):
         if self.chkbEmail.isChecked():
             self.chkbURL.setChecked(False)
-        else:
-            self.chkbURL.setChecked(True)
+            self.chkbNo_absent.setChecked(False)
+        # else:
+        #     self.chkbURL.setChecked(True)
 
     def on_CHKU_toggled(self, checked: bool):
         if self.chkbURL.isChecked():
             self.chkbEmail.setChecked(False)
-        else:
-            self.chkbEmail.setChecked(True)
+            self.chkbNo_absent.setChecked(False)
+        # else:
+        #     self.chkbEmail.setChecked(True)
+
+    def on_CHKN_toggled(self, checked: bool):
+        if self.chkbNo_absent.isChecked():
+            self.chkbEmail.setChecked(False)
+            self.chkbURL.setChecked(False)
+
+    def on_CHKC_toggled(self, checked: bool):
+        self.chkbNo_absent.setChecked(False)
+
+    def on_CHKP_toggled(self, checked: bool):
+        self.chkbNo_absent.setChecked(False)
+
+    def on_item_activated_localiz(self, index):
+        self.chkbNo_absent.setChecked(False)
+
+    def on_item_activated_localiz_2(self, index):
+        self.chkbNo_absent.setChecked(False)
+
+    def on_editing_finished_min(self):
+        self.chkbNo_absent.setChecked(False)
+
+    def on_editing_finished_max(self):
+        self.chkbNo_absent.setChecked(False)
+
 
     def on_ok(self):
         """Читаємо дані з форми"""
+        self.chkbNo_absent.setChecked(False)
         # Комбобокс (розкладка)
         localiz = self.cmbLocaliz.currentText()
 
