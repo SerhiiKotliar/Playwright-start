@@ -174,8 +174,12 @@ def entries_rules(fame, **kwargs):
 
     if email:
         chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
+        # chars = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
+
     elif url:
         chars = "http?://[^\s/$.?#].[^\s"
+        # chars = r"http?://[^\s/$.?#].[^\s]*"
+
     elif no_absent:
         chars = "."
     else:
@@ -186,7 +190,7 @@ def entries_rules(fame, **kwargs):
         if digits_str:
             parts.append(digits_str)
         if not is_probel:
-            parts.append('\s')
+            parts.append('\\s')
             # chars = "^["+f"{chars}"+"]+$*"
         if spec_escaped:
             parts.append(spec_escaped)
@@ -230,8 +234,8 @@ def entries_rules(fame, **kwargs):
     #     email_url = email
     #     patternu = pattern
     # # messagebox.showerror("Шаблон", pattern, parent=_root)
-    QMessageBox.information(None, "Символи", chars)
-    QMessageBox.information(None, "Шаблон", pattern)
+    # QMessageBox.information(None, "Символи", chars)
+    # QMessageBox.information(None, "Шаблон", pattern)
     return pattern
 
 from typing import Tuple, Set, Optional
@@ -422,9 +426,15 @@ class DynamicDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Введення даних у тест    "+name_of_test)
         self.resize(640, 140)
+        self.result = {}
+        self.result_invalid = {}
 
         main_layout = QVBoxLayout(self)
-
+        # ---- предупреждающий текст ----
+        self.warning_label = QLabel("⚠ По замовчуванню для кожного поля тільки одне правило: БУТИ НЕ ПУСТИМ!")
+        self.warning_label.setStyleSheet("color: red; font-weight: bold;")
+        self.warning_label.setAlignment(Qt.AlignCenter)
+        main_layout.addWidget(self.warning_label)
         # ---- Layout для GroupBox ----
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
@@ -629,9 +639,9 @@ class DynamicDialog(QDialog):
             email_inv.clear()
             condition_email = True
 
-        app = QApplication.instance()
-        if not app:
-            app = QApplication([])
+        # app = QApplication.instance()
+        # if not app:
+        #     app = QApplication([])
         dlg = MyDialog()
 
         dlg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
@@ -645,48 +655,40 @@ class DynamicDialog(QDialog):
         txt_data = ""
         for name, wrapper in self.gb.items():
             # if wrapper.cmb is combo:
-            txt_data = wrapper.cmb.currentText().strip()
+            if wrapper.chkb.isChecked():
+                txt_data += wrapper.cmb.currentText().strip()
+                if wrapper.cmb.currentText() != "":
+                    self.result[name] = wrapper.cmb.currentText()
         if txt_data == "":
-            QMessageBox.warning(self, "Дані форми", "Форма пуста. Дані не введені")
-            # self.accept()
-            # self.destroy()
+            QMessageBox.warning(self, "Обов'язкові дані", "Обов'язкові дані не введені.")
             self.reject()
-        else:
-            # sys.exit(app.exec())
-                # wrapper.cmb.setEditable(True)  # текущий делаем редактируемым
-        # data = {}
-        # for name, wrapper in self.gb.items():
-        #     data[name] = {
-        #         "value": wrapper.cmb.currentText(),
-        #         "required": wrapper.chkb.isChecked(),
-        #         "rules": self.rules.get(name, "")
-        #     }
-        # print("Введённые данные:", data)
-        # # если нужно вернуть данные наружу, можно сохранить в self.result_data
-        # self.result_data = data
-            self.accept()
-            self.result = {"login": login_val, "login_l": login_l_val, "password": pw, "url": url_val, "email": email_val}
-            self.result_invalid = rule_invalid
-            self.destroy()
+        self.result
+        self.result_invalid = rule_invalid
+        self.accept()
 
-
-# ---- Основной запуск ----
-if __name__ == "__main__":
-    # import sys
-
+def get_user_input():
+    global number_of_test
     app = QApplication(sys.argv)
-
     input_dlg = ConfigInputDialog()
     if input_dlg.exec() == QDialog.Accepted:
         config = input_dlg.get_config()
         dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
                           input_login_l=input_data['login_l'], input_password=input_data['password'],
                           input_email=input_data['email'], name_of_test="test_first_name_field_visible")
-        dlg.show()
+        # dlg.show()
 
         # пример изменения размеров элементов
         # dlg.gb["group1"].set_geometry(cmb_geom=(10, 10, 250, 30),
         #                               chkb_geom=(270, 10, 150, 30),
         #                               btn_geom=(430, 10, 120, 30))
 
-    sys.exit(app.exec())
+    # return dlg.result#, dlg.result_invalid
+    # sys.exit(app.exec())
+    if dlg.exec() == QDialog.Accepted:
+        return dlg.result, dlg.result_invalid
+    else:
+        return None
+
+# ---- Основной запуск ----
+if __name__ == "__main__":
+    get_user_input()
