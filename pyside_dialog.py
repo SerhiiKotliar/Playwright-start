@@ -38,6 +38,8 @@ class MyDialog(QDialog, Ui_Dialog):
     def on_spec_toggled(self, checked: bool):
         """Увімкнення/вимкнення поля tbSpec"""
         self.chkbNo_absent.setChecked(False)
+        self.chkbURL.setChecked(False)
+        self.chkbEmail.setChecked(False)
         self.tbSpec.setEnabled(checked)
         if self.tbSpec.isEnabled() == False:
             self.tbSpec.setText("")
@@ -63,21 +65,33 @@ class MyDialog(QDialog, Ui_Dialog):
 
     def on_CHKC_toggled(self, checked: bool):
         self.chkbNo_absent.setChecked(False)
+        self.chkbURL.setChecked(False)
+        self.chkbEmail.setChecked(False)
 
     def on_CHKP_toggled(self, checked: bool):
         self.chkbNo_absent.setChecked(False)
+        self.chkbURL.setChecked(False)
+        self.chkbEmail.setChecked(False)
 
     def on_item_activated_localiz(self, index):
         self.chkbNo_absent.setChecked(False)
+        self.chkbURL.setChecked(False)
+        self.chkbEmail.setChecked(False)
 
     def on_item_activated_localiz_2(self, index):
         self.chkbNo_absent.setChecked(False)
+        self.chkbURL.setChecked(False)
+        self.chkbEmail.setChecked(False)
 
     def on_editing_finished_min(self):
         self.chkbNo_absent.setChecked(False)
+        self.chkbURL.setChecked(False)
+        self.chkbEmail.setChecked(False)
 
     def on_editing_finished_max(self):
         self.chkbNo_absent.setChecked(False)
+        self.chkbURL.setChecked(False)
+        self.chkbEmail.setChecked(False)
 
 
     def on_ok(self):
