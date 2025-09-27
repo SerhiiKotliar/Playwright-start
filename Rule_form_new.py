@@ -571,16 +571,7 @@ def get_user_input():
         config = input_dlg.get_config()
         dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
                           input_login_l=input_data['login_l'], input_password=input_data['password'],
-                          input_email=input_data['email'], name_of_test="test_first_name_field_visible")
-        # dlg.show()
-
-        # пример изменения размеров элементов
-        # dlg.gb["group1"].set_geometry(cmb_geom=(10, 10, 250, 30),
-        #                               chkb_geom=(270, 10, 150, 30),
-        #                               btn_geom=(430, 10, 120, 30))
-
-    # return dlg.result#, dlg.result_invalid
-    # sys.exit(app.exec())
+                          input_email=input_data['email'], name_of_test="")
     if dlg.exec() == QDialog.Accepted:
         return dlg.result, dlg.result_invalid
     else:
