@@ -96,7 +96,6 @@ class MyDialog(QDialog, Ui_Dialog):
 
     def on_ok(self):
         """Читаємо дані з форми"""
-        self.chkbNo_absent.setChecked(False)
         # Комбобокс (розкладка)
         localiz = self.cmbLocaliz.currentText()
 
