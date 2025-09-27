@@ -23,8 +23,9 @@ upregcyr = "А-Я"
 lowregcyr = "а-я"
 upreglat = "A-Z"
 lowreglat = "a-z"
-pattern: str = ""
-chars: str = ""
+# pattern: str = ""
+chars: str = "."
+pattern = "^["+f"{chars}"+"]+$"
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -191,44 +192,46 @@ def entries_rules(fame, **kwargs):
             parts.append(spec_escaped)
         chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
     pattern = "^["+f"{chars}"+"]+$"
-    if fame == "login":
-        lenminlog = len_min
-        lenmaxlog = len_max
-        patternlog = pattern
-        both_reg_log = both_reg
-        digits_str_log = digits_str
-        spec_escaped_log = spec_escaped
-        email_login = email
-        url_login = url
-        local_log = local
-    if fame == "login_l":
-        lenminlog_l = len_min
-        lenmaxlog_l = len_max
-        patternlog_l = pattern
-        both_reg_log_l = both_reg
-        digits_str_log_l = digits_str
-        spec_escaped_log_l = spec_escaped
-        email_login_l = email
-        url_login_l = url
-        local_log_l = local
-    if fame == "password":
-        lenminpas = len_min
-        lenmaxpas = len_max
-        patternpas = pattern
-        both_reg_p = both_reg
-        digits_str_p = digits_str
-        spec_escaped_p = spec_escaped
-        email_p = email
-        url_p = url
-        local_p = local
-    if fame == "email":
-        patterne = pattern
-        url_e = url
-    if fame == "url":
-        # patternu = f"{chars}"+"]+$"
-        email_url = email
-        patternu = pattern
-    # messagebox.showerror("Шаблон", pattern, parent=_root)
+    # if fame == "login":
+    #     lenminlog = len_min
+    #     lenmaxlog = len_max
+    #     patternlog = pattern
+    #     both_reg_log = both_reg
+    #     digits_str_log = digits_str
+    #     spec_escaped_log = spec_escaped
+    #     email_login = email
+    #     url_login = url
+    #     local_log = local
+    # if fame == "login_l":
+    #     lenminlog_l = len_min
+    #     lenmaxlog_l = len_max
+    #     patternlog_l = pattern
+    #     both_reg_log_l = both_reg
+    #     digits_str_log_l = digits_str
+    #     spec_escaped_log_l = spec_escaped
+    #     email_login_l = email
+    #     url_login_l = url
+    #     local_log_l = local
+    # if fame == "password":
+    #     lenminpas = len_min
+    #     lenmaxpas = len_max
+    #     patternpas = pattern
+    #     both_reg_p = both_reg
+    #     digits_str_p = digits_str
+    #     spec_escaped_p = spec_escaped
+    #     email_p = email
+    #     url_p = url
+    #     local_p = local
+    # if fame == "email":
+    #     patterne = pattern
+    #     url_e = url
+    # if fame == "url":
+    #     # patternu = f"{chars}"+"]+$"
+    #     email_url = email
+    #     patternu = pattern
+    # # messagebox.showerror("Шаблон", pattern, parent=_root)
+    QMessageBox.information(None, "Символи", chars)
+    QMessageBox.information(None, "Шаблон", pattern)
     return pattern
 
 from typing import Tuple, Set, Optional
@@ -336,180 +339,67 @@ def diff_char(bigger: str, smaller: str) -> str:
     # если отличий не нашли, то "лишний" символ — в конце
     return bigger[len(smaller)]
 
-# создание шаблона ввода в комбобокс
-def entries_rules(fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
-    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l, no_absent
-
-    entries = kwargs["entries"]
-    # инициализация переменных
-    local = ""
-    latin = "A-Za-z"
-    Cyrillic = "А-Яа-я"
-    both_reg = False
-    digits_str = ""
-    spec_escaped = ""
-    is_probel = False
-    len_min = 0
-    len_max = 0
-    email = False
-    url = False
-
-    for key, value in entries.items():
-        if key == 'register':
-            if value == 'великий':
-                latin = upreglat
-                Cyrillic = upregcyr
-            elif value == "малий":
-                latin = lowreglat
-                Cyrillic = lowregcyr
-            elif value == "обидва":
-                both_reg = True
-        elif key == 'localiz':
-            if value == 'латиниця':
-                local = latin
-            elif value == 'кирилиця':
-                local = Cyrillic
-        elif key == "cyfry" and value:
-            digits_str = "0-9"
-        elif key == "spec" and value:
-            if isinstance(value, str):
-                spec_escaped = "".join(re.escape(ch) for ch in value)
-            else:
-                spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
-                spec_escaped = "".join(re.escape(ch) for ch in spec)
-        elif key == "probel":
-            is_probel = value
-        elif key == "len_min":
-            len_min = value
-        elif key == "len_max":
-            len_max = value
-        elif key == "email_in":
-            # email = r"(A-Za-z0-9@._-)"
-            email = value
-        elif key == "url_in":
-            # url = r"(http?://[^\s/$.?#].[^\s])"
-            url = value
-        elif key == "no_absent":
-            no_absent = value
-
-    if email:
-        chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
-    elif url:
-        chars = "http?://[^\s/$.?#].[^\s"
-    elif no_absent:
-        chars = "."
-    else:
-        # собираем разрешённые символы
-        parts = []
-        if local:
-            parts.append(local)
-        if digits_str:
-            parts.append(digits_str)
-        if not is_probel:
-            parts.append('\s')
-            # chars = "^["+f"{chars}"+"]+$*"
-        if spec_escaped:
-            parts.append(spec_escaped)
-        chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
-    pattern = "^["+f"{chars}"+"]+$"
-    if fame == "login":
-        lenminlog = len_min
-        lenmaxlog = len_max
-        patternlog = pattern
-        both_reg_log = both_reg
-        digits_str_log = digits_str
-        spec_escaped_log = spec_escaped
-        email_login = email
-        url_login = url
-        local_log = local
-    if fame == "login_l":
-        lenminlog_l = len_min
-        lenmaxlog_l = len_max
-        patternlog_l = pattern
-        both_reg_log_l = both_reg
-        digits_str_log_l = digits_str
-        spec_escaped_log_l = spec_escaped
-        email_login_l = email
-        url_login_l = url
-        local_log_l = local
-    if fame == "password":
-        lenminpas = len_min
-        lenmaxpas = len_max
-        patternpas = pattern
-        both_reg_p = both_reg
-        digits_str_p = digits_str
-        spec_escaped_p = spec_escaped
-        email_p = email
-        url_p = url
-        local_p = local
-    if fame == "email":
-        patterne = pattern
-        url_e = url
-    if fame == "url":
-        # patternu = f"{chars}"+"]+$"
-        email_url = email
-        patternu = pattern
-    # messagebox.showerror("Шаблон", pattern, parent=_root)
-    # QMessageBox.information(None, "Шаблон", pattern)
-    return pattern
-
-
-
 # --- проверки при вводе ---
-def allow_login_value(new_value: str) -> bool:
-    global chars, patternlog
-    if not new_value:
-        return True
-    # если chars == ".", разрешаем всё
-    if chars == ".":
-        return True
-    if email_login:
-        patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
-    return bool(re.fullmatch(patternlog, new_value))
+# def allow_login_value(new_value: str) -> bool:
+#     global chars, patternlog
+#     if not new_value:
+#         return True
+#     # если chars == ".", разрешаем всё
+#     if chars == ".":
+#         return True
+#     if email_login:
+#         patternlog = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9.-]+$"
+#     return bool(re.fullmatch(patternlog, new_value))
+#
+# def allow_login_l_value(new_value: str) -> bool:
+#     global chars, patternlog_l
+#     if not new_value:
+#         return True
+#     # если chars == ".", разрешаем всё
+#     if chars == ".":
+#         return True
+#     return bool(re.fullmatch(patternlog_l, new_value))
+#
+#
+# def allow_password_value(new_value: str) -> bool:
+#     global chars, patternpas
+#     if not new_value:
+#         return True
+#     # если chars == ".", разрешаем всё
+#     if chars == ".":
+#         return True
+#     return bool(re.fullmatch(patternpas, new_value))
+#
+#
+# def allow_url_value(new_value: str) -> bool:
+#     global patternu
+#     if not new_value:
+#         return True
+#     if chars == ".":
+#         return True
+#     return bool(re.fullmatch(patternu, new_value))
+# # --- проверки Email при вводе ---
+# def allow_email_value(new_value: str) -> bool:
+#     global patterne
+#     if not new_value:
+#         return True
+#     if chars == ".":
+#         return True
+#     return bool(re.fullmatch(patterne, new_value))
 
-def allow_login_l_value(new_value: str) -> bool:
-    global chars, patternlog_l
-    if not new_value:
-        return True
-    # если chars == ".", разрешаем всё
-    if chars == ".":
-        return True
-    return bool(re.fullmatch(patternlog_l, new_value))
-
-
-def allow_password_value(new_value: str) -> bool:
-    global chars, patternpas
-    if not new_value:
-        return True
-    # если chars == ".", разрешаем всё
-    if chars == ".":
-        return True
-    return bool(re.fullmatch(patternpas, new_value))
-
-
-def allow_url_value(new_value: str) -> bool:
-    global patternu
-    if not new_value:
-        return True
-    if chars == ".":
-        return True
-    return bool(re.fullmatch(patternu, new_value))
-# --- проверки Email при вводе ---
-def allow_email_value(new_value: str) -> bool:
-    global patterne
-    if not new_value:
-        return True
-    if chars == ".":
-        return True
-    return bool(re.fullmatch(patterne, new_value))
-
+# FIELDS_CONFIG = [
+#         {"name": "url", "default": "", "allow_func": allow_url_value},
+#         {"name": "login", "default": "", "allow_func": allow_login_value},
+#         {"name": "login_l", "default": "", "allow_func": allow_login_l_value},
+#         {"name": "password", "default": "", "allow_func": allow_password_value},
+#         {"name": "email", "default": "", "allow_func": allow_email_value},
+#     ]
 FIELDS_CONFIG = [
-        {"name": "url", "default": "", "allow_func": allow_url_value},
-        {"name": "login", "default": "", "allow_func": allow_login_value},
-        {"name": "login_l", "default": "", "allow_func": allow_login_l_value},
-        {"name": "password", "default": "", "allow_func": allow_password_value},
-        {"name": "email", "default": "", "allow_func": allow_email_value},
+        {"name": "url", "default": "", "allow_func": None},
+        {"name": "login", "default": "", "allow_func": None},
+        {"name": "login_l", "default": "", "allow_func": None},
+        {"name": "password", "default": "", "allow_func": None},
+        {"name": "email", "default": "", "allow_func": None},
     ]
 
 for el in FIELDS_CONFIG:
@@ -646,9 +536,11 @@ class DynamicDialog(QDialog):
             combo.blockSignals(True)
             combo.setCurrentText(self.previous_text)
             combo.blockSignals(False)
+            return False
         else:
             # всё ок — обновляем previous_text
             self.previous_text = text
+            return True
 
     def on_gb_focus_left(self):
         gb = self.sender()
@@ -680,12 +572,10 @@ class DynamicDialog(QDialog):
 
     # нажатие на кнопку Правила
     def on_rules_clicked(self, combo, field_name):
-        # combo.setEditable(True)
         for name, wrapper in self.gb.items():
             if wrapper.cmb is combo:
                 wrapper.cmb.setEditable(True)  # текущий делаем редактируемым
                 wrapper.gb.setStyleSheet("background-color: rgb(255, 255, 200);")  # подсветка
-                # print(f"ComboBox в {field_name} теперь редактируемый")
             else:
                 if wrapper.cmb.isEditable():
                     # сохранить введённый текст
@@ -752,7 +642,19 @@ class DynamicDialog(QDialog):
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
-        data = {}
+        txt_data = ""
+        for name, wrapper in self.gb.items():
+            # if wrapper.cmb is combo:
+            txt_data = wrapper.cmb.currentText().strip()
+        if txt_data == "":
+            QMessageBox.warning(self, "Дані форми", "Форма пуста. Дані не введені")
+            # self.accept()
+            # self.destroy()
+            self.reject()
+        else:
+            # sys.exit(app.exec())
+                # wrapper.cmb.setEditable(True)  # текущий делаем редактируемым
+        # data = {}
         # for name, wrapper in self.gb.items():
         #     data[name] = {
         #         "value": wrapper.cmb.currentText(),
@@ -761,13 +663,16 @@ class DynamicDialog(QDialog):
         #     }
         # print("Введённые данные:", data)
         # # если нужно вернуть данные наружу, можно сохранить в self.result_data
-        self.result_data = data
-        self.accept()
+        # self.result_data = data
+            self.accept()
+            self.result = {"login": login_val, "login_l": login_l_val, "password": pw, "url": url_val, "email": email_val}
+            self.result_invalid = rule_invalid
+            self.destroy()
 
 
 # ---- Основной запуск ----
 if __name__ == "__main__":
-    import sys
+    # import sys
 
     app = QApplication(sys.argv)
 

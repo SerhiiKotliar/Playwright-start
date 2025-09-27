@@ -24,6 +24,7 @@ class MyDialog(QDialog, Ui_Dialog):
         self.chkbSpecS.toggled.connect(self.on_spec_toggled)
         self.chkbEmail.toggled.connect(self.on_CHKE_toggled)
         self.chkbURL.toggled.connect(self.on_CHKU_toggled)
+        self.chkbNo_absent.setChecked(True)
 
 
     def on_spec_toggled(self, checked: bool):
