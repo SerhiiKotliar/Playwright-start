@@ -25,6 +25,8 @@ upreglat = "A-Z"
 lowreglat = "a-z"
 chars: str = "."
 pattern = "^["+f"{chars}"+"]+$"
+len_min = 0
+len_max = 0
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -115,7 +117,7 @@ class GroupBoxWrapper:
         if btn_geom:
             self.btn.setGeometry(*btn_geom)
 ###############################################################################################################
-def entries_rules(fame, **kwargs):
+def entries_rules(log, required, fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
     email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l, no_absent
 
@@ -189,6 +191,54 @@ def entries_rules(fame, **kwargs):
     pattern = "^["+f"{chars}"+"]+$"
     # QMessageBox.information(None, "Символи", chars)
     # QMessageBox.information(None, "Шаблон", pattern)
+    rule_invalid[fame] = []
+    if not log and required:
+        rule_invalid[fame].append("absent")
+        # return f"Помилка, Поле {fame} не може бути пустим."
+    if url:
+        rule_invalid[fame].append("no_url")
+        # return "Помилка, Логін не може форматуватись як URL адреса."
+    if len(log) < len_min or len(log) > len_max:
+        rule_invalid[fame].append(f"len {len_min} {len_max}")
+        # return f"Логін має бути від {lenminlog} до {lenmaxlog} символів включно"
+    if email:
+        rule_invalid[fame].append("no_email")
+        # return None
+    if both_reg:
+        rule_invalid[fame].append("no_lower")
+        rule_invalid[fame].append("no_upper")
+        # if not any(c.islower() for c in log):
+        #     # return "Логін має містити принаймні одну маленьку літеру."
+        # if not any(c.isupper() for c in log):
+            # return "Логін має містити принаймні одну велику літеру."
+    if digits_str:
+        rule_invalid[fame].append("no_digit")
+        # if not any(c.isdigit() for c in log):
+            # return "Логін має містити принаймні одну цифру."
+    if spec_escaped:
+        rule_invalid[fame].append("no_spec")
+        # if not any(c in spec_escaped_log for c in log):
+            # return "Логін має містити принаймні один спеціальний символ."
+    if is_probel:
+        rule_invalid[fame].append("probel")
+    if local == latin:
+        rule_invalid[fame].append("Cyrillic")
+    elif local == upreglat:
+        rule_invalid[fame].append("lowreglat")
+    elif local == lowreglat:
+        rule_invalid[fame].append("upreglat")
+    elif local == Cyrillic:
+        rule_invalid[fame].append("latin")
+    elif local == upregcyr:
+        rule_invalid[fame].append("lowregcyr")
+    elif local == lowregcyr:
+        rule_invalid[fame].append("upregcyr")
+    if both_reg:
+        rule_invalid[fame].append("one_reg_log")
+    if no_absent:
+        rule_invalid[fame].append("absent")
+    # rule_invalid['login'] = login_invalid
+
     return pattern
 
 from typing import Tuple, Set, Optional
@@ -451,8 +501,9 @@ class DynamicDialog(QDialog):
 
     def on_gb_focus_left(self):
         gb = self.sender()
-        global chars, pattern
-        gr_t = gb.title()
+        global chars, pattern, len_min, len_max
+        gr_t_title = gb.title()
+        gr_t = gb.objectName()
         if gb.chkb.isChecked() and gb.cmb.currentText() == "":
             QMessageBox.warning(self, "Обов'язкове поле", f"Введіть дані у обов'язкове поле: '{gr_t}'")
             gb.cmb.setFocus(True)
@@ -463,8 +514,25 @@ class DynamicDialog(QDialog):
             return True
         # Перевірка на відповідність pattern
         if not bool(re.fullmatch(pattern, gb.cmb.currentText())) and gb.cmb.currentText() != "":
-            QMessageBox.warning(self, "Помилка вводу", "Видаліть неприпустимі символи або додайте необхідні")
+            QMessageBox.warning(self, f"Поле {gr_t_title}", "Видаліть неприпустимі символи або додайте необхідні")
+            # return False
+        ###############################################################
+            if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну маленьку літеру.")
+            if "no_upper" in rule_invalid[gr_t] and not any(c.isupper() for c in gb.cmb.currentText()):
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну велику літеру.")
+            if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну цифру.")
+            if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped_log for c in gb.cmb.currentText()):
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні один спеціальний символ.")
+            if "no_email" in rule_invalid[gr_t]:
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути формату email.")
+            if "no_url" in rule_invalid[gr_t]:
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути формату URL.")
+            if f"len {len_min} {len_max}" in rule_invalid[gr_t]:
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути від {len_min} до {len_max} символів включно.")
             return False
+        ###############################################################
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
         return True
@@ -480,6 +548,7 @@ class DynamicDialog(QDialog):
     # нажатие на кнопку Правила
     def on_rules_clicked(self, combo, field_name):
         for name, wrapper in self.gb.items():
+            chck_stat = wrapper.chkb.isChecked()
             if wrapper.cmb is combo:
                 wrapper.cmb.setEditable(True)  # текущий делаем редактируемым
                 wrapper.gb.setStyleSheet("background-color: rgb(255, 255, 200);")  # подсветка
@@ -498,43 +567,44 @@ class DynamicDialog(QDialog):
                     # теперь можно выключить редактирование
                 wrapper.cmb.setEditable(False)
                 wrapper.gb.setStyleSheet("background-color: rgb(85, 255, 127);")
+        rule_invalid[field_name] = []
         #########################################################################################################
-        global check_login, check_login_l, check_p, check_url, check_email, condition_login, condition_login_l, condition_p, condition_url, condition_email
-        if field_name == "login":
-            condition_login = False
-        if field_name == "login_l":
-            condition_login = False
-        if field_name == "password":
-            condition_p = False
-        if field_name == "url":
-            condition_url = False
-        if field_name == "email":
-            condition_email = False
-        if field_name == "login":
-            check_login = False
-            rule_invalid['login'] = []
-            login_inv.clear()
-            condition_login = True
-        if field_name == "login_l":
-            check_login_l = False
-            rule_invalid['login_l'] = []
-            login_l_inv.clear()
-            condition_login = True
-        if field_name == "password":
-            check_p = False
-            rule_invalid['password'] = []
-            pw_inv.clear()
-            condition_p = True
-        if field_name == "url":
-            check_url = False
-            rule_invalid['url'] = []
-            url_inv.clear()
-            condition_url = True
-        if field_name == "email":
-            check_email = False
-            rule_invalid['email'] = []
-            email_inv.clear()
-            condition_email = True
+        # global check_login, check_login_l, check_p, check_url, check_email, condition_login, condition_login_l, condition_p, condition_url, condition_email
+        # if field_name == "login":
+        #     condition_login = False
+        # if field_name == "login_l":
+        #     condition_login = False
+        # if field_name == "password":
+        #     condition_p = False
+        # if field_name == "url":
+        #     condition_url = False
+        # if field_name == "email":
+        #     condition_email = False
+        # if field_name == "login":
+        #     check_login = False
+        #     rule_invalid['login'] = []
+        #     login_inv.clear()
+        #     condition_login = True
+        # if field_name == "login_l":
+        #     check_login_l = False
+        #     rule_invalid['login_l'] = []
+        #     login_l_inv.clear()
+        #     condition_login = True
+        # if field_name == "password":
+        #     check_p = False
+        #     rule_invalid['password'] = []
+        #     pw_inv.clear()
+        #     condition_p = True
+        # if field_name == "url":
+        #     check_url = False
+        #     rule_invalid['url'] = []
+        #     url_inv.clear()
+        #     condition_url = True
+        # if field_name == "email":
+        #     check_email = False
+        #     rule_invalid['email'] = []
+        #     email_inv.clear()
+        #     condition_email = True
 
         # app = QApplication.instance()
         # if not app:
@@ -545,7 +615,7 @@ class DynamicDialog(QDialog):
         dlg.setModal(True)
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
-            entries_rules(field_name, entries=cur_rules)
+            entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules)
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
@@ -579,4 +649,5 @@ def get_user_input():
 
 # ---- Основной запуск ----
 if __name__ == "__main__":
-    get_user_input()
+    get1_2 = get_user_input()
+    print(str(get1_2[0])+"\n"+str(get1_2[1]))
