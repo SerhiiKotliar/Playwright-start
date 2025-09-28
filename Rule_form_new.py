@@ -27,6 +27,7 @@ chars: str = "."
 pattern = "^["+f"{chars}"+"]+$"
 len_min = 0
 len_max = 0
+spec_escaped = ""
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -117,6 +118,22 @@ class GroupBoxWrapper:
         if btn_geom:
             self.btn.setGeometry(*btn_geom)
 ###############################################################################################################
+
+def detect_script(text: str) -> str:
+    if re.search(r"[А-Яа-яЁёЇїІіЄєҐґ]", text):
+        return "Cyrillic"
+    elif re.search(r"[A-Za-z]", text):
+        return "Latin"
+    elif re.search(r"[a-z]", text):
+        return "lowreglat"
+    elif re.search(r"[A-Z]", text):
+        return "upreglat"
+    elif re.search(r"[а-яїієёґ]", text):
+        return "lowregcyr"
+    elif re.search(r"[А-ЯЁЇІЄҐ]", text):
+        return "upregcyr"
+    return "Unknown"
+
 def entries_rules(log, required, fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
     email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l, no_absent
@@ -126,6 +143,10 @@ def entries_rules(log, required, fame, **kwargs):
     local = ""
     latin = "A-Za-z"
     Cyrillic = "А-Яа-я"
+    upregcyr = "А-Я"
+    lowregcyr = "а-я"
+    upreglat = "A-Z"
+    lowreglat = "a-z"
     both_reg = False
     digits_str = ""
     spec_escaped = ""
@@ -184,11 +205,18 @@ def entries_rules(log, required, fame, **kwargs):
         if digits_str:
             parts.append(digits_str)
         if not is_probel:
-            parts.append('\s')
+            parts.append(' ')
         if spec_escaped:
             parts.append(spec_escaped)
         chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
-    pattern = "^["+f"{chars}"+"]+$"
+    if not is_probel:
+        # pattern = "^(?=.*\s)["+f"{chars}"+"]+$"
+        # pattern = "^(?=.*\s)["+f"{chars}]\{{len_min, len_max}\}$"
+        pattern = rf"^(?=.*\s)[{chars}]{{{len_min},{len_max}}}$"
+    else:
+        # pattern = "^["+f"{chars}"+"]+$"
+        # pattern = "^["+f"{chars}]\{{len_min}, {len_max}\}$"
+        pattern = rf"^[{chars}]{{{len_min},{len_max}}}$"
     # QMessageBox.information(None, "Символи", chars)
     # QMessageBox.information(None, "Шаблон", pattern)
     rule_invalid[fame] = []
@@ -219,8 +247,12 @@ def entries_rules(log, required, fame, **kwargs):
         rule_invalid[fame].append("no_spec")
         # if not any(c in spec_escaped_log for c in log):
             # return "Логін має містити принаймні один спеціальний символ."
+    # немає пробілів
     if is_probel:
         rule_invalid[fame].append("probel")
+    # є пробіли
+    else:
+        rule_invalid[fame].append("no_probel")
     if local == latin:
         rule_invalid[fame].append("Cyrillic")
     elif local == upreglat:
@@ -503,6 +535,7 @@ class DynamicDialog(QDialog):
         gb = self.sender()
         global chars, pattern, len_min, len_max
         gr_t_title = gb.title()
+        # QMessageBox.warning(self, f"Поле {gr_t_title}", f"MIN {len_min} MAX {len_max} LEN TXT {len(gb.cmb.currentText())}")
         gr_t = gb.objectName()
         if gb.chkb.isChecked() and gb.cmb.currentText() == "":
             QMessageBox.warning(self, "Обов'язкове поле", f"Введіть дані у обов'язкове поле: '{gr_t}'")
@@ -523,14 +556,34 @@ class DynamicDialog(QDialog):
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну велику літеру.")
             if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну цифру.")
-            if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped_log for c in gb.cmb.currentText()):
+            if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped for c in gb.cmb.currentText()):
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні один спеціальний символ.")
             if "no_email" in rule_invalid[gr_t]:
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути формату email.")
             if "no_url" in rule_invalid[gr_t]:
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути формату URL.")
-            if f"len {len_min} {len_max}" in rule_invalid[gr_t]:
-                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути від {len_min} до {len_max} символів включно.")
+            if f"len {len_min} {len_max}" in rule_invalid[gr_t] and (len_max < len(gb.cmb.currentText()) or len(gb.cmb.currentText()) < len_min):
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має мати від {len_min} до {len_max} символів включно.")
+            if "probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') > -1:
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} не має бути пробілів.")
+            if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з пробілами.")
+            if "one_reg_log" in rule_invalid[gr_t]:
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з текстом у двох регістрах.")
+            loc_text = detect_script(gb.cmb.currentText())
+            if "Latin" in rule_invalid[gr_t] and loc_text == "Latin":
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з кирилицею.")
+            if "Cyrillic" in rule_invalid[gr_t] and loc_text == "Cyrillic":
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з латиницею.")
+            if "upreglat" in rule_invalid[gr_t] and loc_text != "loureglat":
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з малими латинськими літерами.")
+            if "lowreglat" in rule_invalid[gr_t] and loc_text != "upreglat":
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з великими латинськими літерами.")
+            if "upregcyr" in rule_invalid[gr_t] and loc_text != "lowregcyr":
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з малими кириличними літерами.")
+            if "lowregcyr" in rule_invalid[gr_t] and loc_text != "upregcyr":
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з великими кириличними літерами.")
+            gb.cmb.setFocus(True)
             return False
         ###############################################################
         # Якщо все добре, зберігаємо нове значення
@@ -615,7 +668,8 @@ class DynamicDialog(QDialog):
         dlg.setModal(True)
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
-            entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules)
+            if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
+                self.reject()
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
