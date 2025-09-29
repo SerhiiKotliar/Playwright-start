@@ -45,6 +45,7 @@ class MyGroupBox(_BaseGroupBox):
     Сигнал испускается, когда фокус уходит за пределы ВСЕХ дочерних виджетов группы.
     """
     focusLeft = Signal()  # важно: именно Signal()
+    focusEntered = Signal()
 
     def __init__(self, title: str = "", parent: Optional[QWidget] = None):
         super().__init__(title, parent)
@@ -87,22 +88,48 @@ class MyGroupBox(_BaseGroupBox):
                 self.watch_widget(obj)
         return super().childEvent(event)
 
-    # главный фильтр — ловим FocusOut у дочерних виджетов
+    # # главный фильтр — ловим FocusOut у дочерних виджетов
+    # def eventFilter(self, obj, event):
+    #     if event.type() == QEvent.FocusOut:
+    #         # новое виджет с фокусом в окне
+    #         try:
+    #             new_focus = self.window().focusWidget()
+    #         except Exception:
+    #             new_focus = None
+    #         # если новый фокус либо отсутствует, либо НЕ внутри этого GroupBox -> emit
+    #         if new_focus is None or not self.isAncestorOf(new_focus):
+    #             # emit у экземпляра сигнала
+    #             try:
+    #                 self.focusLeft.emit()
+    #             except Exception:
+    #                 # на всякий случай — если биндинг как-то необычно себя ведет
+    #                 pass
+    #     return super().eventFilter(obj, event)
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.FocusOut:
-            # новое виджет с фокусом в окне
+        if event.type() == QEvent.FocusIn:
             try:
                 new_focus = self.window().focusWidget()
             except Exception:
                 new_focus = None
-            # если новый фокус либо отсутствует, либо НЕ внутри этого GroupBox -> emit
+
+            if new_focus is not None and self.isAncestorOf(new_focus):
+                try:
+                    self.focusEntered.emit()
+                except Exception:
+                    pass
+
+        elif event.type() == QEvent.FocusOut:
+            try:
+                new_focus = self.window().focusWidget()
+            except Exception:
+                new_focus = None
+
             if new_focus is None or not self.isAncestorOf(new_focus):
-                # emit у экземпляра сигнала
                 try:
                     self.focusLeft.emit()
                 except Exception:
-                    # на всякий случай — если биндинг как-то необычно себя ведет
                     pass
+
         return super().eventFilter(obj, event)
 
 
