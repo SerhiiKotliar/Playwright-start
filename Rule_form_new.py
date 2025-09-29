@@ -20,12 +20,14 @@ login_l_invalid = []
 url_invalid = []
 email_invalid = []
 password_invalid = []
-upregcyr = "А-Я"
-lowregcyr = "а-я"
+Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
+latin = "A-Za-z"
+upregcyr = "А-ЯЁЇІЄҐ"
+lowregcyr = "а-яїієёґ"
 upreglat = "A-Z"
 lowreglat = "a-z"
 chars: str = "."
-pattern = "^["+f"{chars}"+"]+$"
+pattern = rf"^[{chars}]+$"
 len_min = 0
 len_max = 0
 spec_escaped = ""
@@ -144,10 +146,16 @@ def entries_rules(log, required, fame, **kwargs):
     entries = kwargs["entries"]
     # инициализация переменных
     local = ""
+    # latin = "A-Za-z"
+    # Cyrillic = "А-Яа-я"
+    # upregcyr = "А-Я"
+    # lowregcyr = "а-я"
+    # upreglat = "A-Z"
+    # lowreglat = "a-z"
     latin = "A-Za-z"
-    Cyrillic = "А-Яа-я"
-    upregcyr = "А-Я"
-    lowregcyr = "а-я"
+    Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
+    upregcyr = "А-ЯЁЇІЄҐ"
+    lowregcyr = "а-яїієёґ"
     upreglat = "A-Z"
     lowreglat = "a-z"
     both_reg = False
@@ -159,22 +167,36 @@ def entries_rules(log, required, fame, **kwargs):
     len_max = 0
     email = False
     url = False
+    up = False
+    low = False
 
     for key, value in entries.items():
         if key == 'register':
             if value == 'великий':
-                latin = upreglat
-                Cyrillic = upregcyr
+                up = True
+                # latin = upreglat
+                # Cyrillic = upregcyr
             elif value == "малий":
-                latin = lowreglat
-                Cyrillic = lowregcyr
+                low = True
+                # latin = lowreglat
+                # Cyrillic = lowregcyr
             elif value == "обидва":
                 both_reg = True
         elif key == 'localiz':
             if value == 'латиниця':
-                local = latin
+                if up:
+                    local = upreglat
+                elif low:
+                    local = lowreglat
+                else:
+                    local = latin
             elif value == 'кирилиця':
-                local = Cyrillic
+                if up:
+                    local = upregcyr
+                elif low:
+                    local = lowregcyr
+                else:
+                    local = Cyrillic
         elif key == "cyfry" and value:
             digits_str = "0-9"
         elif key == "spec" and value:
@@ -198,9 +220,11 @@ def entries_rules(log, required, fame, **kwargs):
         elif key == "probel":
             is_probel = value
     if email:
-        chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
+        # chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
+        chars = "a-zA-Z0-9_.+-@"
     elif url:
-        chars = "http?://[^\s/$.?#].[^\s"
+        # chars = "http?://[^\s/$.?#].[^\s"
+        chars = "a-zA-Z0-9\-_.~:/?#\[\]@!$&'()*+,;=%"
     elif no_absent:
         chars = "."
     else:
@@ -233,8 +257,9 @@ def entries_rules(log, required, fame, **kwargs):
             pattern = rf"^[{chars}]+$"
         else:
             pattern = rf"^[{chars}]{{{len_min},{len_max}}}$"
-    # QMessageBox.information(None, "Символи", chars)
-    # QMessageBox.information(None, "Шаблон", pattern)
+    # if check_on:
+    QMessageBox.information(None, "Символи", chars)
+    QMessageBox.information(None, "Шаблон", pattern)
     rule_invalid[fame] = []
     # if not log and required:
     #     rule_invalid[fame].append("absent")
@@ -290,67 +315,82 @@ def entries_rules(log, required, fame, **kwargs):
 
     return pattern
 
+import re, unicodedata
 from typing import Tuple, Set, Optional
 
+EXTRA_CYRILLIC = {
+    "А-Я": "ЁЇІҐ",
+    "а-я": "ёїіґ",
+}
+
+# дефисы/тире, которые иногда попадают из копипаста — нормализуем в ASCII '-'
+HYPHENS = {"\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2212"}
+
+def normalize_allowed_string(s: str) -> str:
+    s = unicodedata.normalize("NFC", s)
+    return "".join("-" if ch in HYPHENS else ch for ch in s)
+
+def _escape_for_charclass(ch: str) -> str:
+    if ch in r"\^-]":
+        return "\\" + ch
+    return ch
+
 def _parse_allowed_string(allowed: str) -> Tuple[str, Set[str]]:
-    """
-    Разбирает строку allowed, извлекая диапазоны вида a-z и одиночные символы.
-    Возвращает (charclass_string_for_regex, set_of_allowed_chars).
-    Пример allowed: "a-zA-Z0-9_.@+-"
-    """
+    allowed = normalize_allowed_string(allowed)
     ranges = []
     singles = []
     s = allowed
     i = 0
     while i < len(s):
-        # детектим простой диапазон вида X-Y где X и Y — цифра/буква
-        if i + 2 < len(s) and s[i+1] == '-' and re.match(r'[A-Za-z0-9]', s[i]) and re.match(r'[A-Za-z0-9]', s[i+2]):
-            ranges.append((s[i], s[i+2]))
+        if (
+            i + 2 < len(s)
+            and s[i+1] == '-'
+            and (s[i].isalpha() or s[i].isdigit())
+            and (s[i+2].isalpha() or s[i+2].isdigit())
+        ):
+            a, b = s[i], s[i+2]
+            if ord(a) > ord(b):
+                raise ValueError(f"Invalid range {a}-{b}: start > end")
+            ranges.append((a, b))
             i += 3
         else:
-            # одиночный символ (может быть спецсимвол)
             singles.append(s[i])
             i += 1
 
-    # Собираем класс символов и множество разрешённых символов
     parts = []
     allowed_set = set()
 
     for a, b in ranges:
-        # диапазон в виде a-b оставляем как есть в классе
         parts.append(f"{a}-{b}")
         for code in range(ord(a), ord(b) + 1):
             allowed_set.add(chr(code))
+        if a == "А" and b == "Я":
+            allowed_set.update(EXTRA_CYRILLIC["А-Я"])
+            parts.append(EXTRA_CYRILLIC["А-Я"])
+        elif a == "а" and b == "я":
+            allowed_set.update(EXTRA_CYRILLIC["а-я"])
+            parts.append(EXTRA_CYRILLIC["а-я"])
 
     for ch in singles:
-        parts.append(re.escape(ch))
+        parts.append(_escape_for_charclass(ch))
         allowed_set.add(ch)
 
     charclass = "".join(parts)
     return charclass, allowed_set
 
-
 def validate_chars_mode(text: str, allowed: str) -> Tuple[bool, Optional[str]]:
-    """
-    Проверка текста в режиме 'chars'.
-    :param text: входная строка
-    :param allowed: строка описания допустимых символов, например "a-zA-Z0-9_.@+-"
-    :return: (True, None) если OK, иначе (False, first_invalid_char)
-    """
     if text == "":
         return True, None
-
-    charclass, allowed_set = _parse_allowed_string(allowed)
-    regex = fr'^[{charclass}]*$'   # разрешаем пустую строку; можно заменить * на + если нельзя пустую
+    try:
+        charclass, allowed_set = _parse_allowed_string(allowed)
+    except ValueError as e:
+        return False, f"INVALID_ALLOWED_SPEC: {e}"
+    regex = fr'^[{charclass}]*$'
     if re.fullmatch(regex, text):
         return True, None
-
-    # обнаружим первый недопустимый символ (быстро через множество)
     for ch in text:
         if ch not in allowed_set:
             return False, ch
-
-    # запасной вариант (маловероятно)
     return False, text[0]
 
 
@@ -395,25 +435,25 @@ def diff_char(bigger: str, smaller: str) -> str:
     # если отличий не нашли, то "лишний" символ — в конце
     return bigger[len(smaller)]
 
-FIELDS_CONFIG = [
-        {"name": "url", "default": "", "allow_func": None},
-        {"name": "login", "default": "", "allow_func": None},
-        {"name": "login_l", "default": "", "allow_func": None},
-        {"name": "password", "default": "", "allow_func": None},
-        {"name": "email", "default": "", "allow_func": None},
-    ]
-
-for el in FIELDS_CONFIG:
-    if el["name"] == "url":
-        url_inv = []
-    elif el["name"] == "login":
-        login_inv = []
-    elif el["name"] == "login_l":
-        login_l_inv = []
-    elif el["name"] == "password":
-        pw_inv = []
-    elif el["name"] == "email":
-        email_inv = []
+# FIELDS_CONFIG = [
+#         {"name": "url", "default": "", "allow_func": None},
+#         {"name": "login", "default": "", "allow_func": None},
+#         {"name": "login_l", "default": "", "allow_func": None},
+#         {"name": "password", "default": "", "allow_func": None},
+#         {"name": "email", "default": "", "allow_func": None},
+#     ]
+#
+# for el in FIELDS_CONFIG:
+#     if el["name"] == "url":
+#         url_inv = []
+#     elif el["name"] == "login":
+#         login_inv = []
+#     elif el["name"] == "login_l":
+#         login_l_inv = []
+#     elif el["name"] == "password":
+#         pw_inv = []
+#     elif el["name"] == "email":
+#         email_inv = []
 
 
 
@@ -443,7 +483,9 @@ class DynamicDialog(QDialog):
             title = cfg.get("title", "")
             name = cfg.get("name", "")
             required = cfg.get("required")
-
+            # if check_on == False:
+            #     entries_rules("", required, name, entries={"no_absent": True, "probel": True})
+            #     check_on = True
             gb_widget = MyGroupBox(title)
             # gb_widget = QGroupBox(title)
             gb_widget.setObjectName(name)
@@ -507,7 +549,7 @@ class DynamicDialog(QDialog):
             # cmb.focusOut.connect(self.on_focusOut)
             # событие потери фокуса групбоксом
             gb_widget.focusLeft.connect(self.on_gb_focus_left)
-            gb_widget.focusEntered.connect(self.on_gb_focus_entered)
+            # gb_widget.focusEntered.connect(self.on_gb_focus_entered)
 
         # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()
@@ -526,6 +568,9 @@ class DynamicDialog(QDialog):
         # события кнопок
         self.btnOK.clicked.connect(self.on_ok_clicked)
         self.btnCnl.clicked.connect(self.on_cnl_clicked)
+        # if check_on == False:
+        #     entries_rules("", chck_stat, gr_t, entries={"no_absent":True, "probel":True})
+        #     check_on = True
 
         # ---- обработчики ----
 
@@ -562,11 +607,15 @@ class DynamicDialog(QDialog):
         #     return False
         # Якщо chars == ".", дозволяємо все
         if chars == ".":
+            pattern = rf"^[{chars}]+$"
             self.previous_text = gb.cmb.currentText()
+            # check_on = False
+            # entries_rules("", gb.chkb.isChecked(), gr_t, entries={"no_absent": True, "probel": True})
+            # check_on = True
             return True
         # Перевірка на відповідність pattern
         txt_err = ""
-        if not bool(re.fullmatch(pattern, gb.cmb.currentText())) and gb.cmb.currentText() != "":
+        if not bool(re.fullmatch(pattern, gb.cmb.currentText())):# and gb.cmb.currentText() != "":
             # QMessageBox.warning(self, f"Поле {gr_t_title}", "Видаліть неприпустимі символи або додайте необхідні")
             # return False
         ###############################################################
@@ -590,7 +639,7 @@ class DynamicDialog(QDialog):
                 txt_err += "має бути формату URL\n"
             if f"len {len_min} {len_max}" in rule_invalid[gr_t] and (len_max < len(gb.cmb.currentText()) or len(gb.cmb.currentText()) < len_min):
                 # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має мати від {len_min} до {len_max} символів включно.")
-                txt_err += "має мати від {len_min} до {len_max} символів включно\n"
+                txt_err += f"має мати від {len_min} до {len_max} символів включно\n"
             if "probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') > -1:
                 # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} не має бути з пробілами.")
                 txt_err += "не має бути з пробілами\n"
@@ -625,29 +674,33 @@ class DynamicDialog(QDialog):
         ###############################################################
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
-        check_on = True
+        # check_on = False
+        #         # entries_rules("", chck_stat, gr_t, entries={"no_absent": True, "probel": True})
+        #         # check_on = True
+        chars == "."
+        pattern = rf"^[{chars}]+$"
         return True
 
-    def on_gb_focus_entered(self):
-        gb = self.sender()
-        gr_t = gb.objectName()
-        gr_t_title = gb.title()
-        global chars, pattern, len_min, len_max, rule_invalid, check_on
-        for name, wrapper in self.gb.items():
-            chck_stat = wrapper.chkb.isChecked()
-            # gr_t_title = wrapper.gb.title()
-        # QMessageBox.warning(self, f"Поле {gr_t_title}", f"MIN {len_min} MAX {len_max} LEN TXT {len(gb.cmb.currentText())}")
-        # gr_t = gb.objectName()
-        # не пустое поле без пробелов
-        #####################################
-        if check_on == False:
-            entries_rules("", chck_stat, gr_t, entries={"no_absent":True, "probel":True})
-            check_on = True
-        #######################################
-        # QMessageBox.warning(self, f"Поле {gr_t_title}",
-        #                     f"ШАБЛОН {pattern} Негатив {rule_invalid}")
-        # wrapper.cmb.setFocus()
-        # return True
+    # def on_gb_focus_entered(self):
+    #     gb = self.sender()
+    #     gr_t = gb.objectName()
+    #     gr_t_title = gb.title()
+    #     global chars, pattern, len_min, len_max, rule_invalid, check_on
+    #     for name, wrapper in self.gb.items():
+    #         chck_stat = wrapper.chkb.isChecked()
+    #         # gr_t_title = wrapper.gb.title()
+    #     # QMessageBox.warning(self, f"Поле {gr_t_title}", f"MIN {len_min} MAX {len_max} LEN TXT {len(gb.cmb.currentText())}")
+    #     # gr_t = gb.objectName()
+    #     # не пустое поле без пробелов
+    #     #####################################
+    #     # if check_on == False:
+    #     #     entries_rules("", chck_stat, gr_t, entries={"no_absent":True, "probel":True})
+    #     #     check_on = True
+    #     #######################################
+    #     # QMessageBox.warning(self, f"Поле {gr_t_title}",
+    #     #                     f"ШАБЛОН {pattern} Негатив {rule_invalid}")
+    #     # wrapper.cmb.setFocus()
+    #     # return True
 
 
     def on_required_toggled(self, name, state):
@@ -712,7 +765,7 @@ class DynamicDialog(QDialog):
             QMessageBox.warning(self, f"Поля {titles}", "Обов'язкові дані не введені.")
             return False
             # self.reject()
-        self.result
+        # self.result
         self.result_invalid = rule_invalid
         self.accept()
 
@@ -721,7 +774,7 @@ class DynamicDialog(QDialog):
 
 def get_user_input():
     global number_of_test
-    # проверяем, есть ли уже QApplication
+    # Проверяем, есть ли QApplication
     app = QApplication.instance()
     created_app = False
     if app is None:
@@ -729,33 +782,38 @@ def get_user_input():
         created_app = True
     result_f = None
     # app = QApplication(sys.argv)
-    input_dlg = ConfigInputDialog()
-    if input_dlg.exec() == QDialog.Accepted:
-        config = input_dlg.get_config()
-        dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
-                          input_login_l=input_data['login_l'], input_password=input_data['password'],
-                          input_email=input_data['email'], name_of_test="")
-        if dlg.exec() == QDialog.Accepted:
-            # if created_app:
-            #     app.quit()
-            result_f = dlg.result, dlg.result_invalid
-            # return dlg.result, dlg.result_invalid
-        # else:
-        #     if created_app:
-        #         app.quit()
-        #     return None
-    # если приложение создавалось внутри функции → запускаем цикл событий
-    if created_app:
-        # запускаем цикл только один раз
-        app.exec()
-        app.quit()
+    input_dlg = ConfigInputDialog(parent=None)
+    if input_dlg.exec() != QDialog.Accepted:
+        return None  # пользователь отменил ввод
 
-    return result_f
-    # return None
+    config = input_dlg.get_config()
+
+
+    # if input_dlg.exec() == QDialog.Accepted:
+    #     config = input_dlg.get_config()
+    dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
+                      input_login_l=input_data['login_l'], input_password=input_data['password'],
+                      input_email=input_data['email'], name_of_test="")
+    if dlg.exec() == QDialog.Accepted:
+        # if created_app:
+        #     app.quit()
+        result_f = dlg.result, dlg.result_invalid
+            # return dlg.result, dlg.result_invalid
+    # если мы сами создали QApplication, и нет открытых окон — закрываем
+    # if created_app:
+    #     for w in app.topLevelWidgets():
+    #         w.close()
+    #     app.quit()
+        return result_f
+    return None
 # ---- Основной запуск ----
 if __name__ == "__main__":
-    # app = QApplication(sys.argv)
+    app = QApplication(sys.argv)
     get1_2 = get_user_input()
     if get_user_input() is not None:
         print(str(get1_2[0])+"\n"+str(get1_2[1]))
     # sys.exit(app.exec())
+    # # Завершаем приложение явно
+    # app = QApplication.instance()
+    # if app is not None:
+    app.quit()

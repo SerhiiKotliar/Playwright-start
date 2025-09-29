@@ -17,7 +17,7 @@ class MyDialog(QDialog, Ui_Dialog):
 
         # кнопки
         self.btnOk.clicked.connect(self.on_ok)
-        self.btnCnl.clicked.connect(self.close)
+        self.btnCnl.clicked.connect(self.reject)
 
         # --- нове: вмикаємо/вимикаємо tbSpec по чекбоксу ---
         self.tbSpec.setEnabled(False)  # початково вимкнене
