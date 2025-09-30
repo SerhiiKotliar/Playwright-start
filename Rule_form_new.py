@@ -140,7 +140,7 @@ def detect_script(text: str) -> str:
     return "Unknown"
 
 def entries_rules(log, required, fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
+    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
     email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l, no_absent
 
     entries = kwargs["entries"]
@@ -547,7 +547,7 @@ class DynamicDialog(QDialog):
             self.scroll_layout.addWidget(gb_widget)
             self.gb[name] = GroupBoxWrapper(gb_widget, cmb, chkb, btn)
             # подключаем событие изменения чекбокса (с правильным захватом имени)
-            chkb.toggled.connect(partial(self.on_required_toggled, name))
+            # chkb.toggled.connect(partial(self.on_required_toggled, name))
             # подключаем сигнал с передачей combo и имени
             btn.clicked.connect(lambda _, c=cmb, n=name: self.on_rules_clicked(c, n))
             # запоминаем старое значение
@@ -577,9 +577,6 @@ class DynamicDialog(QDialog):
         # события кнопок
         self.btnOK.clicked.connect(self.on_ok_clicked)
         self.btnCnl.clicked.connect(self.on_cnl_clicked)
-        # if check_on == False:
-        #     entries_rules("", chck_stat, gr_t, entries={"no_absent":True, "probel":True})
-        #     check_on = True
 
         # ---- обработчики ----
 
@@ -608,26 +605,15 @@ class DynamicDialog(QDialog):
         gb = self.sender()
         global chars, pattern, len_min, len_max, rule_invalid, check_on
         gr_t_title = gb.title()
-        # QMessageBox.warning(self, f"Поле {gr_t_title}", f"MIN {len_min} MAX {len_max} LEN TXT {len(gb.cmb.currentText())}")
         gr_t = gb.objectName()
-        # if gb.chkb.isChecked() and gb.cmb.currentText() == "":
-        #     QMessageBox.warning(self, "Обов'язкове поле", f"Введіть дані у обов'язкове поле: '{gr_t}'")
-        #     gb.cmb.setFocus()
-        #     return False
         # Якщо chars == ".", дозволяємо все
         if chars == ".":
             pattern = rf"^[{chars}]+$"
             self.previous_text = gb.cmb.currentText()
-            # check_on = False
-            # entries_rules("", gb.chkb.isChecked(), gr_t, entries={"no_absent": True, "probel": True})
-            # check_on = True
             return True
         # Перевірка на відповідність pattern
         txt_err = ""
         if not bool(re.fullmatch(pattern, gb.cmb.currentText())):# and gb.cmb.currentText() != "":
-            # QMessageBox.warning(self, f"Поле {gr_t_title}", "Видаліть неприпустимі символи або додайте необхідні")
-            # return False
-        ###############################################################
             if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
                 # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну маленьку літеру.")
                 txt_err += "має містити принаймні одну маленьку літеру\n"
@@ -680,40 +666,14 @@ class DynamicDialog(QDialog):
             QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
             gb.cmb.setFocus()
             return False
-        ###############################################################
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
-        # check_on = False
-        #         # entries_rules("", chck_stat, gr_t, entries={"no_absent": True, "probel": True})
-        #         # check_on = True
         chars == "."
         pattern = rf"^[{chars}]+$"
         return True
 
-    # def on_gb_focus_entered(self):
-    #     gb = self.sender()
-    #     gr_t = gb.objectName()
-    #     gr_t_title = gb.title()
-    #     global chars, pattern, len_min, len_max, rule_invalid, check_on
-    #     for name, wrapper in self.gb.items():
-    #         chck_stat = wrapper.chkb.isChecked()
-    #         # gr_t_title = wrapper.gb.title()
-    #     # QMessageBox.warning(self, f"Поле {gr_t_title}", f"MIN {len_min} MAX {len_max} LEN TXT {len(gb.cmb.currentText())}")
-    #     # gr_t = gb.objectName()
-    #     # не пустое поле без пробелов
-    #     #####################################
-    #     # if check_on == False:
-    #     #     entries_rules("", chck_stat, gr_t, entries={"no_absent":True, "probel":True})
-    #     #     check_on = True
-    #     #######################################
-    #     # QMessageBox.warning(self, f"Поле {gr_t_title}",
-    #     #                     f"ШАБЛОН {pattern} Негатив {rule_invalid}")
-    #     # wrapper.cmb.setFocus()
-    #     # return True
-
-
-    def on_required_toggled(self, name, state):
-        """Срабатывает при изменении чекбокса."""
+    # def on_required_toggled(self, name, state):
+    #     """Срабатывает при изменении чекбокса."""
         # пример: можно отключать ComboBox, если поле не обязательное
         # wrapper = self.gb.get(name)
         # if wrapper:
@@ -743,10 +703,6 @@ class DynamicDialog(QDialog):
                 wrapper.cmb.setEditable(False)
                 wrapper.gb.setStyleSheet("background-color: rgb(85, 255, 127);")
         rule_invalid[field_name] = []
-
-        # app = QApplication.instance()
-        # if not app:
-        #     app = QApplication([])
         dlg = MyDialog()
 
         dlg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
@@ -758,23 +714,31 @@ class DynamicDialog(QDialog):
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
-        txt_data = ""
+        global rule_invalid
         titles = []
         for name, wrapper in self.gb.items():
-            # if wrapper.cmb is combo:
+            if not name in rule_invalid:
+                rule_invalid[name] = []
+            if len(rule_invalid[name]) == 0:
+                msg = QMessageBox(self)
+                msg.setWindowTitle("Підтвердження")
+                msg.setText(f"Натискаючи Продовжити ви залишаєте правила створення строки в полі {wrapper.gb.title()} по замовчуванню \"НЕ ПУСТЕ\"\nПРОДОВЖИТИ?")
+                msg.setIcon(QMessageBox.Question)
+                yes_btn = msg.addButton("Продовжити", QMessageBox.YesRole)
+                no_btn = msg.addButton("Скасувати", QMessageBox.NoRole)
+                msg.exec()
+                if msg.clickedButton() == no_btn:
+                    return False
 
+                rule_invalid[name].append("absent")
             if wrapper.chkb.isChecked():
-                txt_data = wrapper.cmb.currentText().strip()
                 if wrapper.cmb.currentText() != "":
                     self.result[name] = wrapper.cmb.currentText()
                 else:
-        # if txt_data == "":
                     titles.append(wrapper.gb.title())
         if len(titles) > 0:
             QMessageBox.warning(self, f"Поля {titles}", "Обов'язкові дані не введені.")
             return False
-            # self.reject()
-        # self.result
         self.result_invalid = rule_invalid
         self.accept()
 
@@ -789,17 +753,11 @@ def get_user_input():
     if app is None:
         app = QApplication(sys.argv)
         created_app = True
-    # result_f = None
-    # app = QApplication(sys.argv)
     input_dlg = ConfigInputDialog()
     if input_dlg.exec() != QDialog.Accepted:
         return None  # пользователь отменил ввод
 
     config = input_dlg.get_config()
-
-
-    # if input_dlg.exec() == QDialog.Accepted:
-    #     config = input_dlg.get_config()
     dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
                       input_login_l=input_data['login_l'], input_password=input_data['password'],
                       input_email=input_data['email'], name_of_test="")
@@ -807,22 +765,10 @@ def get_user_input():
         if created_app:
             app.quit()
         result_f = dlg.result, dlg.result_invalid
-            # return dlg.result, dlg.result_invalid
-    # если мы сами создали QApplication, и нет открытых окон — закрываем
-    # if created_app:
-    #     for w in app.topLevelWidgets():
-    #         w.close()
-    #     app.quit()
         return result_f
     return None
 # ---- Основной запуск ----
 if __name__ == "__main__":
-    # app = QApplication(sys.argv)
     get1_2 = get_user_input()
     if get1_2 is not None:
         print(str(get1_2[0])+"\n"+str(get1_2[1]))
-    # sys.exit(app.exec())
-    # # Завершаем приложение явно
-    # app = QApplication.instance()
-    # if app is not None:
-    # app.quit()
