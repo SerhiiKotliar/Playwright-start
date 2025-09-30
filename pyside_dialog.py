@@ -132,8 +132,8 @@ class MyDialog(QDialog, Ui_Dialog):
         self.accept()
 
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    dlg = MyDialog()
-    dlg.show()
-    sys.exit(app.exec())
+# if __name__ == "__main__":
+#     app = QApplication(sys.argv)
+#     dlg = MyDialog()
+#     dlg.show()
+#     sys.exit(app.exec())

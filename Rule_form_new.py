@@ -224,7 +224,8 @@ def entries_rules(log, required, fame, **kwargs):
         chars = "a-zA-Z0-9_.+-@"
     elif url:
         # chars = "http?://[^\s/$.?#].[^\s"
-        chars = "a-zA-Z0-9\-_.~:/?#\[\]@!$&'()*+,;=%"
+        # chars = "a-zA-Z0-9\-_.~:/?#\[\]@!$&'()*+,;=%"
+        chars = "a-zA-Z0-9_.~:/?#@!$&'()*+,;=%-"
     elif no_absent:
         chars = "."
     else:
@@ -257,9 +258,17 @@ def entries_rules(log, required, fame, **kwargs):
             pattern = rf"^[{chars}]+$"
         else:
             pattern = rf"^[{chars}]{{{len_min},{len_max}}}$"
+    if email:
+        pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    elif url:
+        # pattern = r"^(http://|https://)[a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+$"
+        # pattern = r"^(http://|https://)[^\s/$.?#].[^\s]+$"
+        # pattern = r"^(http://|https://)[^\s]+$"
+        # pattern = r"^(http://|https://)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[^\s]*)?$"
+        pattern = r"^(http://|https://)([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(:\d+)?(/[^\s?#]*)?(\?[^\s#]*)?(#[^\s]*)?$"
     # if check_on:
-    QMessageBox.information(None, "Символи", chars)
-    QMessageBox.information(None, "Шаблон", pattern)
+    # QMessageBox.information(None, "Символи", chars)
+    # QMessageBox.information(None, "Шаблон", pattern)
     rule_invalid[fame] = []
     # if not log and required:
     #     rule_invalid[fame].append("absent")
@@ -267,7 +276,7 @@ def entries_rules(log, required, fame, **kwargs):
     if url:
         rule_invalid[fame].append("no_url")
         # return "Помилка, Логін не може форматуватись як URL адреса."
-    if len(log) < len_min or len(log) > len_max:
+    if len(log) < len_min or len(log) > len_max and not email and not url and not no_absent:
         rule_invalid[fame].append(f"len {len_min} {len_max}")
         # return f"Логін має бути від {lenminlog} до {lenmaxlog} символів включно"
     if email:
@@ -780,9 +789,9 @@ def get_user_input():
     if app is None:
         app = QApplication(sys.argv)
         created_app = True
-    result_f = None
+    # result_f = None
     # app = QApplication(sys.argv)
-    input_dlg = ConfigInputDialog(parent=None)
+    input_dlg = ConfigInputDialog()
     if input_dlg.exec() != QDialog.Accepted:
         return None  # пользователь отменил ввод
 
@@ -795,8 +804,8 @@ def get_user_input():
                       input_login_l=input_data['login_l'], input_password=input_data['password'],
                       input_email=input_data['email'], name_of_test="")
     if dlg.exec() == QDialog.Accepted:
-        # if created_app:
-        #     app.quit()
+        if created_app:
+            app.quit()
         result_f = dlg.result, dlg.result_invalid
             # return dlg.result, dlg.result_invalid
     # если мы сами создали QApplication, и нет открытых окон — закрываем
@@ -808,12 +817,12 @@ def get_user_input():
     return None
 # ---- Основной запуск ----
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    # app = QApplication(sys.argv)
     get1_2 = get_user_input()
-    if get_user_input() is not None:
+    if get1_2 is not None:
         print(str(get1_2[0])+"\n"+str(get1_2[1]))
     # sys.exit(app.exec())
     # # Завершаем приложение явно
     # app = QApplication.instance()
     # if app is not None:
-    app.quit()
+    # app.quit()
