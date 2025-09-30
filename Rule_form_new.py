@@ -1,4 +1,4 @@
-from PyQt6.sip import wrapper
+# from PyQt6.sip import wrapper
 from PySide6.QtCore import QLocale, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -6,20 +6,21 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
     QComboBox, QCheckBox, QMessageBox
 )
-import re
+# import re
 from pyside_dialog import MyDialog
-from functools import partial
-# from PyQt6.QtCore import pyqtSignal
+# from functools import partial
 from mycombo import QComboBox, WhichBinding
 from mygroupbox_dynamic import MyGroupBox
 import sys
+import re, unicodedata
+from typing import Tuple, Set, Optional
 
 rule_invalid = {}
-login_invalid = []
-login_l_invalid = []
-url_invalid = []
-email_invalid = []
-password_invalid = []
+# login_invalid = []
+# login_l_invalid = []
+# url_invalid = []
+# email_invalid = []
+# password_invalid = []
 Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
 latin = "A-Za-z"
 upregcyr = "А-ЯЁЇІЄҐ"
@@ -32,7 +33,7 @@ len_min = 0
 len_max = 0
 spec_escaped = ""
 no_absent = False
-check_on = False
+# check_on = False
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -140,24 +141,17 @@ def detect_script(text: str) -> str:
     return "Unknown"
 
 def entries_rules(log, required, fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, is_probel, email, url, both_reg, both_reg_log_l, patternlog, patternlog_l, patternpas, lenminpas, lenmaxpas, lenminlog, lenmaxlog, lenminlog_l, lenmaxlog_l, spec, digits_str, digits_str_log_l, patterne, patternu,\
-    email_url, email_p, email_login, email_login_l, url_login, url_e, url_p, url_login_l, both_reg_log, both_reg_log_l, both_reg_p, digits_str_p, digits_str_log, digits_str_log_l, spec_escaped_log, spec_escaped_p, spec_escaped_log_l, local, local_p, local_log, local_log_l, no_absent
+    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat
 
     entries = kwargs["entries"]
     # инициализация переменных
     local = ""
-    # latin = "A-Za-z"
-    # Cyrillic = "А-Яа-я"
-    # upregcyr = "А-Я"
-    # lowregcyr = "а-я"
-    # upreglat = "A-Z"
-    # lowreglat = "a-z"
     latin = "A-Za-z"
     Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
-    upregcyr = "А-ЯЁЇІЄҐ"
-    lowregcyr = "а-яїієёґ"
-    upreglat = "A-Z"
-    lowreglat = "a-z"
+    # upregcyr = "А-ЯЁЇІЄҐ"
+    # lowregcyr = "а-яїієёґ"
+    # upreglat = "A-Z"
+    # lowreglat = "a-z"
     both_reg = False
     digits_str = ""
     spec_escaped = ""
@@ -174,12 +168,8 @@ def entries_rules(log, required, fame, **kwargs):
         if key == 'register':
             if value == 'великий':
                 up = True
-                # latin = upreglat
-                # Cyrillic = upregcyr
             elif value == "малий":
                 low = True
-                # latin = lowreglat
-                # Cyrillic = lowregcyr
             elif value == "обидва":
                 both_reg = True
         elif key == 'localiz':
@@ -205,8 +195,6 @@ def entries_rules(log, required, fame, **kwargs):
             else:
                 spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
                 spec_escaped = "".join(re.escape(ch) for ch in spec)
-        # elif key == "probel":
-        #     is_probel = value
         elif key == "len_min":
             len_min = value
         elif key == "len_max":
@@ -266,37 +254,22 @@ def entries_rules(log, required, fame, **kwargs):
         # pattern = r"^(http://|https://)[^\s]+$"
         # pattern = r"^(http://|https://)[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[^\s]*)?$"
         pattern = r"^(http://|https://)([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(:\d+)?(/[^\s?#]*)?(\?[^\s#]*)?(#[^\s]*)?$"
-    # if check_on:
     # QMessageBox.information(None, "Символи", chars)
     # QMessageBox.information(None, "Шаблон", pattern)
     rule_invalid[fame] = []
-    # if not log and required:
-    #     rule_invalid[fame].append("absent")
-        # return f"Помилка, Поле {fame} не може бути пустим."
     if url:
         rule_invalid[fame].append("no_url")
-        # return "Помилка, Логін не може форматуватись як URL адреса."
     if len(log) < len_min or len(log) > len_max and not email and not url and not no_absent:
         rule_invalid[fame].append(f"len {len_min} {len_max}")
-        # return f"Логін має бути від {lenminlog} до {lenmaxlog} символів включно"
     if email:
         rule_invalid[fame].append("no_email")
-        # return None
     if both_reg:
         rule_invalid[fame].append("no_lower")
         rule_invalid[fame].append("no_upper")
-        # if not any(c.islower() for c in log):
-        #     # return "Логін має містити принаймні одну маленьку літеру."
-        # if not any(c.isupper() for c in log):
-            # return "Логін має містити принаймні одну велику літеру."
     if digits_str:
         rule_invalid[fame].append("no_digit")
-        # if not any(c.isdigit() for c in log):
-            # return "Логін має містити принаймні одну цифру."
     if spec_escaped:
         rule_invalid[fame].append("no_spec")
-        # if not any(c in spec_escaped_log for c in log):
-            # return "Логін має містити принаймні один спеціальний символ."
     # немає пробілів
     if is_probel and not no_absent:
         rule_invalid[fame].append("probel")
@@ -320,12 +293,7 @@ def entries_rules(log, required, fame, **kwargs):
         rule_invalid[fame].append("one_reg_log")
     if no_absent and not "absent" in rule_invalid[fame]:
         rule_invalid[fame].append("absent")
-    # rule_invalid['login'] = login_invalid
-
     return pattern
-
-import re, unicodedata
-from typing import Tuple, Set, Optional
 
 EXTRA_CYRILLIC = {
     "А-Я": "ЁЇІҐ",
@@ -412,7 +380,6 @@ def make_input_data(file_name):
         "password": [],
         "email": []
     }
-
     current_section = None
 
     with open(file_name, "r", encoding="utf-8") as f:
@@ -440,31 +407,8 @@ def diff_char(bigger: str, smaller: str) -> str:
     for i, (c1, c2) in enumerate(zip(bigger, smaller)):
         if c1 != c2:
             return c1  # символ из "большей" строки
-
     # если отличий не нашли, то "лишний" символ — в конце
     return bigger[len(smaller)]
-
-# FIELDS_CONFIG = [
-#         {"name": "url", "default": "", "allow_func": None},
-#         {"name": "login", "default": "", "allow_func": None},
-#         {"name": "login_l", "default": "", "allow_func": None},
-#         {"name": "password", "default": "", "allow_func": None},
-#         {"name": "email", "default": "", "allow_func": None},
-#     ]
-#
-# for el in FIELDS_CONFIG:
-#     if el["name"] == "url":
-#         url_inv = []
-#     elif el["name"] == "login":
-#         login_inv = []
-#     elif el["name"] == "login_l":
-#         login_l_inv = []
-#     elif el["name"] == "password":
-#         pw_inv = []
-#     elif el["name"] == "email":
-#         email_inv = []
-
-
 
 # ---- Динамическая форма ----
 class DynamicDialog(QDialog):
@@ -492,11 +436,7 @@ class DynamicDialog(QDialog):
             title = cfg.get("title", "")
             name = cfg.get("name", "")
             required = cfg.get("required")
-            # if check_on == False:
-            #     entries_rules("", required, name, entries={"no_absent": True, "probel": True})
-            #     check_on = True
             gb_widget = MyGroupBox(title)
-            # gb_widget = QGroupBox(title)
             gb_widget.setObjectName(name)
             gb_widget.setStyleSheet("background-color: rgb(85, 255, 127);")
             gb_widget.setLocale(QLocale(QLocale.Ukrainian, QLocale.Ukraine))
@@ -615,53 +555,37 @@ class DynamicDialog(QDialog):
         txt_err = ""
         if not bool(re.fullmatch(pattern, gb.cmb.currentText())):# and gb.cmb.currentText() != "":
             if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну маленьку літеру.")
                 txt_err += "має містити принаймні одну маленьку літеру\n"
             if "no_upper" in rule_invalid[gr_t] and not any(c.isupper() for c in gb.cmb.currentText()):
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну велику літеру.")
                 txt_err += "має містити принаймні одну велику літеру\n"
             if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні одну цифру.")
                 txt_err += "має містити принаймні одну цифру\n"
             if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped for c in gb.cmb.currentText()):
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має містити принаймні один спеціальний символ.")
                 txt_err += f"має містити принаймні один спеціальний символ з {spec_escaped}\n"
             if "no_email" in rule_invalid[gr_t]:
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути формату email.")
                 txt_err += "має бути формату email\n"
             if "no_url" in rule_invalid[gr_t]:
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути формату URL.")
                 txt_err += "має бути формату URL\n"
             if f"len {len_min} {len_max}" in rule_invalid[gr_t] and (len_max < len(gb.cmb.currentText()) or len(gb.cmb.currentText()) < len_min):
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має мати від {len_min} до {len_max} символів включно.")
                 txt_err += f"має мати від {len_min} до {len_max} символів включно\n"
             if "probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') > -1:
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} не має бути з пробілами.")
                 txt_err += "не має бути з пробілами\n"
             if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з пробілами.")
                 txt_err += "має бути з пробілами\n"
             if "one_reg_log" in rule_invalid[gr_t]:
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з текстом у двох регістрах.")
                 txt_err += "має бути з текстом у двох регістрах\n"
             loc_text = detect_script(gb.cmb.currentText())
             if "Latin" in rule_invalid[gr_t] and loc_text == "Latin":
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з кирилицею.")
                 txt_err += "має бути з кирилицею\n"
             if "Cyrillic" in rule_invalid[gr_t] and loc_text == "Cyrillic":
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з латиницею.")
                 txt_err += "має бути з латиницею\n"
             if "upreglat" in rule_invalid[gr_t] and loc_text != "loureglat":
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з малими латинськими літерами.")
                 txt_err += "має бути з малими латинськими літерами\n"
             if "lowreglat" in rule_invalid[gr_t] and loc_text != "upreglat":
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з великими латинськими літерами.")
                 txt_err += "має бути з великими латинськими літерами\n"
             if "upregcyr" in rule_invalid[gr_t] and loc_text != "lowregcyr":
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з малими кириличними літерами.")
                 txt_err += "має бути з малими кириличними літерами\n"
             if "lowregcyr" in rule_invalid[gr_t] and loc_text != "upregcyr":
-                # QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title} має бути з великими кириличними літерами.")
                 txt_err += "має бути з великими кириличними літерами\n"
             QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
             gb.cmb.setFocus()
@@ -671,13 +595,6 @@ class DynamicDialog(QDialog):
         chars == "."
         pattern = rf"^[{chars}]+$"
         return True
-
-    # def on_required_toggled(self, name, state):
-    #     """Срабатывает при изменении чекбокса."""
-        # пример: можно отключать ComboBox, если поле не обязательное
-        # wrapper = self.gb.get(name)
-        # if wrapper:
-        #     wrapper.cmb.setEnabled(state)
 
     # нажатие на кнопку Правила
     def on_rules_clicked(self, combo, field_name):
