@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QComboBox, QCheckBox, QMessageBox
 )
 # import re
+import allure
 from pyside_dialog import MyDialog
 # from functools import partial
 from mycombo import QComboBox, WhichBinding
@@ -14,6 +15,7 @@ from mygroupbox_dynamic import MyGroupBox
 import sys
 import re, unicodedata
 from typing import Tuple, Set, Optional
+# import invalid_datas
 
 rule_invalid = {}
 # login_invalid = []
@@ -34,6 +36,8 @@ len_max = 0
 spec_escaped = ""
 no_absent = False
 # check_on = False
+
+
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -496,6 +500,7 @@ class DynamicDialog(QDialog):
         self.resize(640, 140)
         self.result = {}
         self.result_invalid = {}
+        self.result_title_fields = {}
         main_layout = QVBoxLayout(self)
         # ---- предупреждающий текст ----
         self.warning_label = QLabel("⚠ По замовчуванню для кожного поля тільки одне правило: БУТИ НЕ ПУСТИМ!")
@@ -519,7 +524,7 @@ class DynamicDialog(QDialog):
             gb_widget.setStyleSheet("background-color: rgb(85, 255, 127);")
             gb_widget.setLocale(QLocale(QLocale.Ukrainian, QLocale.Ukraine))
             gb_widget.setMinimumHeight(60)
-
+            self.result_title_fields[title] = name
             # элементы
             cmb = QComboBox(gb_widget)
             cmb.setEditable(False)
@@ -759,11 +764,11 @@ def get_user_input():
     if dlg.exec() == QDialog.Accepted:
         if created_app:
             app.quit()
-        result_f = dlg.result, dlg.result_invalid
+        result_f = dlg.result, dlg.result_invalid, dlg.result_title_fields
         return result_f
     return None
 # ---- Основной запуск ----
 if __name__ == "__main__":
     get1_2 = get_user_input()
     if get1_2 is not None:
-        print(str(get1_2[0])+"\n"+str(get1_2[1]))
+        print(str(get1_2[0])+"\n"+str(get1_2[1])+"\n"+str(get1_2[2]))

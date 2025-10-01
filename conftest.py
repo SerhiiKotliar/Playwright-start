@@ -1,7 +1,7 @@
 import pytest
 
 # from main_file import get_user_input
-
+from Rule_form_new import get_user_input
 from playwright.sync_api import Page
 from helper import debug
 
@@ -22,10 +22,10 @@ def user_data():
     # debug("Фикстура user_data запускается", "FIXTURE")
 
     # debug("Форма откроется сейчас", "FIXTURE")
-    result, result_inv = get_user_input()  # открытие формы
+    result, result_inv, result_tit_f = get_user_input()  # открытие формы
 
-    debug(f"Дані для тестів отримані: {result}\n{result_inv}", "FIXTURE")
-    return result, result_inv  # возвращаем введённые данные
+    debug(f"Дані для тестів отримані: {result}\n{result_inv}\n{result_tit_f}", "FIXTURE")
+    return result, result_inv, result_tit_f  # возвращаем введённые данные
 
 # @pytest.fixture(scope="session")
 # def browser():
@@ -69,8 +69,10 @@ def user_data():
 
 @pytest.fixture(autouse=True, scope="function")
 def page_open(page: Page, user_data):
-    page.goto(user_data[0]['url'])
+    page.goto(user_data[0]['url'], timeout=60000, wait_until="domcontentloaded")
     return page
+#, wait_until="commit"
+
 
 # @pytest.fixture(autouse=True, scope="function")
 # def page_open(page: Page, user_data):
