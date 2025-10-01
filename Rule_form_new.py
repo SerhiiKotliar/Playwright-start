@@ -125,6 +125,84 @@ class GroupBoxWrapper:
             self.btn.setGeometry(*btn_geom)
 ###############################################################################################################
 
+def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
+    # додаємо повідомлення у Allure
+    allure.attach(message, name="Причина зупинки", attachment_type=allure.attachment_type.TEXT)
+    filename = ""
+    # унікальне ім’я файлу
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"screenshots/{name}_{timestamp}.png"
+    if page_open:
+        try:
+            # створюємо папку screenshots (якщо немає)
+            os.makedirs("screenshots", exist_ok=True)
+
+            # # унікальне ім’я файлу
+            # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # filename = f"screenshots/{name}_{timestamp}.png"
+
+            # робимо скріншот у файл
+            page_open.screenshot(path=filename, timeout=40000)
+
+            # прикріплюємо цей файл у Allure
+            allure.attach.file(
+                filename,
+                name=name,
+                attachment_type=allure.attachment_type.PNG
+            )
+
+        except Exception as e:
+            # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
+            allure.attach(
+                page_open.screenshot(),
+                name=f"{name}_{timestamp}",
+                attachment_type=allure.attachment_type.PNG
+            )
+            print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
+
+    # зупиняємо тест
+    pytest.fail(message, pytrace=False)
+
+def report_about(message: str, page_open=None, name="screenshot_of_final"):
+    # додаємо повідомлення у Allure
+    allure.attach(message, name="Тест пройдено", attachment_type=allure.attachment_type.TEXT)
+    filename = ""
+    # унікальне ім’я файлу
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"screenshots/{name}_{timestamp}.png"
+    if page_open:
+        try:
+            # створюємо папку screenshots (якщо немає)
+            os.makedirs("screenshots", exist_ok=True)
+
+            # # унікальне ім’я файлу
+            # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # filename = f"screenshots/{name}_{timestamp}.png"
+
+            # робимо скріншот у файл
+            page_open.screenshot(path=filename, timeout=40000)
+
+            # прикріплюємо цей файл у Allure
+            allure.attach.file(
+                filename,
+                name=name,
+                attachment_type=allure.attachment_type.PNG
+            )
+
+        except Exception as e:
+            # якщо файл не вдалось зберегти — все одно прикріплюємо байти у Allure
+            allure.attach(
+                page_open.screenshot(),
+                name=f"{name}_{timestamp}",
+                attachment_type=allure.attachment_type.PNG
+            )
+            print(f"[WARNING] Не вдалось записати файл {filename}: {e}")
+
+    # зупиняємо тест
+    # pytest.fail(message, pytrace=False)
+
+
+
 def detect_script(text: str) -> str:
     if re.search(r"[А-Яа-яЁёЇїІіЄєҐґ]", text):
         return "Cyrillic"
