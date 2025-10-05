@@ -8,8 +8,10 @@ https://www.qa-practice.com/elements/button/disabled
 https://magento.softwaretestingboard.com/
 [login]
 Валентин
+Pedro
 [login_l]
 Валентиненко
+Pedruccy
 [password]
 uytrUYTR4567_-#4
 [email]
