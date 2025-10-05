@@ -643,7 +643,7 @@ def test_negative_form(page_open, user_data):
             debug(alert.inner_text(), "ERROR")
 
         if errors:
-            failed_cases.append((field, el_list[0], "; ".join(errors)))
+            failed_cases.append((field, el_list_n, "; ".join(errors)))
             debug(errors, "ERROR")
 
         screenshot = page_open.screenshot()
@@ -655,6 +655,8 @@ def test_negative_form(page_open, user_data):
             msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
             debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
             raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
+
+
 def test_generate(page_open, user_data):
     global valid_values, invalid_values, fields
     fields = user_data[0].keys()
