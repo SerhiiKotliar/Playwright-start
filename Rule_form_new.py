@@ -341,7 +341,7 @@ def entries_rules(log, required, fame, **kwargs):
     rule_invalid[fame] = []
     if url:
         rule_invalid[fame].append("no_url")
-    if len(log) < len_min or len(log) > len_max and not email and not url and not no_absent:
+    if ((len(log) < len_min or len(log) > len_max) and (not email) and (not url) and (not no_absent)):
         rule_invalid[fame].append(f"len {len_min} {len_max}")
     if email:
         rule_invalid[fame].append("no_email")

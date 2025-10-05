@@ -3,20 +3,15 @@ import traceback
 import allure
 import pytest
 from playwright.sync_api import expect, Page
-# from main_file import report_about, report_bug_and_stop
 from Rule_form_new import report_about, report_bug_and_stop
 from helper import debug
 import re
 from typing import Callable, Pattern, Union, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 import invalid_datas as in_d
-from playwright_stealth import stealth
 
 
 fields = []
-# fields = ["First Name", "Last Name", "UserName", "Password"]
-# names_data_for_fields = {"First Name*": "login", "Last Name*": "login_l", "Email*": "email", "Password*": "password", "Confirm Password*": "password"}
-# names_data_for_fields = {"First Name": "login", "Last Name": "login_l", "UserName": "email", "Password": "password"}
 valid_values = []
 invalid_values = {}
 
@@ -82,8 +77,6 @@ def valid_val(user_data):
     global fields
     fields = user_data[0].keys()
     val_el = []
-    # for field in fields:
-    #     val_el.append(user_data[0][names_data_for_fields[field]])
     # збір значень полів по іменам полів
     for val in user_data[0].values():
         val_el.append(val)
@@ -92,28 +85,15 @@ def valid_val(user_data):
 def invalid_val(user_data):
     global fields
     inval_el = {}
-    # for field in fields:
     # перебір по назвам полів
     for field in fields:
         ar_inv = []
-        # for el in user_data[1][names_data_for_fields[field]]:
         # перебір по назвам полів для розбору типу невалідних даних зі списків
         for el in user_data[1][field]:
-            # value, mode = in_inv(field, el, user_data)
-            # if mode == "len":
-            #     first, second = value.split(" ", 1)
-            #     ar_inv.append(first)
-            #     ar_inv.append(second)
-            # else:
-            #     ar_inv.append(value)
             if el[:3] == 'len':
-                # first, second = el.split(" ", 1)
-                # ar_inv.append(first)
-                # ar_inv.append(second)
                 lminmax = el[4:]
                 lmin = int(lminmax.split(" ", 1)[0])
                 lmax = int(lminmax.split(" ", 1)[1])
-                # return (user_data[0][field] * 6)[:(lmin - 2)] + " " + (user_data[0][field] * 6)[:(lmax + 2)], el
                 first = ((user_data[0][field] * 6)[:(lmin - 2)], "lenmin")
                 second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
                 ar_inv.append(first)
@@ -294,15 +274,15 @@ def test_positive_form(page_open, user_data):
             but_reestr = page_open.get_by_role("button", name="New User")
             # page_open.get_by_role("button", name="New User").click()
             # Применяем stealth к странице (нужно сразу после создания page, ДО навигации)
-            stealth(page_open)
-            page_open.add_init_script("""
-        window.grecaptcha = {
-            ready: function(cb) { try { cb(); } catch(e) {} },
-            execute: function() { return Promise.resolve("test-token"); },
-            render: function() { return 12345; }
-        };
-        window.grecaptcha.enterprise = window.grecaptcha.enterprise || window.grecaptcha;
-    """)
+    #         stealth(page_open)
+    #         page_open.add_init_script("""
+    #     window.grecaptcha = {
+    #         ready: function(cb) { try { cb(); } catch(e) {} },
+    #         execute: function() { return Promise.resolve("test-token"); },
+    #         render: function() { return 12345; }
+    #     };
+    #     window.grecaptcha.enterprise = window.grecaptcha.enterprise || window.grecaptcha;
+    # """)
 
             changed, new_url = click_and_wait_url_change(page_open, lambda: but_reestr.click())
             debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
@@ -333,12 +313,12 @@ def test_positive_form(page_open, user_data):
                     tb.fill(value)
                     debug("заповнено поле", f"{field}")
                     allure.attach(str(value), name=f"Поле {field}")
-            # # Перехватываем запрос к серверу reCAPTCHA и возвращаем успешный ответ
-            # page_open.route("https://www.google.com/recaptcha/api2/**", lambda route: route.fulfill(
-            #     status=200,
-            #     content_type="application/json",
-            #     body='{"success": true}'
-            # ))
+            # Перехватываем запрос к серверу reCAPTCHA и возвращаем успешный ответ
+            page_open.route("https://www.google.com/recaptcha/api2/**", lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body='{"success": true}'
+            ))
 
         with allure.step('Перехід на кнопку реєстрації екаунту та клік на ній'):
             expect(page_open.get_by_role("button", name="Register")).to_be_visible()
@@ -627,3 +607,17 @@ def test_negative_form(page_open, user_data):
             msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
             debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
             raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
+def test_generate(page_open, user_data):
+    global valid_values, invalid_values, fields
+    fields = user_data[0].keys()
+    valid_values = valid_val(user_data)
+    invalid_values = invalid_val(user_data)
+    print(generate_negative_cases())
+
+if __name__ == "__main__":
+    # global valid_values, invalid_values, fields
+    # fields = user_data[0].keys()
+    # valid_values = valid_val(user_data)
+    # invalid_values = invalid_val(user_data)
+    # print(generate_negative_cases())
+    test_generate()
