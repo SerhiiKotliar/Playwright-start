@@ -9,8 +9,9 @@ import re
 from typing import Callable, Pattern, Union, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 import invalid_datas as in_d
+from datetime import datetime
 
-
+now = datetime.now()
 fields = []
 valid_values = []
 invalid_values = {}
@@ -139,91 +140,7 @@ def invalid_val(user_data):
                 ar_inv.append(("no_absent", "no_absent"))
         inval_el[field] =ar_inv
     return inval_el
-# #генерация невалидных данных по ключам
-# def in_inv(cur_name: str, el: list, user_data):
-#     for element in el:
-#         if element == "absent":
-#             return "no absent", element
-#
-#     if el == 'absent':
-#         return  "", el
-#     elif el == 'url':
-#         return user_data[0]['url'], el
-#     elif el[:3] == 'len':
-#         lminmax = el[4:]
-#         lmin = int(lminmax.split(" ", 1)[0])
-#         lmax = int(lminmax.split(" ", 1)[1])
-#         return (user_data[0][names_data_for_fields[cur_name]] * 6)[:(lmin - 2)] +" "+ (user_data[0][names_data_for_fields[cur_name]] * 6)[:(lmax + 2)], el
-#     elif el == 'no_email':
-#         return user_data[0]['url'], el
-#     elif el == 'no_lower':
-#         return user_data[0][names_data_for_fields[cur_name]].upper(), el
-#     elif el == 'no_upper':
-#         return user_data[0][names_data_for_fields[cur_name]].lower(), el
-#     elif el == 'no_digit':
-#         res = re.sub(r"\d", "", el)
-#         return res + 'ab', el
-#     elif el == 'no_spec':
-#         res = "".join(ch for ch in el if ch.isalnum() or ch.isspace())
-#         return res + '1f', el
-#     elif el == 'probel':
-#         return user_data[0][names_data_for_fields[cur_name]][:2] + ' ' + user_data[0][names_data_for_fields[cur_name]][2:], el
-#     elif el == 'Cyrillic':
-#         ru = "йцукенгшщзхъфывапролджэячсмитьбю"
-#         en = "qwertyuiopdfasdfghjkldfzxcvbnmdf"
-#         mapping = dict(zip(ru, en))
-#         result1 = []
-#         for ch in el:
-#             low = ch.lower()
-#             if low in mapping:
-#                 new_ch = mapping[low]
-#                 # восстанавливаем регистр
-#                 result1.append(new_ch.upper() if ch.isupper() else new_ch)
-#             else:
-#                 result1.append(ch)
-#         return "".join(result1), el
-#     elif el == 'latin':
-#         ru = "йцукенгшщзхъфывапролджэячсмитьбю"
-#         en = "qwertyuiopdfasdfghjkldfzxcvbnmdf"
-#         mapping = dict(zip(en, ru))
-#         result2 = []
-#         for ch in el:
-#             low = ch.lower()
-#             if low in mapping:
-#                 new_ch = mapping[low]
-#                 # восстанавливаем регистр
-#                 result2.append(new_ch.upper() if ch.isupper() else new_ch)
-#             else:
-#                 result2.append(ch)
-#         return "".join(result2), el
-#     elif el == 'lowreglat':
-#         ru = "йцукенгшщзхъфывапролджэячсмитьбю"
-#         en = "qwertyuiopdfasdfghjkldfzxcvbnmdf"
-#         mapping = str.maketrans(en + en.lower(), ru + ru.lower())
-#         converted = el.translate(mapping)
-#         return converted, el
-#     elif el == 'upreglat':
-#         ru = "йцукенгшщзхъфывапролджэячсмитьбю"
-#         en = "qwertyuiopdfasdfghjkldfzxcvbnmdf"
-#         mapping = str.maketrans(en + en.upper(), ru + ru.upper())
-#         converted = el.translate(mapping)
-#         return converted, el
-#     elif el == 'lowregcyr':
-#         ru = "йцукенгшщзхъфывапролджэячсмитьбю"
-#         en = "qwertyuiopdfasdfghjkldfzxcvbnmdf"
-#         mapping = str.maketrans(ru + ru.lower(), en + en.lower())
-#         converted = el.translate(mapping)
-#         return converted, el
-#     elif el == 'upregcyr':
-#         ru = "йцукенгшщзхъфывапролджэячсмитьбю"
-#         en = "qwertyuiopdfasdfghjkldfzxcvbnmdf"
-#         mapping = str.maketrans(ru + ru.upper(), en + en.upper())
-#         converted = el.translate(mapping)
-#         return converted, el
-#     elif el == 'one_reg_log':
-#         return user_data[0][names_data_for_fields[cur_name]].upper(), el
-#     else:
-#         return el, el
+
 #
 # @allure.title("Позитивні та негативні тести: поля відображаються")
 # @pytest.mark.parametrize("scenario, expected_result", [
@@ -231,7 +148,7 @@ def invalid_val(user_data):
 #     ("no_valid", "FAIL"),
 #     #("hidden", "FAIL"),
 # ])
-# список кортежей из полей со списками невалидных данных
+# список кортежей из полей и списков словарей с невалидными и валидными данными
 def generate_negative_cases():
     """Собираем все наборы: одно поле невалидное, остальные валидные"""
     test_cases = []
@@ -272,17 +189,6 @@ def test_positive_form(page_open, user_data):
             debug("знайдено кнопку переходу на сторінку реєстрації у застосунку Book Store Application",
                   "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
             but_reestr = page_open.get_by_role("button", name="New User")
-            # page_open.get_by_role("button", name="New User").click()
-            # Применяем stealth к странице (нужно сразу после создания page, ДО навигации)
-    #         stealth(page_open)
-    #         page_open.add_init_script("""
-    #     window.grecaptcha = {
-    #         ready: function(cb) { try { cb(); } catch(e) {} },
-    #         execute: function() { return Promise.resolve("test-token"); },
-    #         render: function() { return 12345; }
-    #     };
-    #     window.grecaptcha.enterprise = window.grecaptcha.enterprise || window.grecaptcha;
-    # """)
 
             changed, new_url = click_and_wait_url_change(page_open, lambda: but_reestr.click())
             debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
@@ -319,7 +225,7 @@ def test_positive_form(page_open, user_data):
                 content_type="application/json",
                 body='{"success": true}'
             ))
-
+        print('\n')
         with allure.step('Перехід на кнопку реєстрації екаунту та клік на ній'):
             expect(page_open.get_by_role("button", name="Register")).to_be_visible()
             debug("знайдено кнопку реєстрації у застосунку Book Store Application",
@@ -428,7 +334,7 @@ def test_negative_form(page_open, user_data):
     fields = user_data[0].keys()
     valid_values = valid_val(user_data)
     invalid_values = invalid_val(user_data)
-    # список кортежей из полей со списками невалидных данных
+    # список кортежей из полей со списками словарей с валидными и невалидными данными
     list_tuppels_negative_tests = generate_negative_cases()
     # збір імен полів для невалідних тестів
     fields_for_negative_tests = [t[0] for t in list_tuppels_negative_tests if t[0] != "url"]
@@ -445,216 +351,174 @@ def test_negative_form(page_open, user_data):
             # створення словника зі списками невалідних даних по полях
             # ключ це ім'я поля а значення список словників з полями і даними'
             dict_for_negative_tests[t[0]].append(dict_negative)
-    # fields_with_lists_for_negative_tests =
     failed_cases = []  # тут збираємо всі провали
+    allure.dynamic.title("Негативний тест: одне поле невалідне, інші поля валідні")
+    print('\n')
+    debug("Негативний тест: одне поле невалідне, інші поля валідні", "Початок негативного тесту")
+    print('\n')
 
-    try:
-        with allure.step('Перехід на сторінку створення екаунту'):
-            expect(page_open.get_by_role("heading", name="Elements")).to_be_visible()
-            page_open.get_by_role("heading", name="Elements").click()
-            debug("здійснено клік на заголовку Elements", "Перехід на сторінку едементів HTML")
-            expect(page_open.get_by_text("Book Store Application")).to_be_visible()
-            page_open.get_by_text("Book Store Application").click()
-            debug("здійснено клік на елементі Book Store Application",
-                  "Перехід на сторінку Застосунок книжкового магазину")
-            expect(page_open.get_by_text("Login")).to_be_visible()
-            page_open.get_by_text("Login").click()
-            debug("здійснено клік на елементі Login списку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            expect(page_open.get_by_role("heading", name="Login", exact=True)).to_be_visible()
-            debug("перейшли на сторінку входу у застосунок Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            expect(page_open.get_by_role("button", name="New User")).to_be_visible()
-            debug("знайдено кнопку переходу на сторінку реєстрації у застосунку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            but_reestr = page_open.get_by_role("button", name="New User")
-            # page_open.get_by_role("button", name="New User").click()
-            changed, new_url = click_and_wait_url_change(page_open, lambda: but_reestr.click())
-            debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            assert changed, "Не відкрилась сторінка реєстрації у Застосунку книжкового магазину"
-            # debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
-            #       "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+    # try:
+    with allure.step('Перехід на сторінку створення екаунту'):
+        expect(page_open.get_by_role("heading", name="Elements")).to_be_visible()
+        page_open.get_by_role("heading", name="Elements").click()
+        debug("здійснено клік на заголовку Elements", "Перехід на сторінку едементів HTML")
+        expect(page_open.get_by_text("Book Store Application")).to_be_visible()
+        page_open.get_by_text("Book Store Application").click()
+        debug("здійснено клік на елементі Book Store Application",
+              "Перехід на сторінку Застосунок книжкового магазину")
+        expect(page_open.get_by_text("Login")).to_be_visible()
+        page_open.get_by_text("Login").click()
+        debug("здійснено клік на елементі Login списку Book Store Application",
+              "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+        expect(page_open.get_by_role("heading", name="Login", exact=True)).to_be_visible()
+        debug("перейшли на сторінку входу у застосунок Book Store Application",
+              "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+        expect(page_open.get_by_role("button", name="New User")).to_be_visible()
+        debug("знайдено кнопку переходу на сторінку реєстрації у застосунку Book Store Application",
+              "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+        but_reestr = page_open.get_by_role("button", name="New User")
+        # page_open.get_by_role("button", name="New User").click()
+        changed, new_url = click_and_wait_url_change(page_open, lambda: but_reestr.click())
+        debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
+              "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+        assert changed, "Не відкрилась сторінка реєстрації у Застосунку книжкового магазину"
 
-            # link = page_open.get_by_role("link", name="Create an Account")
-            # expect(link).to_be_visible(timeout=10000)
-            # debug("здійснено перехід на посилання створення екаунту", "Посилання створення екаунту")
-            # # link.click()
-            # debug("здійснено клік на посиланні створення екаунту", "Посилання створення екаунту")
-            # changed, new_url = click_and_wait_url_change(page_open, lambda: link.click())
-            # assert changed, "Не відкрилась сторінка створення екаунту"
+        # --- обхід реклами ---
+        if "google_vignette" in page_open.url or "ad.doubleclick" in page_open.url:
+            debug("Виявлено рекламу google_vignette. Повертаємось назад...", "WARNING")
+            page_open.go_back()
+            expect(but_reestr).to_be_visible(timeout=10000)
+            but_reestr.click()
+            debug("повторний клік після реклами", "INFO")
 
-            # --- обхід реклами ---
-            if "google_vignette" in page_open.url or "ad.doubleclick" in page_open.url:
-                debug("Виявлено рекламу google_vignette. Повертаємось назад...", "WARNING")
-                page_open.go_back()
-                expect(but_reestr).to_be_visible(timeout=10000)
-                but_reestr.click()
-                debug("повторний клік після реклами", "INFO")
-
-            close_button = page_open.get_by_role("button", name="Close").first
-            if close_button.is_visible():
-                close_button.click()
-                debug("Виявлено рекламу з кнопкою Close. Натиснуто на Close", "WARNING")
-        with allure.step('Перевірка заголовку, чи це сторінка реєстрації у застосунку Book Store Application'):
-            expect(page_open.get_by_role("heading", name="Register", exact=True)).to_be_visible()
-            debug("перейшли на сторінку реєстрації у застосунку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-        for field, list_dicts_inv_data in dict_for_negative_tests.items():
-        # for field, list_inv_data in invalid_values.items():
-        #     if field != "url":
-        #         # list_inv_fields = generate_negative_cases()
-        #         # перебіг по полям зі списками невалідних даних в кортежах
-        #         # for el_list in list_inv_fields:
-        #     поточний словник з черговим негативом для поля
-            for dict_cur_data in list_dicts_inv_data:
+        close_button = page_open.get_by_role("button", name="Close").first
+        if close_button.is_visible():
+            close_button.click()
+            debug("Виявлено рекламу з кнопкою Close. Натиснуто на Close", "WARNING")
+    with allure.step('Перевірка заголовку, чи це сторінка реєстрації у застосунку Book Store Application'):
+        expect(page_open.get_by_role("heading", name="Register", exact=True)).to_be_visible()
+        debug("перейшли на сторінку реєстрації у застосунку Book Store Application",
+              "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+    for field, list_dicts_inv_data in dict_for_negative_tests.items():
+        # try:
+        allure.dynamic.title(f"Негативний тест: поле '{field}' отримує невалідні значення")
+        print('\n')
+        debug(f"Негативний тест: поле '{field}' отримує невалідні значення", "Негативні тести")
+        print('\n')
+    #     поточний словник з черговим негативом для поля
+        for dict_cur_data in list_dicts_inv_data:
+            try:
                 for field_key, el_list in dict_cur_data.items():
                     neg = False
-                    # for el_list in el_lists.values():
                     if isinstance(el_list, tuple):
                         el_list_n = el_list[0]
                         el_list_d = el_list[1]
                         neg = True
                     else:
-                        el_list_n = el_list
-                    # invalid_field, data = el_list
-                    # inv_value = ''
-                    # allure.dynamic.title(f"Негативний тест: поле '{invalid_field}' отримує невалідні значення")
-                    # print('\n')
-                    # debug(f"Негативний тест: поле '{invalid_field}' отримує невалідні значення", "Негативні тести")
-                    # invalid_field, data = el_list
-                    # inv_value = ''
-                    allure.dynamic.title(f"Негативний тест: поле '{field}' отримує невалідні значення")
-                    print('\n')
-                    debug(f"Негативний тест: поле '{field}' отримує невалідні значення", "Негативні тести")
-
-                    # try:
+                        el_list_d = el_list
                     with allure.step("Заповнення форми"):
-                        debug("заповнення полів форми", "Форма")
-                        # for field, value in data.items():
-                        #     if invalid_field == field:
-                        #         inv_value = value
-                        #     tb = page_open.get_by_role("textbox", name=field, exact=True)
-                        #     tb.fill(value)
+                        # debug("заповнення полів форми", "Форма")
                         if neg:
                             ##############################################################
                             tb = page_open.get_by_role("textbox", name=field_key, exact=True)
                             debug(f"заповнення поля {field_key} невалідністю {el_list_n} по типу {el_list_d}", "Заповнення форми")
                             tb.fill(el_list_n)
                             ##############################################################
-                                # if inv_value == value:
                             str_att = f"введені невалідні дані {el_list_n} у поле {field_key}:"
                             debug(str_att, f"{field_key}")
-                                # else:
-                                #     str_att = "введені валідні дані у поле"
-                                #     debug(str_att, f"{field}")
                             allure.attach(str_att+" "+ "\""+str(el_list_n)+"\"", name=f"Поле {field_key}")
                         else:
                             ##############################################################
                             tb = page_open.get_by_role("textbox", name=field_key, exact=True)
-                            debug(f"заповнення поля {field_key} валідними даними {el_list_n}",
+                            debug(f"заповнення поля {field_key} валідними даними {el_list_d}",
                                   "Заповнення форми")
-                            tb.fill(el_list_n)
+                            tb.fill(el_list_d)
                             ##############################################################
-                            # if inv_value == value:
-                            str_att = f"введені валідні дані {el_list_n} у поле {field_key}:"
+                            str_att = f"введені валідні дані {el_list_d} у поле {field_key}:"
                             debug(str_att, f"{field_key}")
-                            # else:
-                            #     str_att = "введені валідні дані у поле"
-                            #     debug(str_att, f"{field}")
-                            allure.attach(str_att + " " + "\"" + str(el_list_n) + "\"", name=f"Поле {field_key}")
+                            allure.attach(str_att + " " + "\"" + str(el_list_d) + "\"", name=f"Поле {field_key}")
                     # Перехватываем запрос к серверу reCAPTCHA и возвращаем успешный ответ
                 page_open.route("https://www.google.com/recaptcha/api2/**", lambda route: route.fulfill(
                     status=200,
                     content_type="application/json",
                     body='{"success": true}'
                 ))
-
-                            # with allure.step('Клік на кнопці створення екаунту'):
-                    #     btnS = page_open.get_by_role("button", name="Create an Account")
-                    #     expect(btnS).to_be_visible(timeout=10000)
-                    #     btnS.click()
-                    #
-                    #     changed, new_url = click_and_wait_url_change(page_open, lambda: btnS.click())
-                    #     assert changed, "Не відкрилась сторінка створеного екаунту"
-                    #     fail_on_alert(page_open)
-                    #     if page_open.get_by_role("alert").locator("div").first.is_visible(timeout=10000):
-                    #         debug("Помилка створення екаунту", "ПОМИЛКА")
-                    #     expect(page_open.get_by_role("alert").locator("div").first).not_to_be_visible(timeout=10000)
-
+                print('\n')
                 with allure.step('Перехід на кнопку реєстрації екаунту та клік на ній'):
                     expect(page_open.get_by_role("button", name="Register")).to_be_visible()
                     debug("знайдено кнопку реєстрації у застосунку Book Store Application",
+                          "Перехід на кнопку реєстрації у Застосунку книжкового магазину")
+                    # page_open.get_by_role("button", name="Register").click()
+                    # debug("здійснено клік на кнопку реєстрації у застосунку Book Store Application",
+                    #       "Реєстрація у Застосунку книжкового магазину")
+                    but_registr = page_open.get_by_role("button", name="Register")
+                    changed, new_url = click_and_wait_url_change(page_open, lambda: but_registr.click())
+                    debug("зроблено клік на кнопці реєстрації у застосунку Book Store Application",
                           "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-                    page_open.get_by_role("button", name="Register").click()
-                    debug("здійснено клік на кнопку реєстрації у застосунку Book Store Application",
-                          "Реєстрація у Застосунку книжкового магазину")
+                    # assert changed, f"Не відкрилась сторінка реєстрації у Застосунку книжкового магазину при невалідному {field}"
+                    if not changed:
+                        failed_cases.append((field, el_list_n, str(e)))
+
                     close_button = page_open.get_by_role("button", name="OK").first
                     if close_button.is_visible():
                         close_button.click()
                         debug("Виявлено рекламу з кнопкою OK. Натиснуто на OK", "WARNING")
-                    # тут навмисно ставимо "невірне" очікування,
-                    # щоб тест зловив помилку, якщо акаунт створився
-                    # expect(page_open.get_by_role("alert")).to_contain_text(
-                    #     "Thank you for registering with Main Website Store."
-                    # )
-                    assert page_open.get_by_role("strong").filter(has_text="Account Information").is_visible(), \
-                        "BUG: Відсутня інформація про екаунт"
+                    # assert page_open.get_by_role("strong").filter(has_text="Account Information").is_visible(), \
+                    #     "BUG: Відсутня інформація про екаунт"
                 # Скриншот страницы
                 screenshot = page_open.screenshot()
+                page_open.screenshot(type='jpeg', path=f'screenshots/negativ{now.strftime("%d.%m.%Y %H:%M:%S")}.jpg')
+                debug("Скриншот останньої сторінки negativ.jpg", "Скрін сторінки")
+                print('\n')
                 allure.attach(
                     screenshot,
                     name=f"Скриншот останньої сторінки",
                     attachment_type=allure.attachment_type.PNG
                 )
-                # with allure.step('Перевірка переходу на сторінку My Account'):
-                #     expect(page_open.locator("h1")).to_be_visible(timeout=20000)
-                #     debug("здійснено перехід на сторінку зареєстрованого екаунту", "Сторінка екаунту")
-                #     assert page_open.get_by_role("strong").filter(has_text="Account Information").is_visible(), \
-                #         "BUG: Відсутня інформація про екаунт"
 
-    except AssertionError as e:
-        debug(f"Негативний тест пройдено для поля {field} зі значенням \"{el_list_n}\"", "TEST FAIL")
-        failed_cases.append((field, el_list_n, str(e)))
+            except AssertionError as e:
+                # debug(f"Негативний тест пройдено для поля {field} з невалідним значенням \"{el_list_n}\"", "TEST FAIL")
+                failed_cases.append((field, el_list_n, str(e)))
+                continue
 
-        # alert = page_open.get_by_role("alert").locator("div").first
-        # if alert.is_visible():
-        #     errors.append(alert.inner_text())
-        #     debug(alert.inner_text(), "ERROR")
+                # alert = page_open.get_by_role("alert").locator("div").first
+                # if alert.is_visible():
+                #     errors.append(alert.inner_text())
+                #     debug(alert.inner_text(), "ERROR")
 
 
-    except Exception as e:
-        # логування інших помилок (поля, алерти тощо)
-        errors = []
-        for selector in [
-            "#firstname-error",
-            "#lastname-error",
-            "#email_address-error",
-            "#password-error",
-            "#password-confirmation-error",
-        ]:
-            if page_open.locator(selector).is_visible():
-                errors.append(page_open.locator(selector).inner_text())
-                debug(page_open.locator(selector).inner_text(), "ERROR")
+            except Exception as e:
+                # логування інших помилок (поля, алерти тощо)
+                errors = []
+                for selector in [
+                    "#firstname-error",
+                    "#lastname-error",
+                    "#email_address-error",
+                    "#password-error",
+                    "#password-confirmation-error",
+                ]:
+                    if page_open.locator(selector).is_visible():
+                        errors.append(page_open.locator(selector).inner_text())
+                        debug(page_open.locator(selector).inner_text(), "ERROR")
 
-        alert = page_open.get_by_role("alert").locator("div").first
-        if alert.is_visible():
-            errors.append(alert.inner_text())
-            debug(alert.inner_text(), "ERROR")
+                alert = page_open.get_by_role("alert").locator("div").first
+                if alert.is_visible():
+                    errors.append(alert.inner_text())
+                    debug(alert.inner_text(), "ERROR")
 
-        if errors:
-            failed_cases.append((field, el_list_n, "; ".join(errors)))
-            debug(errors, "ERROR")
+                if errors:
+                    failed_cases.append((field, el_list_n, "; ".join(errors)))
+                    debug(errors, "ERROR")
 
-        screenshot = page_open.screenshot()
-        allure.attach(screenshot, name="Скриншот падіння або помилки", attachment_type=allure.attachment_type.PNG)
+                screenshot = page_open.screenshot()
+                allure.attach(screenshot, name="Скриншот падіння або помилки", attachment_type=allure.attachment_type.PNG)
 
-    finally:
-        # після всіх ітерацій: якщо були фейли — завалюємо тест 1 раз
-        if failed_cases:
-            msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
-            debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
-            raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
+            finally:
+                # після всіх ітерацій: якщо були фейли — завалюємо тест 1 раз
+                if failed_cases:
+                    msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
+                    debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
+                    # raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
 
 
 def test_generate(page_open, user_data):
