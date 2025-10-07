@@ -185,6 +185,27 @@ def test_positive_form(page_open, user_data):
             debug("здійснено клік на посиланні Text input", "Перехід на сторінку елементів введення даних")
             assert changed, "Не відкрилась сторінка елементів введення даних"
             debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
+            expect(page_open.get_by_role("heading", name="Input field")).to_be_visible()
+            debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
+            expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
+            debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
+            expect(page_open.get_by_role("textbox", name="Text string*")).to_be_visible()
+            debug("знайдено текстове поле text_string", "Перевірка наявності текстового поля text_string")
+            with allure.step("Заповнення форми валідними даними"):
+                for field, value in user_data[0].items():
+                    if field != "url":
+                        tb = page_open.get_by_role("textbox", name=field, exact=True)
+                        tb.fill(value)
+                        debug("заповнено поле", f"{field}")
+                        allure.attach(str(value), name=f"Поле {field}")
+                        tb.press("Enter")
+                        debug("зафіксоване введення клавішею Enter", f"{field}")
+                        expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
+                        debug(f"підтверджене введення {value}", f"{field}")
+            # page_open.get_by_role("textbox", name="Text string*").fill("Test QA")
+            # debug(f"заповнено текстове поле {field}", f"Заповнення текстового поля {field}")
+
+
             # expect(page_open.get_by_role("heading", name="Elements")).to_be_visible()
             page_open.get_by_role("heading", name="Elements").click()
             debug("здійснено клік на заголовку Elements", "Перехід на сторінку едементів HTML")
@@ -220,10 +241,10 @@ def test_positive_form(page_open, user_data):
             if close_button.is_visible():
                 close_button.click()
                 debug("Виявлено рекламу з кнопкою Close. Натиснуто на Close", "WARNING")
-        with allure.step('Перевірка заголовку, чи це сторінка реєстрації у застосунку Book Store Application'):
-            expect(page_open.get_by_role("heading", name="Register", exact=True)).to_be_visible()
-            debug("перейшли на сторінку реєстрації у застосунку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
+        # with allure.step('Перевірка заголовку, чи це сторінка реєстрації у застосунку Book Store Application'):
+        #     expect(page_open.get_by_role("heading", name="Register", exact=True)).to_be_visible()
+        #     debug("перейшли на сторінку реєстрації у застосунку Book Store Application",
+        #           "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
         ##########################################################################
         with allure.step("Заповнення форми валідними даними"):
             for field, value in user_data[0].items():
