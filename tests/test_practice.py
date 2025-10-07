@@ -189,11 +189,13 @@ def test_positive_form(page_open, user_data):
             debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
             expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
             debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
-            expect(page_open.get_by_role("textbox", name="Text string*")).to_be_visible()
-            debug("знайдено текстове поле text_string", "Перевірка наявності текстового поля text_string")
+            # expect(page_open.get_by_role("textbox", name="Text string*")).to_be_visible()
+            # debug("знайдено текстове поле text_string", "Перевірка наявності текстового поля text_string")
             with allure.step("Заповнення форми валідними даними"):
                 for field, value in user_data[0].items():
                     if field != "url":
+                        expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
+                        debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
                         tb = page_open.get_by_role("textbox", name=field, exact=True)
                         tb.fill(value)
                         debug("заповнено поле", f"{field}")
