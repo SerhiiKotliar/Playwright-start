@@ -178,10 +178,8 @@ def test_positive_form(page_open, user_data):
             debug("знайдено заголовок Hello!", "Перевірка наявності заголовка Hello!")
             expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
             debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
-            debug("здійснено клік на заголовку Elements", "Перехід на сторінку едементів HTML")
             link_input = page_open.get_by_role("link", name="Text input")
             changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
-            # page.get_by_role("link", name="Text input").click()
             debug("здійснено клік на посиланні Text input", "Перехід на сторінку елементів введення даних")
             assert changed, "Не відкрилась сторінка елементів введення даних"
             debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
@@ -190,7 +188,7 @@ def test_positive_form(page_open, user_data):
             expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
             debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
             # expect(page_open.get_by_role("textbox", name="Text string*")).to_be_visible()
-            # debug("знайдено текстове поле text_string", "Перевірка наявності текстового поля text_string")
+            # debug("знайдено текстове поле Text string*", "Перевірка наявності текстового поля Text string*")
             with allure.step("Заповнення форми валідними даними"):
                 for field, value in user_data[0].items():
                     if field != "url":
@@ -202,82 +200,22 @@ def test_positive_form(page_open, user_data):
                         allure.attach(str(value), name=f"Поле {field}")
                         tb.press("Enter")
                         debug("зафіксоване введення клавішею Enter", f"{field}")
+                        if page_open.get_by_text("Please enter no more than ...").is_visible():
+                            pytest.fail(f"❌ З'явилось повідомлення про надто велику довжину для поля '{field}' при введенні валідних даних: {value}")
+                            debug(f"З'явилось повідомлення про надто велику довжину для поля '{field}' при введенні валідних даних: {value}", f"❌ Помилка довжини для поля '{field}'")
+                        if page_open.get_by_text("Please enter ... or more").is_visible():
+                            pytest.fail(f"❌ З'явилось повідомлення про надто малу довжину для поля '{field}' при введенні валідних даних: {value}")
+                            debug(f"З'явилось повідомлення про надто малу довжину для поля '{field}' при введенні валідних даних: {value}", f"❌ Помилка довжини для поля '{field}'")
+                        if page_open.get_by_text("Enter a valid string").is_visible():
+                            pytest.fail(f"❌ З'явилось повідомлення про невалідний формат для поля '{field}' при введенні валідних даних: {value}")
+                            debug(f"З'явилось повідомлення про невалідний формат для поля '{field}' при введенні валідних даних: {value}", f"❌ Помилка формату для поля '{field}'")
                         expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
                         debug(f"підтверджене введення {value}", f"{field}")
-            # page_open.get_by_role("textbox", name="Text string*").fill("Test QA")
-            # debug(f"заповнено текстове поле {field}", f"Заповнення текстового поля {field}")
-
-
-            # expect(page_open.get_by_role("heading", name="Elements")).to_be_visible()
-            page_open.get_by_role("heading", name="Elements").click()
-            debug("здійснено клік на заголовку Elements", "Перехід на сторінку едементів HTML")
-            expect(page_open.get_by_text("Book Store Application")).to_be_visible()
-            page_open.get_by_text("Book Store Application").click()
-            debug("здійснено клік на елементі Book Store Application", "Перехід на сторінку Застосунок книжкового магазину")
-            expect(page_open.get_by_text("Login")).to_be_visible()
-            page_open.get_by_text("Login").click()
-            debug("здійснено клік на елементі Login списку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            expect(page_open.get_by_role("heading", name="Login", exact=True)).to_be_visible()
-            debug("перейшли на сторінку входу у застосунок Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            expect(page_open.get_by_role("button", name="New User")).to_be_visible()
-            debug("знайдено кнопку переходу на сторінку реєстрації у застосунку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            but_reestr = page_open.get_by_role("button", name="New User")
-
-            changed, new_url = click_and_wait_url_change(page_open, lambda: but_reestr.click())
-            debug("зроблено клік на кнопці переходу на сторінку реєстрації у застосунку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            assert changed, "Не відкрилась сторінка реєстрації у Застосунку книжкового магазину"
-
-            # --- обхід реклами ---
-            if "google_vignette" in page_open.url or "ad.doubleclick" in page_open.url:
-                debug("Виявлено рекламу google_vignette. Повертаємось назад...", "WARNING")
-                page_open.go_back()
-                expect(but_reestr).to_be_visible(timeout=10000)
-                but_reestr.click()
-                debug("повторний клік після реклами", "INFO")
-
-            close_button = page_open.get_by_role("button", name="Close").first
-            if close_button.is_visible():
-                close_button.click()
-                debug("Виявлено рекламу з кнопкою Close. Натиснуто на Close", "WARNING")
-        # with allure.step('Перевірка заголовку, чи це сторінка реєстрації у застосунку Book Store Application'):
-        #     expect(page_open.get_by_role("heading", name="Register", exact=True)).to_be_visible()
-        #     debug("перейшли на сторінку реєстрації у застосунку Book Store Application",
-        #           "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-        ##########################################################################
-        with allure.step("Заповнення форми валідними даними"):
-            for field, value in user_data[0].items():
-                if field != "url":
-                    tb = page_open.get_by_role("textbox", name=field, exact=True)
-                    tb.fill(value)
-                    debug("заповнено поле", f"{field}")
-                    allure.attach(str(value), name=f"Поле {field}")
-            # Перехватываем запрос к серверу reCAPTCHA и возвращаем успешный ответ
-            page_open.route("https://www.google.com/recaptcha/api2/**", lambda route: route.fulfill(
-                status=200,
-                content_type="application/json",
-                body='{"success": true}'
-            ))
-        print('\n')
-        with allure.step('Перехід на кнопку реєстрації екаунту та клік на ній'):
-            expect(page_open.get_by_role("button", name="Register")).to_be_visible()
-            debug("знайдено кнопку реєстрації у застосунку Book Store Application",
-                  "Перехід на сторінку реєстрації у Застосунку книжкового магазину")
-            page_open.get_by_role("button", name="Register").click()
-            debug("здійснено клік на кнопку реєстрації у застосунку Book Store Application", "Реєстрація у Застосунку книжкового магазину")
-
-            close_button = page_open.get_by_role("button", name="OK").first
-            if close_button.is_visible():
-                close_button.click()
-                debug("Виявлено рекламу з кнопкою OK. Натиснуто на OK", "WARNING")
 
         # Скриншот страницы
         screenshot = page_open.screenshot()
-        page_open.screenshot(type='jpeg', path='screenshots/positiv.jpg')
-        debug("Скриншот останньої сторінки positiv.jpg", "Скрін сторінки")
+        page_open.screenshot(type='jpeg', path=f'screenshots/positiv{now.strftime("%d-%m-%Y %H-%M-%S")}.jpg')
+        debug(f"Скриншот останньої сторінки positiv{now.strftime("%d-%m-%Y %H-%M-%S")}.jpg", "Скрін сторінки")
         allure.attach(
             screenshot,
             name=f"Скриншот останньої сторінки",
