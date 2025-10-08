@@ -298,3 +298,163 @@ def test_positive_form(page_open, user_data):
 
         # Сбрасываем AssertionError, чтобы тест упал и pytest зарегистрировал ошибку
         raise e
+
+# 🔹 Негативные тесты зависят от позитивного
+# @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
+# @pytest.mark.dependency(depends=["positive"])
+# def test_negative_form(page_open, invalid_field, data):
+def test_negative_form(page_open, user_data):
+    global valid_values, invalid_values, fields
+    fields = user_data[0].keys()
+    valid_values = valid_val(user_data)
+    invalid_values = invalid_val(user_data)
+    # список кортежей из полей со списками словарей с валидными и невалидными данными
+    list_tuppels_negative_tests = generate_negative_cases()
+    # збір імен полів для невалідних тестів
+    fields_for_negative_tests = [t[0] for t in list_tuppels_negative_tests if t[0] != "url"]
+    dict_for_negative_tests = {}
+    for ff in fields_for_negative_tests:
+        dict_for_negative_tests[ff] = []
+    # перебіг по кортежам зі списками невалідних даних
+    for t in list_tuppels_negative_tests:
+        if t[0] in dict_for_negative_tests.keys():
+            dict_negative = {}
+            for key, value in t[1].items():
+                if key != "url":
+                    dict_negative[key] = value
+            # створення словника зі списками невалідних даних по полях
+            # ключ це ім'я поля а значення список словників з полями і даними'
+            dict_for_negative_tests[t[0]].append(dict_negative)
+    failed_cases = []  # тут збираємо всі провали
+    allure.dynamic.title("Негативний тест: одне поле невалідне, інші поля валідні")
+    print('\n')
+    debug("Негативний тест: одне поле невалідне, інші поля валідні", "Початок негативного тесту")
+    print('\n')
+    with (allure.step('Перехід на головну сторінку сайту')):
+        expect(page_open.get_by_role("link", name=" Homepage")).to_be_visible()
+        debug("знайдено посилання Homepage", "Перевірка наявності посилання Homepage")
+        expect(page_open.get_by_role("heading", name="Hello!")).to_be_visible()
+        debug("знайдено заголовок Hello!", "Перевірка наявності заголовка Hello!")
+        expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
+        debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
+        link_input = page_open.get_by_role("link", name="Text input")
+        changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
+        debug("здійснено клік на посиланні Text input", "Перехід на сторінку елементів введення даних")
+        assert changed, "Не відкрилась сторінка елементів введення даних"
+        debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
+        expect(page_open.get_by_role("heading", name="Input field")).to_be_visible()
+        debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
+        expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
+        debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
+        # expect(page_open.get_by_role("textbox", name="Text string*")).to_be_visible()
+        # debug("знайдено текстове поле Text string*", "Перевірка наявності текстового поля Text string*")
+        for field, list_dicts_inv_data in dict_for_negative_tests.items():
+            # try:
+            allure.dynamic.title(f"Негативний тест: поле '{field}' отримує невалідні значення")
+            print('\n')
+            debug(f"Негативний тест: поле '{field}' отримує невалідні значення", "Негативні тести")
+            print('\n')
+            #     поточний словник з черговим негативом для поля
+            for dict_cur_data in list_dicts_inv_data:
+                try:
+                    for field_key, el_list in dict_cur_data.items():
+                        neg = False
+                        value = ""
+                        if isinstance(el_list, tuple):
+                            el_list_n = el_list[0]
+                            el_list_d = el_list[1]
+                            neg = True
+                        else:
+                            el_list_d = el_list
+                        with allure.step("Заповнення форми"):
+                            # debug("заповнення полів форми", "Форма")
+                            if neg:
+                                ##############################################################
+                                tb = page_open.get_by_role("textbox", name=field_key, exact=True)
+                                debug(f"заповнення поля {field_key} невалідністю {el_list_n} по типу {el_list_d}",
+                                      "Заповнення форми")
+                                tb.fill(el_list_n)
+                                value = el_list_n
+                                ##############################################################
+                                str_att = f"введені невалідні дані {el_list_n} у поле {field_key}:"
+                                debug(str_att, f"{field_key}")
+                                allure.attach(str_att + " " + "\"" + str(el_list_n) + "\"", name=f"Поле {field_key}")
+                            else:
+                                ##############################################################
+                                tb = page_open.get_by_role("textbox", name=field_key, exact=True)
+                                debug(f"заповнення поля {field_key} валідними даними {el_list_d}",
+                                      "Заповнення форми")
+                                tb.fill(el_list_d)
+                                value = el_list_d
+                                ##############################################################
+                                str_att = f"введені валідні дані {el_list_d} у поле {field_key}:"
+                                debug(str_att, f"{field_key}")
+                                allure.attach(str_att + " " + "\"" + str(el_list_d) + "\"", name=f"Поле {field_key}")
+                            tb.press("Enter")
+                            debug("зафіксоване введення клавішею Enter", f"{field_key}")
+                            # if page_open.get_by_text("Please enter no more than ...").is_visible():
+                            # if page_open.get_by_text(re.compile(r"Please enter no more than .*")).is_visible(timeout=10000):
+                            if page_open.get_by_text("Please enter no more than 20").is_visible(timeout=10000):
+                                raise AssertionError(f"З'явилось повідомлення про надто велику довжину для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
+                            if page_open.get_by_text(re.compile(r"Please enter .* or more")).is_visible(timeout=10000):
+                                raise AssertionError(f"З'явилось повідомлення про надто малу довжину для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
+                            if page_open.get_by_text("Enter a valid string").is_visible(timeout=10000):
+                                raise AssertionError(f"З'явилось повідомлення про невалідний формат для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
+                            expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
+                            debug(f"підтверджене введення {value}", f"{field}")
+                    # Скриншот страницы
+                    screenshot = page_open.screenshot()
+                    page_open.screenshot(type='jpeg',
+                                         path=f'screenshots/negativ{now.strftime("%d.%m.%Y %H:%M:%S")}.jpg')
+                    debug("Скриншот останньої сторінки negativ.jpg", "Скрін сторінки")
+                    print('\n')
+                    allure.attach(
+                        screenshot,
+                        name=f"Скриншот останньої сторінки",
+                        attachment_type=allure.attachment_type.PNG
+                    )
+                except AssertionError as e:
+                    # debug(f"Негативний тест пройдено для поля {field} з невалідним значенням \"{el_list_n}\"", "TEST FAIL")
+                    failed_cases.append((field, el_list_n, str(e)))
+                    continue
+
+                    # alert = page_open.get_by_role("alert").locator("div").first
+                    # if alert.is_visible():
+                    #     errors.append(alert.inner_text())
+                    #     debug(alert.inner_text(), "ERROR")
+
+
+                except Exception as e:
+                    # логування інших помилок (поля, алерти тощо)
+                    errors = []
+                    for selector in [
+                        "#firstname-error",
+                        "#lastname-error",
+                        "#email_address-error",
+                        "#password-error",
+                        "#password-confirmation-error",
+                    ]:
+                        if page_open.locator(selector).is_visible():
+                            errors.append(page_open.locator(selector).inner_text())
+                            debug(page_open.locator(selector).inner_text(), "ERROR")
+
+                    alert = page_open.get_by_role("alert").locator("div").first
+                    if alert.is_visible():
+                        errors.append(alert.inner_text())
+                        debug(alert.inner_text(), "ERROR")
+
+                    if errors:
+                        failed_cases.append((field, el_list_n, "; ".join(errors)))
+                        debug(errors, "ERROR")
+
+                    screenshot = page_open.screenshot()
+                    allure.attach(screenshot, name="Скриншот падіння або помилки",
+                                  attachment_type=allure.attachment_type.PNG)
+
+                finally:
+                    # після всіх ітерацій: якщо були фейли — завалюємо тест 1 раз
+                    if failed_cases:
+                        msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
+                        debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
+                        # raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
+
