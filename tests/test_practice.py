@@ -11,7 +11,7 @@ from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 import invalid_datas as in_d
 from datetime import datetime
 
-now = datetime.now()
+# now = datetime.now()
 fields = []
 valid_values = []
 invalid_values = {}
@@ -95,7 +95,7 @@ def invalid_val(user_data):
                 lminmax = el[4:]
                 lmin = int(lminmax.split(" ", 1)[0])
                 lmax = int(lminmax.split(" ", 1)[1])
-                first = ((user_data[0][field] * 6)[:(lmin - 2)], "lenmin")
+                first = ((user_data[0][field] * 6)[:(lmin - 1)], "lenmin")
                 second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
                 ar_inv.append(first)
                 ar_inv.append(second)
@@ -392,27 +392,36 @@ def test_negative_form(page_open, user_data):
                                 allure.attach(str_att + " " + "\"" + str(el_list_d) + "\"", name=f"Поле {field_key}")
                             tb.press("Enter")
                             debug("зафіксоване введення клавішею Enter", f"{field_key}")
-                            # if page_open.get_by_text("Please enter no more than ...").is_visible():
-                            # if page_open.get_by_text(re.compile(r"Please enter no more than .*")).is_visible(timeout=10000):
-                            if page_open.get_by_text("Please enter no more than 20").is_visible(timeout=10000):
-                                raise AssertionError(f"З'явилось повідомлення про надто велику довжину для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
-                            if page_open.get_by_text(re.compile(r"Please enter .* or more")).is_visible(timeout=10000):
-                                raise AssertionError(f"З'явилось повідомлення про надто малу довжину для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
-                            if page_open.get_by_text("Enter a valid string").is_visible(timeout=10000):
-                                raise AssertionError(f"З'явилось повідомлення про невалідний формат для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
+
+                            # перевірка на появу повідомлень про помилки
+                            locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+                            text_err = locator.inner_text()
+                            page_open.wait_for_selector('//*[@id="error_1_id_text_string"]', timeout=1000)
+                            if locator.is_visible():
+                                safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field_key)
+                                now = datetime.now()
+                                page_open.screenshot(type='jpeg',
+                                                     path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpg")
+                                debug(f'Скриншот останньої сторінки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpg", "Скрін сторінки")
+                                allure.attach(
+                                    page_open.screenshot(),
+                                    name=f"Скриншот останньої сторінки",
+                                    attachment_type=allure.attachment_type.PNG
+                                print('\n')
+                                raise AssertionError(f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
                             expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
                             debug(f"підтверджене введення {value}", f"{field}")
-                    # Скриншот страницы
-                    screenshot = page_open.screenshot()
-                    page_open.screenshot(type='jpeg',
-                                         path=f'screenshots/negativ{now.strftime("%d.%m.%Y %H:%M:%S")}.jpg')
-                    debug("Скриншот останньої сторінки negativ.jpg", "Скрін сторінки")
-                    print('\n')
-                    allure.attach(
-                        screenshot,
-                        name=f"Скриншот останньої сторінки",
-                        attachment_type=allure.attachment_type.PNG
-                    )
+                    # # Скриншот страницы
+                    # screenshot = page_open.screenshot()
+                    # page_open.screenshot(type='jpeg',
+                    #                      path=f'screenshots/negativ{now.strftime("%d.%m.%Y %H:%M:%S")}.jpg')
+                    # debug("Скриншот останньої сторінки negativ.jpg", "Скрін сторінки")
+                    # print('\n')
+                    # allure.attach(
+                    #     screenshot,
+                    #     name=f"Скриншот останньої сторінки",
+                    #     attachment_type=allure.attachment_type.PNG
+                    # )
                 except AssertionError as e:
                     # debug(f"Негативний тест пройдено для поля {field} з невалідним значенням \"{el_list_n}\"", "TEST FAIL")
                     failed_cases.append((field, el_list_n, str(e)))
@@ -450,11 +459,19 @@ def test_negative_form(page_open, user_data):
                     screenshot = page_open.screenshot()
                     allure.attach(screenshot, name="Скриншот падіння або помилки",
                                   attachment_type=allure.attachment_type.PNG)
+                    # page_open.screenshot(type='jpeg',
+                    #                      path=f'screenshots/negativ{now.strftime("%d-%m-%Y %H-%M-%S")}.jpg')
+                    # debug("Скриншот останньої сторінки negativerror.jpg", "Скрін сторінки")
 
-                finally:
-                    # після всіх ітерацій: якщо були фейли — завалюємо тест 1 раз
-                    if failed_cases:
-                        msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
-                        debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
-                        # raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
-
+                # finally:
+                    # # після всіх ітерацій: якщо були фейли — завалюємо тест 1 раз
+                    # if failed_cases:
+                    #     msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
+                    #     debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
+                    #     # raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
+        # після всіх ітерацій: якщо були фейли — завалюємо тест 1 раз
+        if failed_cases:
+            msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
+            print('\n')
+            debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
+            # raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
