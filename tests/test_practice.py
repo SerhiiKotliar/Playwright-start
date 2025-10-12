@@ -489,5 +489,10 @@ def test_negative_form(page_open, user_data):
         if failed_cases:
             msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
             print('\n')
-            debug(f"Помилки, знайдені негативним тестом:\n{msg}", "ERROR")
+            txt_neg_tests = ""
+            for key, neg_test in count_tests_for_field.items():
+                txt_neg_tests = txt_neg_tests + f"\n{neg_test} тестах(і) для поля '{key}'"
+            # debug(f"{len(failed_cases)} Помилок, знайдених у {count_tests_for_field} негативним тестом:\n{msg}", "ERROR")
+            debug(f"{len(failed_cases)} помилок(ки), знайдених у {txt_neg_tests}:\n{msg}",
+                  "ERROR")
             # raise AssertionError(f"Негативний тест знайшов помилки:\n{msg}")
