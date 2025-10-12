@@ -327,6 +327,7 @@ def test_negative_form(page_open, user_data):
     # збір імен полів для невалідних тестів
     fields_for_negative_tests = [t[0] for t in list_tuppels_negative_tests if t[0] != "url"]
     dict_for_negative_tests = {}
+    count_tests_for_field = {}
     for ff in fields_for_negative_tests:
         dict_for_negative_tests[ff] = []
     # перебіг по кортежам зі списками невалідних даних
@@ -364,6 +365,7 @@ def test_negative_form(page_open, user_data):
         # debug("знайдено текстове поле Text string*", "Перевірка наявності текстового поля Text string*")
         for field, list_dicts_inv_data in dict_for_negative_tests.items():
             # try:
+            count_tests_for_field[field] = len(list_dicts_inv_data)
             allure.dynamic.title(f"Негативний тест: поле '{field}' отримує невалідні значення")
             print('\n')
             debug(f"Негативний тест: поле '{field}' отримує невалідні значення", "Негативні тести")
