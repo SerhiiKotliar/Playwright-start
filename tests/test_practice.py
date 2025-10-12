@@ -160,7 +160,7 @@ def generate_negative_cases():
     return test_cases
 
 # 🔹 Позитивный тест выполняется всегда первым
-# @pytest.mark.dependency(name="positive")
+@pytest.mark.dependency(name="positive")
 def test_positive_form(page_open, user_data):
     global valid_values, invalid_values, fields
     fields = user_data[0].keys()
@@ -191,7 +191,10 @@ def test_positive_form(page_open, user_data):
             # debug("знайдено текстове поле Text string*", "Перевірка наявності текстового поля Text string*")
             with allure.step("Заповнення форми валідними даними"):
                 for field, value in user_data[0].items():
+                    safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
+                    now = datetime.now()
                     if field != "url":
+
                         expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
                         debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
                         tb = page_open.get_by_role("textbox", name=field, exact=True)
@@ -200,27 +203,38 @@ def test_positive_form(page_open, user_data):
                         allure.attach(str(value), name=f"Поле {field}")
                         tb.press("Enter")
                         debug("зафіксоване введення клавішею Enter", f"{field}")
-                        if page_open.get_by_text("Please enter no more than ...").is_visible():
-                            pytest.fail(f"❌ З'явилось повідомлення про надто велику довжину для поля '{field}' при введенні валідних даних: {value}")
-                            debug(f"З'явилось повідомлення про надто велику довжину для поля '{field}' при введенні валідних даних: {value}", f"❌ Помилка довжини для поля '{field}'")
-                        if page_open.get_by_text("Please enter ... or more").is_visible():
-                            pytest.fail(f"❌ З'явилось повідомлення про надто малу довжину для поля '{field}' при введенні валідних даних: {value}")
-                            debug(f"З'явилось повідомлення про надто малу довжину для поля '{field}' при введенні валідних даних: {value}", f"❌ Помилка довжини для поля '{field}'")
-                        if page_open.get_by_text("Enter a valid string").is_visible():
-                            pytest.fail(f"❌ З'явилось повідомлення про невалідний формат для поля '{field}' при введенні валідних даних: {value}")
-                            debug(f"З'явилось повідомлення про невалідний формат для поля '{field}' при введенні валідних даних: {value}", f"❌ Помилка формату для поля '{field}'")
+                        # перевірка на появу повідомлень про помилки
+                        locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+                        if locator.count() > 0 and locator.is_visible:
+                            # safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
+                            # now = datetime.now()
+                            text_err = locator.inner_text()
+                            page_open.wait_for_selector('//*[@id="error_1_id_text_string"]', timeout=1000)
+                            now = datetime.now()
+                            page_open.screenshot(type='jpeg',
+                                                 path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
+                            debug(
+                                f'Скриншот останньої сторінки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg",
+                                "Скрін сторінки")
+                            allure.attach(
+                                page_open.screenshot(),
+                                name=f"Скриншот останньої сторінки",
+                                attachment_type=allure.attachment_type.PNG)
+                            print('\n')
+                            raise AssertionError(
+                            f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
                         expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
                         debug(f"підтверджене введення {value}", f"{field}")
 
-        # Скриншот страницы
-        screenshot = page_open.screenshot()
-        page_open.screenshot(type='jpeg', path=f'screenshots/positiv{now.strftime("%d-%m-%Y %H-%M-%S")}.jpg')
-        debug(f"Скриншот останньої сторінки positiv{now.strftime("%d-%m-%Y %H-%M-%S")}.jpg", "Скрін сторінки")
-        allure.attach(
-            screenshot,
-            name=f"Скриншот останньої сторінки",
-            attachment_type=allure.attachment_type.PNG
-        )
+                # Скриншот страницы
+                screenshot = page_open.screenshot()
+                page_open.screenshot(type='jpeg', path=f'screenshots/positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
+                debug(f'Скриншот останньої сторінки positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg", "Скрін сторінки")
+                allure.attach(
+                    screenshot,
+                    name=f"Скриншот останньої сторінки",
+                    attachment_type=allure.attachment_type.PNG
+                )
 
     except AssertionError as e:
         debug(f"Тест провалено: позитивний сценарій не пройдено {e}", "ERROR")
@@ -301,7 +315,7 @@ def test_positive_form(page_open, user_data):
 
 # 🔹 Негативные тесты зависят от позитивного
 # @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
-# @pytest.mark.dependency(depends=["positive"])
+@pytest.mark.dependency(depends=["positive"])
 # def test_negative_form(page_open, invalid_field, data):
 def test_negative_form(page_open, user_data):
     global valid_values, invalid_values, fields
@@ -366,7 +380,7 @@ def test_negative_form(page_open, user_data):
                             neg = True
                         else:
                             el_list_d = el_list
-                        with allure.step("Заповнення форми"):
+                        with allure.step("Заповнення полів"):
                             # debug("заповнення полів форми", "Форма")
                             if neg:
                                 ##############################################################
@@ -401,12 +415,12 @@ def test_negative_form(page_open, user_data):
                                 safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field_key)
                                 now = datetime.now()
                                 page_open.screenshot(type='jpeg',
-                                                     path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpg")
-                                debug(f'Скриншот останньої сторінки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpg", "Скрін сторінки")
+                                                     path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
+                                debug(f'Скриншот останньої сторінки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg", "Скрін сторінки")
                                 allure.attach(
                                     page_open.screenshot(),
                                     name=f"Скриншот останньої сторінки",
-                                    attachment_type=allure.attachment_type.PNG
+                                    attachment_type=allure.attachment_type.PNG)
                                 print('\n')
                                 raise AssertionError(f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
                             expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
