@@ -4,6 +4,7 @@ import allure
 import pytest
 from playwright.sync_api import expect, Page
 from Rule_form_new import report_about, report_bug_and_stop
+from conftest import page_open
 from helper import debug
 import re
 from typing import Callable, Pattern, Union, Optional
@@ -237,6 +238,7 @@ def test_positive_form(page_open, user_data):
                 )
 
     except AssertionError as e:
+        fail_on_alert(page_open, "error", 2000)
         debug(f"Тест провалено: позитивний сценарій не пройдено {e}", "ERROR")
         report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено {e}", page_open)
         debug(f"Current URL: {page_open.url}", "INFO")
@@ -270,6 +272,7 @@ def test_positive_form(page_open, user_data):
         )
 
     except Exception as e:
+        fail_on_alert(page_open, "error", 2000)
         debug(f"Тест провалено: позитивний сценарій не пройдено з помилкою \"{e}\"", "ERROR")
         report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено з помилкою {e}", page_open)
         debug(f"Current URL: {page_open.url}", "INFO")
@@ -359,8 +362,13 @@ def test_negative_form(page_open, user_data):
         debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
         expect(page_open.get_by_role("heading", name="Input field")).to_be_visible()
         debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
+        ###################################################################################################################
         expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
         debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
+        page_open.get_by_role("link", name="Text input").click()
+        # changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
+        debug("здійснено клік на посиланні Text input", "Перехід на вкладку для введення тексту")
+        # assert changed, "Не відкрилась сторінка елементів введення даних"
         # expect(page_open.get_by_role("textbox", name="Text string*")).to_be_visible()
         # debug("знайдено текстове поле Text string*", "Перевірка наявності текстового поля Text string*")
         for field, list_dicts_inv_data in dict_for_negative_tests.items():
@@ -384,9 +392,10 @@ def test_negative_form(page_open, user_data):
                             el_list_d = el_list
                         with allure.step("Заповнення полів"):
                             # debug("заповнення полів форми", "Форма")
+                            tb = page_open.get_by_role("textbox", name=field_key, exact=True)
                             if neg:
                                 ##############################################################
-                                tb = page_open.get_by_role("textbox", name=field_key, exact=True)
+                                # tb = page_open.get_by_role("textbox", name=field_key, exact=True)
                                 debug(f"заповнення поля {field_key} невалідністю {el_list_n} по типу {el_list_d}",
                                       "Заповнення форми")
                                 tb.fill(el_list_n)
@@ -397,7 +406,7 @@ def test_negative_form(page_open, user_data):
                                 allure.attach(str_att + " " + "\"" + str(el_list_n) + "\"", name=f"Поле {field_key}")
                             else:
                                 ##############################################################
-                                tb = page_open.get_by_role("textbox", name=field_key, exact=True)
+                                # tb = page_open.get_by_role("textbox", name=field_key, exact=True)
                                 debug(f"заповнення поля {field_key} валідними даними {el_list_d}",
                                       "Заповнення форми")
                                 tb.fill(el_list_d)
@@ -427,19 +436,9 @@ def test_negative_form(page_open, user_data):
                                 raise AssertionError(f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
                             expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
                             debug(f"підтверджене введення {value}", f"{field}")
-                    # # Скриншот страницы
-                    # screenshot = page_open.screenshot()
-                    # page_open.screenshot(type='jpeg',
-                    #                      path=f'screenshots/negativ{now.strftime("%d.%m.%Y %H:%M:%S")}.jpg')
-                    # debug("Скриншот останньої сторінки negativ.jpg", "Скрін сторінки")
-                    # print('\n')
-                    # allure.attach(
-                    #     screenshot,
-                    #     name=f"Скриншот останньої сторінки",
-                    #     attachment_type=allure.attachment_type.PNG
-                    # )
                 except AssertionError as e:
                     # debug(f"Негативний тест пройдено для поля {field} з невалідним значенням \"{el_list_n}\"", "TEST FAIL")
+                    fail_on_alert(page_open, "error", 2000)
                     failed_cases.append((field, el_list_n, str(e)))
                     continue
 
@@ -451,6 +450,7 @@ def test_negative_form(page_open, user_data):
 
                 except Exception as e:
                     # логування інших помилок (поля, алерти тощо)
+                    fail_on_alert(page_open, "error", 2000)
                     errors = []
                     for selector in [
                         "#firstname-error",

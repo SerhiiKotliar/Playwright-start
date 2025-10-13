@@ -467,7 +467,7 @@ def test_negative_form(page_open, user_data):
                     #     "BUG: Відсутня інформація про екаунт"
                 # Скриншот страницы
                 screenshot = page_open.screenshot()
-                page_open.screenshot(type='jpeg', path=f'screenshots/negativ{now.strftime("%d.%m.%Y %H:%M:%S")}.jpg')
+                page_open.screenshot(type='jpeg', path=f'screenshots/negativ{now.strftime("%d-%m-%Y %H-%M-%S")}.jpg')
                 debug("Скриншот останньої сторінки negativ.jpg", "Скрін сторінки")
                 print('\n')
                 allure.attach(
