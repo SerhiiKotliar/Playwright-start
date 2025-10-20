@@ -3,7 +3,7 @@ import traceback
 import allure
 import pytest
 from playwright.sync_api import expect, Page
-from Rule_form_new import report_about, report_bug_and_stop
+# from Rule_form_new import report_about, report_bug_and_stop
 from conftest import page_open
 from helper import debug
 import re
@@ -70,7 +70,7 @@ def fail_on_alert(
         el = page.wait_for_selector(selector, timeout=timeout)
         pytest.fail(f"❌ З'явилось повідомлення типу '{type_}': {el.inner_text()}")
         debug(f"{el.inner_text()}", f"❌ З'явилось повідомлення типу '{type_}'")
-    except TimeoutError:
+    except PlaywrightTimeoutError:
         # если не появилось — всё хорошо
         pass
 
@@ -245,22 +245,20 @@ def test_positive_form(page_open, user_data):
                     safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
                     now = datetime.now()
                     if field != "url":
-
                         expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
                         debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
                         tb = page_open.get_by_role("textbox", name=field, exact=True)
-                        tb.fill(value)
+                        # tb.fill(value)
+                        tb.fill("пр ско№")
                         debug("заповнено поле", f"{field}")
                         allure.attach(str(value), name=f"Поле {field}")
                         tb.press("Enter")
                         debug("зафіксоване введення клавішею Enter", f"{field}")
                         # перевірка на появу повідомлень про помилки
                         locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+                        locator.wait_for(state="visible", timeout=2000)
                         if locator.count() > 0 and locator.is_visible:
-                            # safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
-                            # now = datetime.now()
                             text_err = locator.inner_text()
-                            # page_open.wait_for_selector('//*[@id="error_1_id_text_string"]', timeout=1000)
                             now = datetime.now()
                             page_open.screenshot(type='jpeg',
                                                  path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
@@ -271,7 +269,6 @@ def test_positive_form(page_open, user_data):
                                 page_open.screenshot(),
                                 name=f"Скриншот останньої сторінки",
                                 attachment_type=allure.attachment_type.PNG)
-                            print('\n')
                             raise AssertionError(
                             f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
                         expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
@@ -290,7 +287,7 @@ def test_positive_form(page_open, user_data):
     except AssertionError as e:
         fail_on_alert(page_open, "error", 2000)
         debug(f"Тест провалено: позитивний сценарій не пройдено {e}", "ERROR")
-        report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено {e}", page_open)
+        # report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено {e}", page_open)
         debug(f"Current URL: {page_open.url}", "INFO")
 
         # Логування помилок форми
@@ -324,7 +321,7 @@ def test_positive_form(page_open, user_data):
     except Exception as e:
         fail_on_alert(page_open, "error", 2000)
         debug(f"Тест провалено: позитивний сценарій не пройдено з помилкою \"{e}\"", "ERROR")
-        report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено з помилкою {e}", page_open)
+        # report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено з помилкою {e}", page_open)
         debug(f"Current URL: {page_open.url}", "INFO")
 
         # Логування помилок форми
