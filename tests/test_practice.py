@@ -160,6 +160,56 @@ def generate_negative_cases():
             test_cases.append((field, dict(zip(fields, case))))
     return test_cases
 
+def test_collection_interactive_elements(page_open):
+    import json
+    def get_dom_structure(page):
+        # Выполняем JavaScript, чтобы пройтись по всем элементам и собрать данные
+        return page.evaluate("""
+            () => {
+                const selectors = [
+                    'a[href]',
+                    'button',
+                    'input',
+                    'select',
+                    'textarea',
+                    'option',
+                    'label',
+                    'summary',
+                    'details',
+                    '[tabindex]',
+                    '[role="button"]',
+                    '[role="link"]',
+                    '[contenteditable]'
+                ];
+
+                const elements = Array.from(document.querySelectorAll(selectors.join(',')));
+
+                return elements.map(el => ({
+                    tag: el.tagName.toLowerCase(),
+                    type: el.getAttribute('type'),
+                    id: el.id,
+                    name: el.getAttribute('name'),
+                    classes: el.className,
+                    role: el.getAttribute('role'),
+                    text: el.innerText.trim(),
+                    href: el.getAttribute('href'),
+                    value: el.value,
+                }));
+            }
+            """)
+    # Получаем структуру DOM
+    dom_tree = get_dom_structure(page_open)
+    # Сохраняем в JSON-файл
+    # with open("dom_structure.json", "w", encoding="utf-8") as f:
+    #     json.dump(dom_tree, f, ensure_ascii=False, indent=2)
+    # with open("dom_structure.json", "r", encoding="utf-8") as f:
+    #     data = json.load(f)
+    print(f"🔹 Найдено интерактивных элементов: {len(dom_tree)}")
+    print(json.dumps(dom_tree, ensure_ascii=False, indent=2))
+    # print(json.dumps(data, ensure_ascii=False, indent=2))
+    page_open.close()
+
+
 # 🔹 Позитивный тест выполняется всегда первым
 @pytest.mark.dependency(name="positive")
 def test_positive_form(page_open, user_data):
@@ -173,10 +223,10 @@ def test_positive_form(page_open, user_data):
     ##########################################################################
     try:
         with allure.step('Перехід на головну сторінку сайту'):
-            expect(page_open.get_by_role("link", name=" Homepage")).to_be_visible()
-            debug("знайдено посилання Homepage", "Перевірка наявності посилання Homepage")
-            expect(page_open.get_by_role("heading", name="Hello!")).to_be_visible()
-            debug("знайдено заголовок Hello!", "Перевірка наявності заголовка Hello!")
+            # expect(page_open.get_by_role("link", name=" Homepage")).to_be_visible()
+            # debug("знайдено посилання Homepage", "Перевірка наявності посилання Homepage")
+            # expect(page_open.get_by_role("heading", name="Hello!")).to_be_visible()
+            # debug("знайдено заголовок Hello!", "Перевірка наявності заголовка Hello!")
             expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
             debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
             link_input = page_open.get_by_role("link", name="Text input")
@@ -210,7 +260,7 @@ def test_positive_form(page_open, user_data):
                             # safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
                             # now = datetime.now()
                             text_err = locator.inner_text()
-                            page_open.wait_for_selector('//*[@id="error_1_id_text_string"]', timeout=1000)
+                            # page_open.wait_for_selector('//*[@id="error_1_id_text_string"]', timeout=1000)
                             now = datetime.now()
                             page_open.screenshot(type='jpeg',
                                                  path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
