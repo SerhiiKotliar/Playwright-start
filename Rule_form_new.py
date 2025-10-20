@@ -88,18 +88,28 @@ class ConfigInputDialog(QDialog):
         for i in range(self.spin.value()):
             container = QWidget()
             h_layout = QHBoxLayout(container)
-
-            h_layout.addWidget(QLabel(f'Поле {i + 1}  Title:'))
-            title_edit = QLineEdit(f"Поле {i + 1}")
+            if i == 0:
+                h_layout.addWidget(QLabel('Title:'))
+                title_edit = QLineEdit("URL")
+            else:
+                h_layout.addWidget(QLabel(f'Title {i + 1}:'))
+                title_edit = QLineEdit(f"Поле {i + 1}")
             h_layout.addWidget(title_edit)
-
-            h_layout.addWidget(QLabel("Name:"))
-            name_edit = QLineEdit(f"textbox{i + 1}")
+            if i == 0:
+                h_layout.addWidget(QLabel("Name:"))
+                name_edit = QLineEdit("url")
+            else:
+                h_layout.addWidget(QLabel(f"Name {i + 1}:"))
+                name_edit = QLineEdit(f"textbox{i + 1}")
             h_layout.addWidget(name_edit)
 
             # чекбокс "Обов'язкове"
             required_chk = QCheckBox("Обов'язкове")
+            if i == 0:
+                required_chk.setChecked(True)
             h_layout.addWidget(required_chk)
+
+
 
             self.entries_layout.addWidget(container)
             self.line_edits.append((title_edit, name_edit, required_chk))

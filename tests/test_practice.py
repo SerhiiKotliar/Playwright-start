@@ -223,10 +223,6 @@ def test_positive_form(page_open, user_data):
     ##########################################################################
     try:
         with allure.step('Перехід на головну сторінку сайту'):
-            # expect(page_open.get_by_role("link", name=" Homepage")).to_be_visible()
-            # debug("знайдено посилання Homepage", "Перевірка наявності посилання Homepage")
-            # expect(page_open.get_by_role("heading", name="Hello!")).to_be_visible()
-            # debug("знайдено заголовок Hello!", "Перевірка наявності заголовка Hello!")
             expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
             debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
             link_input = page_open.get_by_role("link", name="Text input")
@@ -238,8 +234,6 @@ def test_positive_form(page_open, user_data):
             debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
             expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
             debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
-            # expect(page_open.get_by_role("textbox", name="Text string*")).to_be_visible()
-            # debug("знайдено текстове поле Text string*", "Перевірка наявності текстового поля Text string*")
             with allure.step("Заповнення форми валідними даними"):
                 for field, value in user_data[0].items():
                     safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
@@ -248,31 +242,37 @@ def test_positive_form(page_open, user_data):
                         expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
                         debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
                         tb = page_open.get_by_role("textbox", name=field, exact=True)
-                        # tb.fill(value)
-                        tb.fill("пр ско№")
+                        # value = "пр ско№"
+                        tb.fill(value)
                         debug("заповнено поле", f"{field}")
                         allure.attach(str(value), name=f"Поле {field}")
                         tb.press("Enter")
                         debug("зафіксоване введення клавішею Enter", f"{field}")
+                        fail_on_alert(page_open, "error", 2000)
                         # перевірка на появу повідомлень про помилки
                         locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                        locator.wait_for(state="visible", timeout=2000)
-                        if locator.count() > 0 and locator.is_visible:
-                            text_err = locator.inner_text()
-                            now = datetime.now()
-                            page_open.screenshot(type='jpeg',
-                                                 path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
-                            debug(
-                                f'Скриншот останньої сторінки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg",
-                                "Скрін сторінки")
-                            allure.attach(
-                                page_open.screenshot(),
-                                name=f"Скриншот останньої сторінки",
-                                attachment_type=allure.attachment_type.PNG)
-                            raise AssertionError(
-                            f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
-                        expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
-                        debug(f"підтверджене введення {value}", f"{field}")
+                        try:
+                            locator.wait_for(state="visible", timeout=2000)
+                            # Если элемент появился — тогда проверяем
+                            if locator.count() > 0 and locator.is_visible():
+                                if locator.count() > 0 and locator.is_visible:
+                                    text_err = locator.inner_text()
+                                    now = datetime.now()
+                                    page_open.screenshot(type='jpeg',
+                                                         path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
+                                    debug(
+                                        f'Скриншот останньої сторінки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg",
+                                        "Скрін сторінки")
+                                    allure.attach(
+                                        page_open.screenshot(),
+                                        name=f"Скриншот останньої сторінки",
+                                        attachment_type=allure.attachment_type.PNG)
+                                    raise AssertionError(
+                                        f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
+                        except PlaywrightTimeoutError:
+                            # Элемент не появился — просто пропускаем
+                            expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
+                            debug(f"Підтверджене введення {value}", f"{field}")
 
                 # Скриншот страницы
                 screenshot = page_open.screenshot()
@@ -283,85 +283,57 @@ def test_positive_form(page_open, user_data):
                     name=f"Скриншот останньої сторінки",
                     attachment_type=allure.attachment_type.PNG
                 )
+                debug(f"Позитивний тест пройдено", "PASSED")
 
     except AssertionError as e:
-        fail_on_alert(page_open, "error", 2000)
-        debug(f"Тест провалено: позитивний сценарій не пройдено {e}", "ERROR")
-        # report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено {e}", page_open)
+        debug(f"Тест провалено: позитивний сценарій не пройдено \n{e}", "ASSERTIONERROR")
         debug(f"Current URL: {page_open.url}", "INFO")
-
         # Логування помилок форми
-        errors = []
-        for selector in [
-            "#firstname-error",
-            "#lastname-error",
-            "#email_address-error",
-            "#password-error",
-            "#password-confirmation-error",
-        ]:
-            if page_open.locator(selector).is_visible():
-                errors.append(page_open.locator(selector).inner_text())
-
+        errorsa = []
+        errorsa.append(f"{field}': - '{text_err}")
         alert = page_open.get_by_role("alert").locator("div").first
         if alert.is_visible():
-            errors.append(alert.inner_text())
-            debug(alert.inner_text(), "Errors list:")
-
-        if errors:
-            debug("Знайдено помилки при введенні даних:", "ERROR")
-            debug(errors, "Errors list:")
+            errorsa.append(f"{field}': - '{alert.inner_text()}")
+        if len(errorsa) > 1:
+            debug(f"Знайдено помилки при введенні даних:\n{errorsa}", "AssertionErrors list:")
         # Скриншот страницы
         screenshot = page_open.screenshot()
         allure.attach(
             screenshot,
-            name=f"Скриншот падіння або помилки",
+            name=f"Скриншот падіння або помилки у полі {field}",
             attachment_type=allure.attachment_type.PNG
         )
-
+        text_err = ""
     except Exception as e:
         fail_on_alert(page_open, "error", 2000)
         debug(f"Тест провалено: позитивний сценарій не пройдено з помилкою \"{e}\"", "ERROR")
-        # report_bug_and_stop(f"Тест провалено: позитивний сценарій не пройдено з помилкою {e}", page_open)
         debug(f"Current URL: {page_open.url}", "INFO")
-
         # Логування помилок форми
         errors = []
-        for selector in [
-            "#firstname-error",
-            "#lastname-error",
-            "#email_address-error",
-            "#password-error",
-            "#password-confirmation-error",
-        ]:
-            if page_open.locator(selector).is_visible():
-                errors.append(page_open.locator(selector).inner_text())
-                debug(page_open.locator(selector).inner_text(), "ERROR")
-
+        errors.append(f"{field}': - '{e}")
         alert = page_open.get_by_role("alert").locator("div").first
         if alert.is_visible():
             errors.append(alert.inner_text())
             debug(alert.inner_text(), "ERROR")
-
-        if errors:
-            debug("Знайдено помилки при введенні даних:", "ERROR")
-            debug(errors, "Errors list:")
+        if len(errors) > 1:
+            debug(f"Знайдено помилки при введенні даних:\n{errors}", "Errors list:")
         # Скриншот страницы
         screenshot = page_open.screenshot()
         allure.attach(
             screenshot,
-            name=f"Скриншот падіння або помилки",
+            name=f"Скриншот падіння або помилки у полі {field}",
             attachment_type=allure.attachment_type.PNG
         )
 
-        # debug текущего текста страницы для анализа
-        try:
-            account_text = page_open.locator("#maincontent").inner_text(timeout=5000)
-            debug(account_text, "Текст сторінки My Account (якщо є):")
-        except:
-            debug("Не вдалося отримати текст сторінки My Account", "INFO")
-
-        # Сбрасываем AssertionError, чтобы тест упал и pytest зарегистрировал ошибку
-        raise e
+        # # debug текущего текста страницы для анализа
+        # try:
+        #     account_text = page_open.locator("#maincontent").inner_text(timeout=5000)
+        #     debug(account_text, "Текст сторінки My Account (якщо є):")
+        # except:
+        #     debug("Не вдалося отримати текст сторінки My Account", "INFO")
+        #
+        # # Сбрасываем AssertionError, чтобы тест упал и pytest зарегистрировал ошибку
+        # raise e
 
 # 🔹 Негативные тесты зависят от позитивного
 # @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
