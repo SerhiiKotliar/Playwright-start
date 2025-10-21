@@ -20,12 +20,10 @@ from helper import debug
 
 @pytest.fixture(scope='session')
 def user_data():
-    # debug("Фикстура user_data запускается", "FIXTURE")
 
-    # debug("Форма откроется сейчас", "FIXTURE")
     result, result_inv, result_tit_f = get_user_input()  # открытие формы
 
-    debug(f"Дані для тестів отримані: {result}\n{result_inv}\n{result_tit_f}", "FIXTURE")
+    debug(f"Дані для тестів отримані:\n{result}\n{result_inv}\n{result_tit_f}", "FIXTURE")
     return result, result_inv, result_tit_f  # возвращаем введённые данные
 
 # @pytest.fixture(scope="session")
@@ -70,7 +68,7 @@ def user_data():
 
 @pytest.fixture(autouse=True, scope="function")
 def page_open(page: Page, user_data):
-    page.goto(user_data[0]['url'], timeout=6000, wait_until="domcontentloaded")
+    page.goto(user_data[0]['url'], timeout=5000, wait_until="domcontentloaded")
     return page
 #, wait_until="commit"
 
