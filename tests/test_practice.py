@@ -81,11 +81,18 @@ def fail_on_alert(
 # список валидных данных
 def valid_val(user_data):
     global fields
-    fields = user_data[0].keys()
+    # fields = user_data[0].keys()
     val_el = []
-    # збір значень полів по іменам полів
-    for val in user_data[0].values():
-        val_el.append(val)
+    for field in fields:
+        # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+        #     fields.append(field)
+        # val_el = []
+        # збір значень полів по іменам полів
+        # for val in user_data[0].values():
+        val_el.append(user_data[0][field])
+        #     for key, val in user_data[0].items():
+        #         if key != 'fix_enter' and key != "check_attr" and key != 'el_fix_after_fill' and key != 'txt_el_fix_after_fill':
+        #             val_el.append(val)
     return val_el
 # список невалидных данных по полям
 def invalid_val(user_data):
@@ -93,58 +100,58 @@ def invalid_val(user_data):
     inval_el = {}
     # перебір по назвам полів
     for field in fields:
-        if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
-            ar_inv = []
-            # перебір по назвам полів для розбору типу невалідних даних зі списків
-            for el in user_data[1][field]:
-            # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
-                if el[:3] == 'len':
-                    lminmax = el[4:]
-                    lmin = int(lminmax.split(" ", 1)[0])
-                    lmax = int(lminmax.split(" ", 1)[1])
-                    first = ((user_data[0][field] * 6)[:(lmin - 1)], "lenmin")
-                    second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
-                    ar_inv.append(first)
-                    ar_inv.append(second)
-                elif el == "absent":
-                    ar_inv.append(("", "absent"))
-                elif el == "no_url":
-                    for el_no_url in in_d.invalid_urls:
-                        ar_inv.append((el_no_url, "no_url"))
-                elif el == "no_email":
-                    for el_no_email in in_d.invalid_emails:
-                        ar_inv.append((el_no_email, "no_email"))
-                elif el == "no_lower":
-                    ar_inv.append((user_data[0][field].upper(), "no_lower"))
-                elif el == "no_upper":
-                    ar_inv.append((user_data[0][field].lower(), "no_upper"))
-                elif el == "no_digit":
-                    res = re.sub(r"\d", "", user_data[0][field])
-                    ar_inv.append((res + 'ab', "no_digit"))
-                elif el == "no_spec":
-                    res = "".join(ch for ch in user_data[0][field] if ch.isalnum() or ch.isspace())
-                    ar_inv.append((res + '1f', "no_spec"))
-                elif el == "probel":
-                    ar_inv.append((user_data[0][field][:2] + ' ' + user_data[0][field][2:], "probel"))
-                elif el == "no_probel":
-                    ar_inv.append((user_data[0][field].replace(" ", ""), "no_probel"))
-                elif el == "Cyrillic":
-                    ar_inv.append(("АЯаяЁёЇїІіЄєҐґ", "Cyrillic"))
-                elif el == "latin":
-                    ar_inv.append(("AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx", "latin"))
-                elif el == "lowreglat":
-                    ar_inv.append(("qwertyuiop", "lowreglat"))
-                elif el == "upreglat":
-                    ar_inv.append(("QWERTYUIOP", "upreglat"))
-                elif el == "lowregcyr":
-                    ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
-                elif el == "upregcyr":
-                    ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-                elif el == "one_reg_log":
-                    ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
-                    ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
-                else:
-                    ar_inv.append(("no_absent", "no_absent"))
+        # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+        ar_inv = []
+        # перебір по назвам полів для розбору типу невалідних даних зі списків
+        for el in user_data[1][field]:
+        # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+            if el[:3] == 'len':
+                lminmax = el[4:]
+                lmin = int(lminmax.split(" ", 1)[0])
+                lmax = int(lminmax.split(" ", 1)[1])
+                first = ((user_data[0][field] * 6)[:(lmin - 1)], "lenmin")
+                second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
+                ar_inv.append(first)
+                ar_inv.append(second)
+            elif el == "absent":
+                ar_inv.append(("", "absent"))
+            elif el == "no_url":
+                for el_no_url in in_d.invalid_urls:
+                    ar_inv.append((el_no_url, "no_url"))
+            elif el == "no_email":
+                for el_no_email in in_d.invalid_emails:
+                    ar_inv.append((el_no_email, "no_email"))
+            elif el == "no_lower":
+                ar_inv.append((user_data[0][field].upper(), "no_lower"))
+            elif el == "no_upper":
+                ar_inv.append((user_data[0][field].lower(), "no_upper"))
+            elif el == "no_digit":
+                res = re.sub(r"\d", "", user_data[0][field])
+                ar_inv.append((res + 'ab', "no_digit"))
+            elif el == "no_spec":
+                res = "".join(ch for ch in user_data[0][field] if ch.isalnum() or ch.isspace())
+                ar_inv.append((res + '1f', "no_spec"))
+            elif el == "probel":
+                ar_inv.append((user_data[0][field][:2] + ' ' + user_data[0][field][2:], "probel"))
+            elif el == "no_probel":
+                ar_inv.append((user_data[0][field].replace(" ", ""), "no_probel"))
+            elif el == "Cyrillic":
+                ar_inv.append(("АЯаяЁёЇїІіЄєҐґ", "Cyrillic"))
+            elif el == "latin":
+                ar_inv.append(("AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx", "latin"))
+            elif el == "lowreglat":
+                ar_inv.append(("qwertyuiop", "lowreglat"))
+            elif el == "upreglat":
+                ar_inv.append(("QWERTYUIOP", "upreglat"))
+            elif el == "lowregcyr":
+                ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
+            elif el == "upregcyr":
+                ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+            elif el == "one_reg_log":
+                ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
+                ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
+            else:
+                ar_inv.append(("no_absent", "no_absent"))
         inval_el[field] =ar_inv
     return inval_el
 
@@ -158,8 +165,10 @@ def invalid_val(user_data):
 # список кортежей из полей и списков словарей с невалидными и валидными данными
 def generate_negative_cases():
     """Собираем все наборы: одно поле невалидное, остальные валидные"""
+    global fields
     test_cases = []
     for i, field in enumerate(fields):
+        # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
         for inv in invalid_values[field]:
             case = valid_values.copy()
             case[i] = inv
@@ -220,7 +229,10 @@ def test_collection_interactive_elements(page_open):
 @pytest.mark.dependency(name="positive")
 def test_positive_form(page_open, user_data):
     global valid_values, invalid_values, fields
-    fields = user_data[0].keys()
+    # fields = user_data[0].keys()
+    for field in user_data[0].keys():
+        if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+            fields.append(field)
     valid_values = valid_val(user_data)
     invalid_values = invalid_val(user_data)
     allure.dynamic.title("Позитивний тест: усі поля валідні")
@@ -299,6 +311,7 @@ def test_positive_form(page_open, user_data):
 
     except AssertionError as e:
         debug(f"Тест провалено: позитивний сценарій не пройдено \n{e}", "ASSERTIONERROR")
+
         debug(f"Current URL: {page_open.url}", "INFO")
         # Логування помилок форми
         errorsa = []
@@ -352,11 +365,15 @@ def test_positive_form(page_open, user_data):
 
 # 🔹 Негативные тесты зависят от позитивного
 # @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
-@pytest.mark.dependency(depends=["positive"])
+# @pytest.mark.dependency(depends=["positive"])
 # def test_negative_form(page_open, invalid_field, data):
 def test_negative_form(page_open, user_data):
     global valid_values, invalid_values, fields
-    fields = user_data[0].keys()
+    # fields = user_data[0].keys()
+    # fields = []
+    for field in user_data[0].keys():
+        if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+            fields.append(field)
     valid_values = valid_val(user_data)
     invalid_values = invalid_val(user_data)
     # список кортежей из полей со списками словарей с валидными и невалидными данными
@@ -455,7 +472,7 @@ def test_negative_form(page_open, user_data):
                             # перевірка на появу повідомлень про помилки
                             locator = page_open.locator('//*[@id="error_1_id_text_string"]')
                             text_err = locator.inner_text()
-                            page_open.wait_for_selector('//*[@id="error_1_id_text_string"]', timeout=1000)
+                            page_open.wait_for_selector('//*[@id="error_1_id_text_string"]', timeout=2000)
                             if locator.is_visible():
                                 safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field_key)
                                 now = datetime.now()
