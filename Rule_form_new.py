@@ -4,7 +4,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QApplication, QDialog, QSpinBox, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
-    QComboBox, QCheckBox, QMessageBox
+    QComboBox, QCheckBox, QMessageBox, QRadioButton, QButtonGroup
 )
 # import re
 import allure
@@ -45,7 +45,7 @@ no_absent = False
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Конфігурація полів")
+        self.setWindowTitle("Конфігурація перевірки полів")
         self.resize(400, 200)
 
         main_layout = QVBoxLayout(self)
@@ -63,13 +63,83 @@ class ConfigInputDialog(QDialog):
         self.entries_layout = QVBoxLayout()
         main_layout.addLayout(self.entries_layout)
 
-        # кнопки
+        # === Фіксація вводу у поле ===
+        label_fix = QLabel("Фіксація введеннданих у кожне поле")
+        main_layout.addWidget(label_fix)
+
+        # === Радиокнопки ===
+        radio_layout = QHBoxLayout()
+        self.radio_event = QRadioButton("Подія")
+        self.radio_enter = QRadioButton("\"Enter\"")
+        self.radio_button = QRadioButton("Кнопка")
+
+        # Группируем радиокнопки, чтобы только одна могла быть выбрана
+        radio_group = QButtonGroup(self)
+        radio_group.addButton(self.radio_event)
+        radio_group.addButton(self.radio_enter)
+        radio_group.addButton(self.radio_button)
+
+        # По умолчанию выбрана первая
+        self.radio_event.setChecked(True)
+
+        radio_layout.addWidget(self.radio_event)
+        radio_layout.addWidget(self.radio_enter)
+        radio_layout.addWidget(self.radio_button)
+        main_layout.addLayout(radio_layout)
+
+        # === Перевірка помилки ===
+        label_check_error = QLabel("Перевірка помилки у введених у поле даних")
+        main_layout.addWidget(label_check_error)
+
+        # === Атрибут ===
+        label_attr = QLabel("Атрибут сповіщувача про помилку")
+        main_layout.addWidget(label_attr)
+
+        # === Поле вводу для атрибута ===
+        self.attr_input = QLineEdit()
+        self.attr_input.setText('//*[@id="error_1_id_text_string"]')
+        main_layout.addWidget(self.attr_input)
+
+        # === Остаточна фіксація ===
+        label_final_fix = QLabel("Остаточна фіксація введених даних елементом HTML")
+        main_layout.addWidget(label_final_fix)
+
+        # === Елемент HTML + Текст ===
+        html_text_layout = QHBoxLayout()
+
+        # Левая часть (Елемент HTML)
+        html_layout = QVBoxLayout()
+        label_html = QLabel("Елемент HTML")
+        self.html_input = QLineEdit()
+        html_layout.addWidget(label_html)
+        html_layout.addWidget(self.html_input)
+
+        # Правая часть (Текст)
+        text_layout = QVBoxLayout()
+        label_text = QLabel("Текст елемента")
+        self.text_input = QLineEdit()
+        text_layout.addWidget(label_text)
+        text_layout.addWidget(self.text_input)
+
+        html_text_layout.addLayout(html_layout)
+        html_text_layout.addLayout(text_layout)
+        main_layout.addLayout(html_text_layout)
+
+        # === Кнопки OK и Скасувати ===
         btn_layout = QHBoxLayout()
         self.btnOK = QPushButton("OK")
         self.btnCnl = QPushButton("Скасувати")
         btn_layout.addWidget(self.btnOK)
         btn_layout.addWidget(self.btnCnl)
         main_layout.addLayout(btn_layout)
+
+        # кнопки
+        # btn_layout = QHBoxLayout()
+        # self.btnOK = QPushButton("OK")
+        # self.btnCnl = QPushButton("Скасувати")
+        # btn_layout.addWidget(self.btnOK)
+        # btn_layout.addWidget(self.btnCnl)
+        # main_layout.addLayout(btn_layout)
 
         self.spin.valueChanged.connect(self.update_entries)
         self.btnOK.clicked.connect(self.accept)
@@ -749,6 +819,7 @@ class DynamicDialog(QDialog):
                     self.result[name] = wrapper.cmb.currentText()
                 else:
                     titles.append(wrapper.gb.title())
+        # self.result['fix_enter'] = self.
         if len(titles) > 0:
             QMessageBox.warning(self, f"Поля {titles}", "Обов'язкові дані не введені.")
             return False
@@ -777,6 +848,15 @@ def get_user_input():
     if dlg.exec() == QDialog.Accepted:
         if created_app:
             app.quit()
+        if input_dlg.radio_event.isChecked():
+            dlg.result["fix_enter"] = 0
+        if input_dlg.radio_enter.isChecked():
+            dlg.result["fix_enter"] = 1
+        if input_dlg.radio_button.isChecked():
+            dlg.result["fix_enter"] = 2
+        dlg.result['check_attr'] = input_dlg.attr_input.text()
+        dlg.result['el_fix_after_fill'] = input_dlg.html_input.text()
+        dlg.result['txt_el_fix_after_fill'] = input_dlg.text_input.text()
         result_f = dlg.result, dlg.result_invalid, dlg.result_title_fields
         return result_f
     return None

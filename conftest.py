@@ -69,7 +69,7 @@ def user_data():
 
 @pytest.fixture(autouse=True, scope="function")
 def page_open(page: Page, user_data):
-    page.goto(user_data[0]['url'], timeout=60000, wait_until="domcontentloaded")
+    page.goto(user_data[0]['url'], timeout=6000, wait_until="domcontentloaded")
     return page
 #, wait_until="commit"
 

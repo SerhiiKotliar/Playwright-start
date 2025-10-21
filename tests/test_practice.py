@@ -2,7 +2,7 @@ import traceback
 
 import allure
 import pytest
-from playwright.sync_api import expect, Page
+from playwright.sync_api import expect
 # from Rule_form_new import report_about, report_bug_and_stop
 from conftest import page_open
 from helper import debug
@@ -11,6 +11,8 @@ from typing import Callable, Pattern, Union, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 import invalid_datas as in_d
 from datetime import datetime
+from enter_to_homepage import enter_to_fieldspage
+from utils import  checking_for_errors
 
 # now = datetime.now()
 fields = []
@@ -68,11 +70,13 @@ def fail_on_alert(
     try:
         # ждём появления элемента
         el = page.wait_for_selector(selector, timeout=timeout)
-        pytest.fail(f"❌ З'явилось повідомлення типу '{type_}': {el.inner_text()}")
+        # pytest.fail(f"❌ З'явилось повідомлення типу '{type_}': {el.inner_text()}")
         debug(f"{el.inner_text()}", f"❌ З'явилось повідомлення типу '{type_}'")
+        return type_, el.inner_text()
     except PlaywrightTimeoutError:
         # если не появилось — всё хорошо
-        pass
+        # pass
+        return None
 
 # список валидных данных
 def valid_val(user_data):
@@ -89,56 +93,58 @@ def invalid_val(user_data):
     inval_el = {}
     # перебір по назвам полів
     for field in fields:
-        ar_inv = []
-        # перебір по назвам полів для розбору типу невалідних даних зі списків
-        for el in user_data[1][field]:
-            if el[:3] == 'len':
-                lminmax = el[4:]
-                lmin = int(lminmax.split(" ", 1)[0])
-                lmax = int(lminmax.split(" ", 1)[1])
-                first = ((user_data[0][field] * 6)[:(lmin - 1)], "lenmin")
-                second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
-                ar_inv.append(first)
-                ar_inv.append(second)
-            elif el == "absent":
-                ar_inv.append(("", "absent"))
-            elif el == "no_url":
-                for el_no_url in in_d.invalid_urls:
-                    ar_inv.append((el_no_url, "no_url"))
-            elif el == "no_email":
-                for el_no_email in in_d.invalid_emails:
-                    ar_inv.append((el_no_email, "no_email"))
-            elif el == "no_lower":
-                ar_inv.append((user_data[0][field].upper(), "no_lower"))
-            elif el == "no_upper":
-                ar_inv.append((user_data[0][field].lower(), "no_upper"))
-            elif el == "no_digit":
-                res = re.sub(r"\d", "", user_data[0][field])
-                ar_inv.append((res + 'ab', "no_digit"))
-            elif el == "no_spec":
-                res = "".join(ch for ch in user_data[0][field] if ch.isalnum() or ch.isspace())
-                ar_inv.append((res + '1f', "no_spec"))
-            elif el == "probel":
-                ar_inv.append((user_data[0][field][:2] + ' ' + user_data[0][field][2:], "probel"))
-            elif el == "no_probel":
-                ar_inv.append((user_data[0][field].replace(" ", ""), "no_probel"))
-            elif el == "Cyrillic":
-                ar_inv.append(("АЯаяЁёЇїІіЄєҐґ", "Cyrillic"))
-            elif el == "latin":
-                ar_inv.append(("AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx", "latin"))
-            elif el == "lowreglat":
-                ar_inv.append(("qwertyuiop", "lowreglat"))
-            elif el == "upreglat":
-                ar_inv.append(("QWERTYUIOP", "upreglat"))
-            elif el == "lowregcyr":
-                ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
-            elif el == "upregcyr":
-                ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            elif el == "one_reg_log":
-                ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
-                ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
-            else:
-                ar_inv.append(("no_absent", "no_absent"))
+        if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+            ar_inv = []
+            # перебір по назвам полів для розбору типу невалідних даних зі списків
+            for el in user_data[1][field]:
+            # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+                if el[:3] == 'len':
+                    lminmax = el[4:]
+                    lmin = int(lminmax.split(" ", 1)[0])
+                    lmax = int(lminmax.split(" ", 1)[1])
+                    first = ((user_data[0][field] * 6)[:(lmin - 1)], "lenmin")
+                    second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
+                    ar_inv.append(first)
+                    ar_inv.append(second)
+                elif el == "absent":
+                    ar_inv.append(("", "absent"))
+                elif el == "no_url":
+                    for el_no_url in in_d.invalid_urls:
+                        ar_inv.append((el_no_url, "no_url"))
+                elif el == "no_email":
+                    for el_no_email in in_d.invalid_emails:
+                        ar_inv.append((el_no_email, "no_email"))
+                elif el == "no_lower":
+                    ar_inv.append((user_data[0][field].upper(), "no_lower"))
+                elif el == "no_upper":
+                    ar_inv.append((user_data[0][field].lower(), "no_upper"))
+                elif el == "no_digit":
+                    res = re.sub(r"\d", "", user_data[0][field])
+                    ar_inv.append((res + 'ab', "no_digit"))
+                elif el == "no_spec":
+                    res = "".join(ch for ch in user_data[0][field] if ch.isalnum() or ch.isspace())
+                    ar_inv.append((res + '1f', "no_spec"))
+                elif el == "probel":
+                    ar_inv.append((user_data[0][field][:2] + ' ' + user_data[0][field][2:], "probel"))
+                elif el == "no_probel":
+                    ar_inv.append((user_data[0][field].replace(" ", ""), "no_probel"))
+                elif el == "Cyrillic":
+                    ar_inv.append(("АЯаяЁёЇїІіЄєҐґ", "Cyrillic"))
+                elif el == "latin":
+                    ar_inv.append(("AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx", "latin"))
+                elif el == "lowreglat":
+                    ar_inv.append(("qwertyuiop", "lowreglat"))
+                elif el == "upreglat":
+                    ar_inv.append(("QWERTYUIOP", "upreglat"))
+                elif el == "lowregcyr":
+                    ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
+                elif el == "upregcyr":
+                    ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+                elif el == "one_reg_log":
+                    ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
+                    ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
+                else:
+                    ar_inv.append(("no_absent", "no_absent"))
         inval_el[field] =ar_inv
     return inval_el
 
@@ -223,66 +229,79 @@ def test_positive_form(page_open, user_data):
     ##########################################################################
     try:
         with allure.step('Перехід на головну сторінку сайту'):
-            expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
-            debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
-            link_input = page_open.get_by_role("link", name="Text input")
-            changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
-            debug("здійснено клік на посиланні Text input", "Перехід на сторінку елементів введення даних")
-            assert changed, "Не відкрилась сторінка елементів введення даних"
-            debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
-            expect(page_open.get_by_role("heading", name="Input field")).to_be_visible()
-            debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
-            expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
-            debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
+            ##########################################################################
+            # функція переходу до сторінки з полями, що треба заповнити (page_open)
+            page_open = enter_to_fieldspage(page_open)
+            #############################################################################
             with allure.step("Заповнення форми валідними даними"):
                 for field, value in user_data[0].items():
                     safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
                     now = datetime.now()
-                    if field != "url":
+                    if field != "url" and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
                         expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
                         debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
                         tb = page_open.get_by_role("textbox", name=field, exact=True)
                         # value = "пр ско№"
                         tb.fill(value)
-                        debug("заповнено поле", f"{field}")
-                        allure.attach(str(value), name=f"Поле {field}")
-                        tb.press("Enter")
-                        debug("зафіксоване введення клавішею Enter", f"{field}")
-                        fail_on_alert(page_open, "error", 2000)
-                        # перевірка на появу повідомлень про помилки
-                        locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                        try:
-                            locator.wait_for(state="visible", timeout=2000)
-                            # Если элемент появился — тогда проверяем
-                            if locator.count() > 0 and locator.is_visible():
-                                if locator.count() > 0 and locator.is_visible:
-                                    text_err = locator.inner_text()
-                                    now = datetime.now()
-                                    page_open.screenshot(type='jpeg',
-                                                         path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
-                                    debug(
-                                        f'Скриншот останньої сторінки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg",
-                                        "Скрін сторінки")
-                                    allure.attach(
-                                        page_open.screenshot(),
-                                        name=f"Скриншот останньої сторінки",
-                                        attachment_type=allure.attachment_type.PNG)
-                                    raise AssertionError(
-                                        f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
-                        except PlaywrightTimeoutError:
-                            # Элемент не появился — просто пропускаем
-                            expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
-                            debug(f"Підтверджене введення {value}", f"{field}")
+                        debug(f"Заповнено поле значенням {value}", f"Поле {field}")
+                        allure.attach(f"Заповнено поле значенням {value}", name=f"Поле {field}")
+                        #####################################################################
+                        # умова, що вибирає чи треба якось фіксувати введення даних, чи це трапляється при події виходу з поля
+                        if user_data[0]["fix_enter"] == 1:
+                            tb.press("Enter")
+                            debug("Зафіксоване введення даних клавішею Enter", f"Поле {field}")
+                        ######################################################################
+                        # функція перевірки появи повідомлень про помилку
+                        # checking_for_errors(page_open, tag: str)
+                        check_m = fail_on_alert(page_open, "error", 2000)
+                        if check_m is None:
+                        # перевірка на появу повідомлень про помилки після введення даних у поле
+                        # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+                            check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
+                        # else:
+                        #     check_m = fail_on_alert(page_open, "error", 2000)
+                        if check_m[0] is not None:
+                            #########################################################################
+                            # try:
+                                # locator.wait_for(state="visible", timeout=2000)
+                                # # Если элемент появился — тогда проверяем
+                                # if locator.count() > 0 and locator.is_visible():
+                                # if locator.count() > 0 and locator.is_visible:
+                            text_err = check_m[1]
+                            now = datetime.now()
+                            page_open.screenshot(type='jpeg',
+                                                 path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
+                            debug(
+                                f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg",
+                                "Скрін сторінки")
+                            allure.attach(
+                                page_open.screenshot(),
+                                name=f"Скриншот останньої сторінки після помилки",
+                                attachment_type=allure.attachment_type.PNG)
+                            raise AssertionError(
+                                f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
+                            # except PlaywrightTimeoutError:
+                                # Элемент не появился — просто пропускаем
+                                ##################################################################
+                                # функція можливих дій після валідного заповненння поля
+                                # confirmation(page_open, value, field)
+                        expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
+                        debug(f"Підтверджене валідне введення {value}", f"{field}")
+                                ######################################################################
 
                 # Скриншот страницы
                 screenshot = page_open.screenshot()
                 page_open.screenshot(type='jpeg', path=f'screenshots/positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
-                debug(f'Скриншот останньої сторінки positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg", "Скрін сторінки")
+                debug(f'Скриншот останньої сторінки після заповнення полів positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg", "Скрін сторінки")
                 allure.attach(
                     screenshot,
-                    name=f"Скриншот останньої сторінки",
+                    name=f"Скриншот останньої сторінки піля заповнення полів",
                     attachment_type=allure.attachment_type.PNG
                 )
+                ####################################################################################
+                # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
+                # after_fill_fields(page_open)
+                ##################################################################################
                 debug(f"Позитивний тест пройдено", "PASSED")
 
     except AssertionError as e:
@@ -290,7 +309,10 @@ def test_positive_form(page_open, user_data):
         debug(f"Current URL: {page_open.url}", "INFO")
         # Логування помилок форми
         errorsa = []
-        errorsa.append(f"{field}': - '{text_err}")
+        if text_err is not None:
+            errorsa.append(f"{field}': - '{text_err}")
+        else:
+            errorsa.append(f"{field}: {e}")
         alert = page_open.get_by_role("alert").locator("div").first
         if alert.is_visible():
             errorsa.append(f"{field}': - '{alert.inner_text()}")
