@@ -33,7 +33,9 @@ def enter_to_fieldspage(page_open: Page) -> Page:
     expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
     debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
     link_input = page_open.get_by_role("link", name="Text input")
+
     changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
+
     debug("здійснено клік на посиланні Text input", "Перехід на сторінку елементів введення даних")
     assert changed, "Не відкрилась сторінка елементів введення даних"
     debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
@@ -42,3 +44,10 @@ def enter_to_fieldspage(page_open: Page) -> Page:
     expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
     debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
     return page_open
+
+def confirmation(page_open: Page, value, field):
+    expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
+    debug(f"Підтверджене валідне введення {value}", f"{field}")
+
+def after_fill_fields(page_open: Page):
+    return  True

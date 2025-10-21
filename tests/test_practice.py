@@ -11,7 +11,7 @@ from typing import Callable, Pattern, Union, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 import invalid_datas as in_d
 from datetime import datetime
-from enter_to_homepage import enter_to_fieldspage
+from enter_to_homepage import enter_to_fieldspage, confirmation, after_fill_fields
 from utils import  checking_for_errors
 
 # now = datetime.now()
@@ -235,9 +235,8 @@ def test_positive_form(page_open, user_data):
             #############################################################################
             with allure.step("Заповнення форми валідними даними"):
                 for field, value in user_data[0].items():
-                    safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
-                    now = datetime.now()
                     if field != "url" and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+                        safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
                         expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
                         debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
                         tb = page_open.get_by_role("textbox", name=field, exact=True)
@@ -258,16 +257,9 @@ def test_positive_form(page_open, user_data):
                         # перевірка на появу повідомлень про помилки після введення даних у поле
                         # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
                             check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-                        # else:
-                        #     check_m = fail_on_alert(page_open, "error", 2000)
-                        if check_m[0] is not None:
-                            #########################################################################
-                            # try:
-                                # locator.wait_for(state="visible", timeout=2000)
-                                # # Если элемент появился — тогда проверяем
-                                # if locator.count() > 0 and locator.is_visible():
-                                # if locator.count() > 0 and locator.is_visible:
+                        if check_m is not None:
                             text_err = check_m[1]
+                            # safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
                             now = datetime.now()
                             page_open.screenshot(type='jpeg',
                                                  path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
@@ -280,29 +272,30 @@ def test_positive_form(page_open, user_data):
                                 attachment_type=allure.attachment_type.PNG)
                             raise AssertionError(
                                 f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
-                            # except PlaywrightTimeoutError:
-                                # Элемент не появился — просто пропускаем
-                                ##################################################################
-                                # функція можливих дій після валідного заповненння поля
-                                # confirmation(page_open, value, field)
-                        expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
-                        debug(f"Підтверджене валідне введення {value}", f"{field}")
+                        # Элемент не появился — просто пропускаем
+                        # функція можливих дій після валідного заповненння поля
+                        confirmation(page_open, value, field)
+                        # safe_field = re.sub(r'[\\/*?:"<>| ]', "",  field)
+                        # expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
+                        # debug(f"Підтверджене валідне введення {value}", f"{field}")
                                 ######################################################################
 
                 # Скриншот страницы
+                # safe_field = re.sub(r'[\\/*?:"<>| ]', '_', field)
+                now = datetime.now()
                 screenshot = page_open.screenshot()
                 page_open.screenshot(type='jpeg', path=f'screenshots/positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
                 debug(f'Скриншот останньої сторінки після заповнення полів positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg", "Скрін сторінки")
                 allure.attach(
                     screenshot,
-                    name=f"Скриншот останньої сторінки піля заповнення полів",
+                    name=f"Скриншот останньої сторінки після заповнення полів",
                     attachment_type=allure.attachment_type.PNG
                 )
                 ####################################################################################
                 # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-                # after_fill_fields(page_open)
+                if after_fill_fields(page_open):
                 ##################################################################################
-                debug(f"Позитивний тест пройдено", "PASSED")
+                    debug(f"Позитивний тест пройдено", "PASSED")
 
     except AssertionError as e:
         debug(f"Тест провалено: позитивний сценарій не пройдено \n{e}", "ASSERTIONERROR")
@@ -312,7 +305,7 @@ def test_positive_form(page_open, user_data):
         if text_err is not None:
             errorsa.append(f"{field}': - '{text_err}")
         else:
-            errorsa.append(f"{field}: {e}")
+            errorsa.append(f"{field}': - '{e}")
         alert = page_open.get_by_role("alert").locator("div").first
         if alert.is_visible():
             errorsa.append(f"{field}': - '{alert.inner_text()}")

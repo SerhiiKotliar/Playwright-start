@@ -1,5 +1,6 @@
 import pytest
-
+import shutil
+import  os
 # from main_file import get_user_input
 from Rule_form_new import get_user_input
 from playwright.sync_api import Page
@@ -73,7 +74,18 @@ def page_open(page: Page, user_data):
     return page
 #, wait_until="commit"
 
-
+@pytest.fixture(scope="session", autouse=True)
+def clear_allure_results():
+    allure_dir = "result"
+    if os.path.exists(allure_dir):
+        shutil.rmtree(allure_dir)
+    os.makedirs(allure_dir)
+    print(f"\n✅ Очищена директорія: {allure_dir}")
+    allure_dir = "screenshots"
+    if os.path.exists(allure_dir):
+        shutil.rmtree(allure_dir)
+    os.makedirs(allure_dir)
+    print(f"\n✅ Очищена директорія: {allure_dir}")
 # @pytest.fixture(autouse=True, scope="function")
 # def page_open(page: Page, user_data):
 #     page.goto(user_data["url"])
