@@ -3,7 +3,7 @@ from conftest import page_open
 from helper import debug
 from typing import Callable, Pattern, Union, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
-
+import re
 
 URLMatcher = Union[str, Pattern[str], Callable[[str], bool]]
 
@@ -49,5 +49,8 @@ def confirmation(page_open: Page, value, field):
     expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
     debug(f"Підтверджене валідне введення {value}", f"{field}")
 
-def after_fill_fields(page_open: Page):
-    return  True
+def after_fill_fields(page_open: Page, el: str == '', txt: str == '') -> None:
+    if el != '':
+        page_open.get_by_role(el, name=txt).click()
+        expect(page_open.get_by_text(re.compile(r"^Welcome .*"))).to_be_visible()
+        debug(f"Підтверджена реєстрація користувача", "Реєстрація")

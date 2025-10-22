@@ -19,6 +19,23 @@ fields = []
 valid_values = []
 invalid_values = {}
 
+
+def fill_field_js(page, field_name, value):
+    """
+    Заполняет input или textarea напрямую через JS.
+    :param page: Playwright Page
+    :param field_name: имя поля (атрибут name)
+    :param value: значение для ввода
+    """
+    page.evaluate(
+        """([field, val]) => {
+            const el = document.querySelector(`input[name="${field}"], textarea[name="${field}"]`);
+            if (el) el.value = val;
+        }""",
+        [field_name, value]
+    )
+
+
 def get_text_field(page: Page, field: str):
     """
     Универсальный локатор для текстового поля или textarea.
@@ -32,30 +49,32 @@ def get_text_field(page: Page, field: str):
         return page.locator(f"input[name='{field}'], textarea[name='{field}']")
 
 
+
 def fill_if_exists(page: Page, field: str, value: str, timeout: int = 5000):
     """
     Надёжное заполнение текстового поля.
     Использует get_text_field(), ждёт видимости и делает fill() или type().
     """
     tb = get_text_field(page, field)
+    #
+    # try:
+    #     tb.wait_for(state="visible", timeout=timeout)
+    # except Exception:
+    #     print(f"⚠️ Поле {field} не стало видимым за {timeout/1000} сек, продолжаем")
+    #     print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
+    #
+    # try:
+    #     tb.scroll_into_view_if_needed()
+    # except Exception:
+    #     print(f"⚠️ scroll_into_view_if_needed не сработал для {field}")
 
     try:
-        tb.wait_for(state="visible", timeout=timeout)
-    except Exception:
-        print(f"⚠️ Поле {field} не стало видимым за {timeout/1000} сек, продолжаем")
-        print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
-
-    try:
-        tb.scroll_into_view_if_needed()
-    except Exception:
-        print(f"⚠️ scroll_into_view_if_needed не сработал для {field}")
-
-    try:
-        tb.fill(value)
+        # tb.fill(value)
+        fill_field_js(page, field, value)
     except Exception as e:
         print(f"⚠️ fill() не сработал для {field}: {e}. Используем type()")
-        tb.click()
-        tb.type(value, delay=50)
+    #     tb.click()
+    #     tb.type(value, delay=50)
     return tb
 
 
@@ -285,14 +304,17 @@ def test_positive_form(page_open, user_data):
             text_err = ""
             ##########################################################################
             # функція переходу до сторінки з полями, що треба заповнити (page_open)
-            page_open = enter_to_fieldspage(page_open)
+            # page_open = enter_to_fieldspage(page_open)
             ############################################################################
             with allure.step("Заповнення полів валідними даними"):
                 for field in fields:
                     value = user_data[0][field]
                     if field != "url": #and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
+                        # page_open.screenshot(path="debug.png")
+
                         safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
-                        tb = fill_if_exists(page_open, field, value, timeout=5000)
+                        # tb = fill_if_exists(page_open, field, value, timeout=5000)
+                        fill_field_js(page_open, field, value)
                         #expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
                         ## expect_field_visible(page_open, field)
                         # debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
@@ -332,7 +354,7 @@ def test_positive_form(page_open, user_data):
                         #####################################################################
                         # умова, що вибирає чи треба якось фіксувати введення даних, чи це трапляється при події виходу з поля
                         if user_data[0]["fix_enter"] == 1:
-                            tb.press("Enter")
+                            # tb.press("Enter")
                             debug("Зафіксоване введення даних клавішею Enter", f"{field}")
                         ######################################################################
                         # функція перевірки появи повідомлень про помилку
@@ -341,7 +363,8 @@ def test_positive_form(page_open, user_data):
                         if check_m is None:
                         # перевірка на появу повідомлень про помилки після введення даних у поле
                         # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                            check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
+                            if user_data[0]["check_attr"] != '':
+                                check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
                         if check_m is not None:
                             text_err = check_m[1]
                             now = datetime.now()
@@ -358,8 +381,18 @@ def test_positive_form(page_open, user_data):
                                 f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
                         # Элемент не появился — просто пропускаем
                         # функція можливих дій після валідного заповненння поля
-                        confirmation(page_open, value, field)
-
+                        el_t = user_data[0]['el_fix_after_fill']
+                        if el_t == '':
+                            confirmation(page_open, value, field)
+                ####################################################################################
+                # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
+                el_t = user_data[0]['el_fix_after_fill']
+                if el_t != '':
+                    after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill'])
+                ##################################################################################
+                allure.attach("Позитивні тести пройдено успішно", name="PASSED")
+                print('\n')
+                debug("Позитивні тести пройдено успішно", "PASSED")
                 # Скриншот страницы
                 now = datetime.now()
                 screenshot = page_open.screenshot()
@@ -370,13 +403,15 @@ def test_positive_form(page_open, user_data):
                     name=f"Скриншот останньої сторінки після заповнення полів",
                     attachment_type=allure.attachment_type.PNG
                 )
-                ####################################################################################
-                # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-                if after_fill_fields(page_open):
-                ##################################################################################
-                    allure.attach("Позитивні тести пройдено успішно", name="PASSED")
-                    print('\n')
-                    debug("Позитивні тести пройдено успішно", "PASSED")
+                # ####################################################################################
+                # # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
+                # el_t = user_data[0]['el_fix_after_fill']
+                # if el_t != '':
+                #     after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill'], user_data[0]['username'])
+                # ##################################################################################
+                # allure.attach("Позитивні тести пройдено успішно", name="PASSED")
+                # print('\n')
+                # debug("Позитивні тести пройдено успішно", "PASSED")
 
     except AssertionError as e:
         debug(f"Тест провалено: позитивний сценарій не пройдено \n{e}", "ASSERTIONERROR")

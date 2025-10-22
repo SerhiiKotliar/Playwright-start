@@ -13,8 +13,12 @@ REGISTER_HTML = """
 <title>Register</title>
 <h2>Register</h2>
 <form method="post" action="/register">
-  <label>Username <input name="username" required></label><br>
-  <label>Password <input name="password" type="password" required></label><br>
+  <label for="username">Username</label>
+  <input id="username" name="username" type="text" required><br>
+
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" required><br>
+
   <button type="submit">Register</button>
 </form>
 {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
@@ -25,8 +29,12 @@ LOGIN_HTML = """
 <title>Login</title>
 <h2>Login</h2>
 <form method="post" action="/login">
-  <label>Username <input name="username" required></label><br>
-  <label>Password <input name="password" type="password" required></label><br>
+  <label for="username">Username</label>
+  <input id="username" name="username" type="text" required><br>
+
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" required><br>
+
   <button type="submit">Login</button>
 </form>
 {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
