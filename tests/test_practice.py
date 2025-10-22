@@ -8,7 +8,7 @@ from conftest import page_open
 from helper import debug
 import re
 from typing import Callable, Pattern, Union, Optional
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Page, sync_playwright, TimeoutError as PlaywrightTimeoutError
 import invalid_datas as in_d
 from datetime import datetime
 from enter_to_homepage import enter_to_fieldspage, confirmation, after_fill_fields
@@ -18,6 +18,21 @@ from utils import  checking_for_errors
 fields = []
 valid_values = []
 invalid_values = {}
+
+def expect_field_visible(page, field_name):
+    try:
+        # основной вариант — ARIA role
+        expect(page.get_by_role("textbox", name=field_name)).to_be_visible()
+    except:
+        # fallback — ищем по атрибуту name
+        expect(page.locator(f"input[name='{field_name}'], textarea[name='{field_name}']")).to_be_visible()
+
+def get_text_field(page, field):
+    try:
+        return page.get_by_role("textbox", name=field, exact=True)
+    except:
+        return page.locator(f"input[name='{field}'], textarea[name='{field}']")
+
 
 URLMatcher = Union[str, Pattern[str], Callable[[str], bool]]
 
@@ -242,20 +257,50 @@ def test_positive_form(page_open, user_data):
     ##########################################################################
     try:
         with allure.step('Перехід на головну сторінку сайту'):
+            text_err = ""
             ##########################################################################
             # функція переходу до сторінки з полями, що треба заповнити (page_open)
-            page_open = enter_to_fieldspage(page_open)
-            #############################################################################
+            # page_open = enter_to_fieldspage(page_open)
+            ############################################################################
             with allure.step("Заповнення полів валідними даними"):
                 for field in fields:
                     value = user_data[0][field]
                     if field != "url": #and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
                         safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
-                        expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
+                        # expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
+                        expect_field_visible(page_open, field)
                         debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
-                        tb = page_open.get_by_role("textbox", name=field, exact=True)
+                        # tb = page_open.get_by_role("textbox", name=field, exact=True)
+                        tb = get_text_field(page_open, field)
                         # value = "пр ско№"
-                        tb.fill(value)
+                        # tb.fill(value)
+                        # Попробуем дождаться видимости, но без падения
+                        try:
+                            tb.wait_for(state="visible", timeout=3000)
+                        except:
+                            print(f"⚠️ Поле {field} не стало видимым за 3 сек, продолжаем")
+
+                        # Проверим, что элемент в DOM
+                        if not tb.is_visible():
+                            print(f"⚠️ Поле {field} скрыто — пробуем scroll и повтор")
+                            html = tb.evaluate("el => el.outerHTML")
+                            style = tb.evaluate("el => getComputedStyle(el).cssText")
+                            print("=== DEBUG username field ===")
+                            print(html)
+                            print("=== STYLES ===")
+                            print(style)
+
+                            tb.scroll_into_view_if_needed()
+                            page_open.wait_for_timeout(500)
+                            print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
+
+                        # Пробуем заполнить
+                        try:
+                            tb.fill(value)
+                        except Exception as e:
+                            print(f"⚠️ fill() не сработал, пробуем type(): {e}")
+                            tb.click()
+                            tb.type(value, delay=50)
                         debug(f"Заповнено поле значенням {value}", f"{field}")
                         allure.attach(f"Заповнено поле значенням {value}", name=f"{field}")
                         #####################################################################
@@ -265,6 +310,7 @@ def test_positive_form(page_open, user_data):
                             debug("Зафіксоване введення даних клавішею Enter", f"{field}")
                         ######################################################################
                         # функція перевірки появи повідомлень про помилку
+
                         check_m = fail_on_alert(page_open, "error", 2000)
                         if check_m is None:
                         # перевірка на появу повідомлень про помилки після введення даних у поле
@@ -312,7 +358,7 @@ def test_positive_form(page_open, user_data):
         debug(f"Current URL: {page_open.url}", "INFO")
         # Логування помилок форми
         errorsa = []
-        if text_err is not None:
+        if text_err != "":
             errorsa.append(f"{field}': - '{text_err}")
         else:
             errorsa.append(f"{field}': - '{e}")
@@ -537,3 +583,28 @@ def test_negative_form(page_open, user_data):
                 debug("Всі негативні тести пройдено успішно", "Результат негативних тестів")
             else:
                 debug("Частково негативні тести пройдено успішно", "Результат негативних тестів")
+
+
+# from playwright.sync_api import sync_playwright, expect
+# @pytest.mark.skip(reason="Тест вимкнено")
+def test_invalid_registration(page_open: Page):
+    # with sync_playwright() as pw:
+        # browser = pw.chromium.launch(headless=True)
+        # page_open = browser.new_page()
+        # page_open.goto("http://127.0.0.1:5000/register")
+
+        # username слишком короткий
+    page_open.fill("input[name='username']", "ab")
+    page_open.fill("input[name='password']", "pass1234")
+    page_open.click("button[type='submit']")
+
+    expect(page_open.locator("text=Invalid username")).to_be_visible(timeout=2000)
+
+    # password без цифр
+    page_open.fill("input[name='username']", "user123")
+    page_open.fill("input[name='password']", "abcdefgh")
+    page_open.click("button[type='submit']")
+    expect(page_open.locator("text=Invalid password")).to_be_visible(timeout=2000)
+
+        # browser.close()
+    page_open.close()

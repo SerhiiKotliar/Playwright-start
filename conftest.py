@@ -17,7 +17,7 @@ from helper import debug
 #     # Сохраняем root в data, чтобы можно было использовать при необходимости
 #     data["_root"] = root
 #     return data
-
+#############################################################################
 @pytest.fixture(scope='session')
 def user_data():
 
@@ -25,7 +25,7 @@ def user_data():
 
     debug(f"Дані для тестів отримані:\n{result}\n{result_inv}\n{result_tit_f}", "FIXTURE")
     return result, result_inv, result_tit_f  # возвращаем введённые данные
-
+###################################################################################
 # @pytest.fixture(scope="session")
 # def browser():
 #     with sync_playwright() as p:
@@ -65,7 +65,7 @@ def user_data():
 #     yield page
 #     # можно очистить, если нужно
 #     page.goto("about:blank")
-
+#################################################################################
 @pytest.fixture(autouse=True, scope="function")
 def page_open(page: Page, user_data):
     page.goto(user_data[0]['url'], timeout=5000, wait_until="domcontentloaded")
@@ -83,7 +83,8 @@ def clear_allure_results():
     if os.path.exists(allure_dir):
         shutil.rmtree(allure_dir)
     os.makedirs(allure_dir)
-    print(f"\n✅ Очищена директорія: {allure_dir}")
+    print(f"\n✅ Очищена директорія: {allure_dir}")\
+#########################################################################################
 # @pytest.fixture(autouse=True, scope="function")
 # def page_open(page: Page, user_data):
 #     page.goto(user_data["url"])
