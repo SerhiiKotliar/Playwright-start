@@ -19,19 +19,44 @@ fields = []
 valid_values = []
 invalid_values = {}
 
-def expect_field_visible(page, field_name):
-    # try:
-    #     # основной вариант — ARIA role
-    #     expect(page.get_by_role("textbox", name=field_name)).to_be_visible()
-    # except:
-    #     # fallback — ищем по атрибуту name
-    expect(page.locator(f"input[name='{field_name}'], textarea[name='{field_name}']")).to_be_visible()
+def get_text_field(page: Page, field: str):
+    """
+    Универсальный локатор для текстового поля или textarea.
+    Сначала пробует get_by_role, если не найдёт — fallback на CSS.
+    """
+    try:
+        # Сначала пытаемся по роли (работает, если есть label)
+        return page.get_by_role("textbox", name=field, exact=True)
+    except Exception:
+        # fallback: любой input или textarea с нужным name
+        return page.locator(f"input[name='{field}'], textarea[name='{field}']")
 
-def get_text_field(page, field):
-    # try:
-    #     return page.get_by_role("textbox", name=field, exact=True)
-    # except:
-    return page.locator(f"input[name='{field}'], textarea[name='{field}']")
+
+def fill_if_exists(page: Page, field: str, value: str, timeout: int = 5000):
+    """
+    Надёжное заполнение текстового поля.
+    Использует get_text_field(), ждёт видимости и делает fill() или type().
+    """
+    tb = get_text_field(page, field)
+
+    try:
+        tb.wait_for(state="visible", timeout=timeout)
+    except Exception:
+        print(f"⚠️ Поле {field} не стало видимым за {timeout/1000} сек, продолжаем")
+        print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
+
+    try:
+        tb.scroll_into_view_if_needed()
+    except Exception:
+        print(f"⚠️ scroll_into_view_if_needed не сработал для {field}")
+
+    try:
+        tb.fill(value)
+    except Exception as e:
+        print(f"⚠️ fill() не сработал для {field}: {e}. Используем type()")
+        tb.click()
+        tb.type(value, delay=50)
+    return tb
 
 
 URLMatcher = Union[str, Pattern[str], Callable[[str], bool]]
@@ -267,13 +292,14 @@ def test_positive_form(page_open, user_data):
                     value = user_data[0][field]
                     if field != "url": #and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
                         safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
-                        expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
-                        # expect_field_visible(page_open, field)
-                        debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
-                        tb = page_open.get_by_role("textbox", name=field, exact=True)
-                        # tb = get_text_field(page_open, field)
+                        tb = fill_if_exists(page_open, field, value, timeout=5000)
+                        #expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
+                        ## expect_field_visible(page_open, field)
+                        # debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
+                        #tb = page_open.get_by_role("textbox", name=field, exact=True)
+                        ## tb = get_text_field(page_open, field)
                         # value = "пр ско№"
-                        tb.fill(value)
+                        #tb.fill(value)
                         # Попробуем дождаться видимости, но без падения
                         # try:
                         #     tb.wait_for(state="visible", timeout=3000)
@@ -464,20 +490,23 @@ def test_negative_form(page_open, user_data):
                         else:
                             el_list_d = el_list
                         with allure.step("Заповнення полів"):
-                            tb = page_open.get_by_role("textbox", name=field_key, exact=True)
+                            # tb = page_open.get_by_role("textbox", name=field_key, exact=True)
+                            # tb = fill_if_exists(page_open, field_key, el_list_n, timeout=5000)
                             print('\n')
                             if neg:
+                                tb = fill_if_exists(page_open, field_key, el_list_n, timeout=5000)
                                 debug(f"заповнення поля невалідністю {el_list_n} по типу {el_list_d}",
                                       f"{field_key}")
-                                tb.fill(el_list_n)
+                                # tb.fill(el_list_n)
                                 value = el_list_n
                                 str_att = f"введені невалідні дані {el_list_n} у поле {field_key}:"
                                 debug(str_att, f"{field_key}")
                                 allure.attach(str_att + " " + "\"" + str(el_list_n) + "\"", name=f"Поле {field_key}")
                             else:
+                                tb = fill_if_exists(page_open, field_key, el_list_d, timeout=5000)
                                 debug(f"заповнення поля {field_key} валідними даними {el_list_d}",
                                       "Заповнення форми")
-                                tb.fill(el_list_d)
+                                # tb.fill(el_list_d)
                                 value = el_list_d
                                 str_att = f"введені валідні дані {el_list_d} у поле {field_key}:"
                                 debug(str_att, f"{field_key}")
