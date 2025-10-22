@@ -20,18 +20,18 @@ valid_values = []
 invalid_values = {}
 
 def expect_field_visible(page, field_name):
-    try:
-        # основной вариант — ARIA role
-        expect(page.get_by_role("textbox", name=field_name)).to_be_visible()
-    except:
-        # fallback — ищем по атрибуту name
-        expect(page.locator(f"input[name='{field_name}'], textarea[name='{field_name}']")).to_be_visible()
+    # try:
+    #     # основной вариант — ARIA role
+    #     expect(page.get_by_role("textbox", name=field_name)).to_be_visible()
+    # except:
+    #     # fallback — ищем по атрибуту name
+    expect(page.locator(f"input[name='{field_name}'], textarea[name='{field_name}']")).to_be_visible()
 
 def get_text_field(page, field):
-    try:
-        return page.get_by_role("textbox", name=field, exact=True)
-    except:
-        return page.locator(f"input[name='{field}'], textarea[name='{field}']")
+    # try:
+    #     return page.get_by_role("textbox", name=field, exact=True)
+    # except:
+    return page.locator(f"input[name='{field}'], textarea[name='{field}']")
 
 
 URLMatcher = Union[str, Pattern[str], Callable[[str], bool]]
@@ -260,47 +260,47 @@ def test_positive_form(page_open, user_data):
             text_err = ""
             ##########################################################################
             # функція переходу до сторінки з полями, що треба заповнити (page_open)
-            # page_open = enter_to_fieldspage(page_open)
+            page_open = enter_to_fieldspage(page_open)
             ############################################################################
             with allure.step("Заповнення полів валідними даними"):
                 for field in fields:
                     value = user_data[0][field]
                     if field != "url": #and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
                         safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
-                        # expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
-                        expect_field_visible(page_open, field)
+                        expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
+                        # expect_field_visible(page_open, field)
                         debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
-                        # tb = page_open.get_by_role("textbox", name=field, exact=True)
-                        tb = get_text_field(page_open, field)
+                        tb = page_open.get_by_role("textbox", name=field, exact=True)
+                        # tb = get_text_field(page_open, field)
                         # value = "пр ско№"
-                        # tb.fill(value)
+                        tb.fill(value)
                         # Попробуем дождаться видимости, но без падения
-                        try:
-                            tb.wait_for(state="visible", timeout=3000)
-                        except:
-                            print(f"⚠️ Поле {field} не стало видимым за 3 сек, продолжаем")
-
-                        # Проверим, что элемент в DOM
-                        if not tb.is_visible():
-                            print(f"⚠️ Поле {field} скрыто — пробуем scroll и повтор")
-                            html = tb.evaluate("el => el.outerHTML")
-                            style = tb.evaluate("el => getComputedStyle(el).cssText")
-                            print("=== DEBUG username field ===")
-                            print(html)
-                            print("=== STYLES ===")
-                            print(style)
-
-                            tb.scroll_into_view_if_needed()
-                            page_open.wait_for_timeout(500)
-                            print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
-
-                        # Пробуем заполнить
-                        try:
-                            tb.fill(value)
-                        except Exception as e:
-                            print(f"⚠️ fill() не сработал, пробуем type(): {e}")
-                            tb.click()
-                            tb.type(value, delay=50)
+                        # try:
+                        #     tb.wait_for(state="visible", timeout=3000)
+                        # except:
+                        #     print(f"⚠️ Поле {field} не стало видимым за 3 сек, продолжаем")
+                        #
+                        # # Проверим, что элемент в DOM
+                        # if not tb.is_visible():
+                        #     print(f"⚠️ Поле {field} скрыто — пробуем scroll и повтор")
+                        #     html = tb.evaluate("el => el.outerHTML")
+                        #     style = tb.evaluate("el => getComputedStyle(el).cssText")
+                        #     print("=== DEBUG username field ===")
+                        #     print(html)
+                        #     print("=== STYLES ===")
+                        #     print(style)
+                        #
+                        #     tb.scroll_into_view_if_needed()
+                        #     page_open.wait_for_timeout(500)
+                        #     print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
+                        #
+                        # # Пробуем заполнить
+                        # try:
+                        #     tb.fill(value)
+                        # except Exception as e:
+                        #     print(f"⚠️ fill() не сработал, пробуем type(): {e}")
+                        #     tb.click()
+                        #     tb.type(value, delay=50)
                         debug(f"Заповнено поле значенням {value}", f"{field}")
                         allure.attach(f"Заповнено поле значенням {value}", name=f"{field}")
                         #####################################################################
@@ -509,31 +509,31 @@ def test_negative_form(page_open, user_data):
                             #     raise AssertionError(f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_key}' при введенні невалідних даних: {el_list_n}")
                             # expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
                             # debug(f"підтверджене введення {value}", f"{field}")
-                                ######################################################################
-                                # функція перевірки появи повідомлень про помилку
-                                check_m = fail_on_alert(page_open, "error", 2000)
-                                if check_m is None:
-                                    # перевірка на появу повідомлень про помилки після введення даних у поле
-                                    # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                                    check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-                                if check_m is not None:
-                                    text_err = check_m[1]
-                                    safe_field = re.sub(r'[\\/*?:"<>| ]', '', field_key)
-                                    now = datetime.now()
-                                    page_open.screenshot(type='jpeg',
-                                                         path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
-                                    debug(
-                                        f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg",
-                                        "Скрін сторінки")
-                                    allure.attach(
-                                        page_open.screenshot(),
-                                        name=f"Скриншот останньої сторінки після помилки",
-                                        attachment_type=allure.attachment_type.PNG)
-                                    raise AssertionError(
-                                        f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
-                                # Элемент не появился — просто пропускаем
-                                # функція можливих дій після валідного заповненння поля
-                                confirmation(page_open, value, field_key)
+                            ######################################################################
+                            # функція перевірки появи повідомлень про помилку
+                            check_m = fail_on_alert(page_open, "error", 2000)
+                            if check_m is None:
+                                # перевірка на появу повідомлень про помилки після введення даних у поле
+                                # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+                                check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
+                            if check_m is not None:
+                                text_err = check_m[1]
+                                safe_field = re.sub(r'[\\/*?:"<>| ]', '', field_key)
+                                now = datetime.now()
+                                page_open.screenshot(type='jpeg',
+                                                     path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg")
+                                debug(
+                                    f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.jpeg",
+                                    "Скрін сторінки")
+                                allure.attach(
+                                    page_open.screenshot(),
+                                    name=f"Скриншот останньої сторінки після помилки",
+                                    attachment_type=allure.attachment_type.PNG)
+                                raise AssertionError(
+                                    f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
+                            # Элемент не появился — просто пропускаем
+                            # функція можливих дій після валідного заповненння поля
+                            confirmation(page_open, value, field_key)
                 except AssertionError as e:
                     # debug(f"Негативний тест пройдено для поля {field} з невалідним значенням \"{el_list_n}\"", "TEST FAIL")
                     # errors = []
@@ -586,7 +586,7 @@ def test_negative_form(page_open, user_data):
 
 
 # from playwright.sync_api import sync_playwright, expect
-# @pytest.mark.skip(reason="Тест вимкнено")
+@pytest.mark.skip(reason="Тест вимкнено")
 def test_invalid_registration(page_open: Page):
     # with sync_playwright() as pw:
         # browser = pw.chromium.launch(headless=True)
