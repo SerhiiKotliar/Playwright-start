@@ -1,5 +1,6 @@
 [url]
 https://www.qa-practice.com/
+http://127.0.0.1:5000/
 https://demoqa.com/
 https://demoqa.com/dynamic-properties
 https://www.qa-practice.com/elements/iframe/iframe_page

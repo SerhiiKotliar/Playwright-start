@@ -20,20 +20,47 @@ valid_values = []
 invalid_values = {}
 
 
+# def fill_field_js(page, field_name, value):
+#     """
+#     Заполняет input или textarea напрямую через JS.
+#     :param page: Playwright Page
+#     :param field_name: имя поля (атрибут name)
+#     :param value: значение для ввода
+#     """
+#     page.evaluate(
+#         """([field, val]) => {
+#             const el = document.querySelector(`input[name="${field}"], textarea[name="${field}"]`);
+#             if (el) el.value = val;
+#         }""",
+#         [field_name, value]
+#     )
+
 def fill_field_js(page, field_name, value):
-    """
-    Заполняет input или textarea напрямую через JS.
-    :param page: Playwright Page
-    :param field_name: имя поля (атрибут name)
-    :param value: значение для ввода
-    """
     page.evaluate(
         """([field, val]) => {
             const el = document.querySelector(`input[name="${field}"], textarea[name="${field}"]`);
-            if (el) el.value = val;
+            if (el) {
+                el.value = val;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }""",
         [field_name, value]
     )
+
+def press_enter_js(page, field_name):
+    page.evaluate(
+        """(field) => {
+            const el = document.querySelector(`input[name="${field}"], textarea[name="${field}"]`);
+            if (el) {
+                const eventInit = { key: 'Enter', code: 'Enter', bubbles: true };
+                el.dispatchEvent(new KeyboardEvent('keydown', eventInit));
+                el.dispatchEvent(new KeyboardEvent('keyup', eventInit));
+            }
+        }""",
+        field_name
+    )
+
 
 
 def get_text_field(page: Page, field: str):
@@ -69,12 +96,13 @@ def fill_if_exists(page: Page, field: str, value: str, timeout: int = 5000):
     #     print(f"⚠️ scroll_into_view_if_needed не сработал для {field}")
 
     try:
-        # tb.fill(value)
-        fill_field_js(page, field, value)
+        tb.fill(value)
+        # fill_field_js(page, field, value)
     except Exception as e:
         print(f"⚠️ fill() не сработал для {field}: {e}. Используем type()")
-    #     tb.click()
-    #     tb.type(value, delay=50)
+        fill_field_js(page, field, value)
+        # tb.click()
+        # tb.type(value, delay=50)
     return tb
 
 
@@ -300,71 +328,47 @@ def test_positive_form(page_open, user_data):
     debug("Позитивний тест: усі поля валідні", "Початок позитивного тесту")
     ##########################################################################
     try:
-        with allure.step('Перехід на головну сторінку сайту'):
+        with (allure.step('Перехід на головну сторінку сайту')):
             text_err = ""
             ##########################################################################
             # функція переходу до сторінки з полями, що треба заповнити (page_open)
-            # page_open = enter_to_fieldspage(page_open)
+            page_open = enter_to_fieldspage(page_open)
             ############################################################################
             with allure.step("Заповнення полів валідними даними"):
                 for field in fields:
                     value = user_data[0][field]
-                    if field != "url": #and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
-                        # page_open.screenshot(path="debug.png")
-
+                    if field != "url":
                         safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
-                        # tb = fill_if_exists(page_open, field, value, timeout=5000)
-                        fill_field_js(page_open, field, value)
-                        #expect(page_open.get_by_role("textbox", name=field)).to_be_visible()
-                        ## expect_field_visible(page_open, field)
-                        # debug(f"знайдено текстове поле {field}", f"Перевірка наявності текстового поля {field}")
-                        #tb = page_open.get_by_role("textbox", name=field, exact=True)
-                        ## tb = get_text_field(page_open, field)
-                        # value = "пр ско№"
-                        #tb.fill(value)
-                        # Попробуем дождаться видимости, но без падения
-                        # try:
-                        #     tb.wait_for(state="visible", timeout=3000)
-                        # except:
-                        #     print(f"⚠️ Поле {field} не стало видимым за 3 сек, продолжаем")
-                        #
-                        # # Проверим, что элемент в DOM
-                        # if not tb.is_visible():
-                        #     print(f"⚠️ Поле {field} скрыто — пробуем scroll и повтор")
-                        #     html = tb.evaluate("el => el.outerHTML")
-                        #     style = tb.evaluate("el => getComputedStyle(el).cssText")
-                        #     print("=== DEBUG username field ===")
-                        #     print(html)
-                        #     print("=== STYLES ===")
-                        #     print(style)
-                        #
-                        #     tb.scroll_into_view_if_needed()
-                        #     page_open.wait_for_timeout(500)
-                        #     print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
-                        #
-                        # # Пробуем заполнить
-                        # try:
-                        #     tb.fill(value)
-                        # except Exception as e:
-                        #     print(f"⚠️ fill() не сработал, пробуем type(): {e}")
-                        #     tb.click()
-                        #     tb.type(value, delay=50)
+                        tb = page_open.get_by_role("textbox", name=field, exact=True)
+                        tb.fill(value)
+                        val = tb.input_value()
                         debug(f"Заповнено поле значенням {value}", f"{field}")
-                        allure.attach(f"Заповнено поле значенням {value}", name=f"{field}")
+                        allure.attach(f"Заповнено поле значенням {val}", name=f"{field}")
                         #####################################################################
                         # умова, що вибирає чи треба якось фіксувати введення даних, чи це трапляється при події виходу з поля
                         if user_data[0]["fix_enter"] == 1:
-                            # tb.press("Enter")
-                            debug("Зафіксоване введення даних клавішею Enter", f"{field}")
+                            tb.press("Enter")
+                            debug(f"Зафіксоване введення даних {val} клавішею Enter", f"{field}")
                         ######################################################################
                         # функція перевірки появи повідомлень про помилку
-
                         check_m = fail_on_alert(page_open, "error", 2000)
                         if check_m is None:
                         # перевірка на появу повідомлень про помилки після введення даних у поле
                         # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
                             if user_data[0]["check_attr"] != '':
+                                # відомі атрибути повідомлення про помилку
                                 check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
+                            else:
+                                # відома частина тексту повідомлення
+                                loc_er = page_open.get_by_text(re.compile(r"^Invalid .*"))
+                                if loc_er.count() == 0:
+                                    loc_er = page_open.get_by_text("User exists")
+
+                                if loc_er.count() > 0:
+                                    expect(loc_er).to_be_visible(timeout=3000)
+                                    # debug(f"Підтверджена реєстрація користувача", "Реєстрація")
+                                    check_m = "Повідомлення про помилку", loc_er.inner_text()
+
                         if check_m is not None:
                             text_err = check_m[1]
                             now = datetime.now()
