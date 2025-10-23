@@ -360,13 +360,9 @@ def test_positive_form(page_open, user_data):
                                 check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
                             else:
                                 # відома частина тексту повідомлення
-                                loc_er = page_open.get_by_text(re.compile(r"^Invalid .*"))
-                                if loc_er.count() == 0:
-                                    loc_er = page_open.get_by_text("User exists")
-
+                                loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
                                 if loc_er.count() > 0:
-                                    expect(loc_er).to_be_visible(timeout=3000)
-                                    # debug(f"Підтверджена реєстрація користувача", "Реєстрація")
+                                    expect(loc_er).to_be_visible(timeout=1000)
                                     check_m = "Повідомлення про помилку", loc_er.inner_text()
 
                         if check_m is not None:
@@ -392,7 +388,27 @@ def test_positive_form(page_open, user_data):
                 # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
                 el_t = user_data[0]['el_fix_after_fill']
                 if el_t != '':
-                    after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill'])
+                    if not after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill']):
+                        txt = user_data[0]['txt_el_fix_after_fill']
+                        # loc_er = page_open.get_by_text("User exists")
+                        loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
+                        if loc_er.count() > 0:
+                            expect(loc_er).to_be_visible(timeout=1000)
+                            debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
+                            raise AssertionError(
+                                f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
+                        else:
+                            raise AssertionError(
+                                f"З невідомих причин не відкрилась сторінка після кліку на кнопці {txt}")
+                    # assert changed, "Не відкрилась сторінка привітання з реєстрацією користувача"
+                    loc_txt_reg = page_open.get_by_text(re.compile(r"^Welcome .*"))
+                    if loc_txt_reg.count() > 0:
+                        expect(loc_txt_reg).to_be_visible()
+                        debug("Підтверджено привітання користувача", "Вхід у профіль")
+                    else:
+                        debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
+                        raise AssertionError(
+                            f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
                 ##################################################################################
                 allure.attach("Позитивні тести пройдено успішно", name="PASSED")
                 print('\n')
@@ -407,15 +423,6 @@ def test_positive_form(page_open, user_data):
                     name=f"Скриншот останньої сторінки після заповнення полів",
                     attachment_type=allure.attachment_type.PNG
                 )
-                # ####################################################################################
-                # # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-                # el_t = user_data[0]['el_fix_after_fill']
-                # if el_t != '':
-                #     after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill'], user_data[0]['username'])
-                # ##################################################################################
-                # allure.attach("Позитивні тести пройдено успішно", name="PASSED")
-                # print('\n')
-                # debug("Позитивні тести пройдено успішно", "PASSED")
 
     except AssertionError as e:
         debug(f"Тест провалено: позитивний сценарій не пройдено \n{e}", "ASSERTIONERROR")
@@ -529,23 +536,23 @@ def test_negative_form(page_open, user_data):
                         else:
                             el_list_d = el_list
                         with allure.step("Заповнення полів"):
-                            # tb = page_open.get_by_role("textbox", name=field_key, exact=True)
+                            tb = page_open.get_by_role("textbox", name=field_key, exact=True)
                             # tb = fill_if_exists(page_open, field_key, el_list_n, timeout=5000)
                             print('\n')
                             if neg:
-                                tb = fill_if_exists(page_open, field_key, el_list_n, timeout=5000)
+                                # tb = fill_if_exists(page_open, field_key, el_list_n, timeout=5000)
                                 debug(f"заповнення поля невалідністю {el_list_n} по типу {el_list_d}",
                                       f"{field_key}")
-                                # tb.fill(el_list_n)
+                                tb.fill(el_list_n)
                                 value = el_list_n
                                 str_att = f"введені невалідні дані {el_list_n} у поле {field_key}:"
                                 debug(str_att, f"{field_key}")
                                 allure.attach(str_att + " " + "\"" + str(el_list_n) + "\"", name=f"Поле {field_key}")
                             else:
-                                tb = fill_if_exists(page_open, field_key, el_list_d, timeout=5000)
+                                # tb = fill_if_exists(page_open, field_key, el_list_d, timeout=5000)
                                 debug(f"заповнення поля {field_key} валідними даними {el_list_d}",
                                       "Заповнення форми")
-                                # tb.fill(el_list_d)
+                                tb.fill(el_list_d)
                                 value = el_list_d
                                 str_att = f"введені валідні дані {el_list_d} у поле {field_key}:"
                                 debug(str_att, f"{field_key}")
