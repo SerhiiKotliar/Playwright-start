@@ -1,7 +1,16 @@
 import allure
 from datetime import datetime
 
-def debug(value, description="DEBUG"):
+def get_extension(filename: str) -> str:
+    """
+    Возвращает часть строки после последней точки.
+    Если точки нет — возвращает пустую строку.
+    """
+    parts = filename[-9:].rsplit('.', 1)
+    return parts[1] if len(parts) > 1 else ''
+
+
+def debug(value, description="DEBUG", att=None):
     """
     Вывод сообщения для отладки с таймштампом:
     - печать в консоль
@@ -12,16 +21,29 @@ def debug(value, description="DEBUG"):
 
     # Консоль
     print(message)
-
-    # Allure
-    try:
+    # тип вложения
+    type_txt = get_extension(message).upper()
+    if type_txt != '':
+        attach_txt =f"allure.attachment_type.{type_txt}"
+        allure.attach(
+            att,
+            name=message,
+            attachment_type=attach_txt
+        )
+    else:
         allure.attach(
             message,
-            name=description,
-            attachment_type=allure.attachment_type.TEXT
+            name=description
         )
-    except Exception:
-        pass
+    # # Allure
+    # try:
+    #     allure.attach(
+    #         message,
+    #         name=description,
+    #         attachment_type=attach_txt
+    #     )
+    # except Exception:
+    #     pass
 
 
 # if __name__ == "__main__":
