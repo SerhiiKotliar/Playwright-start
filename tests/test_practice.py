@@ -739,28 +739,22 @@ def test_negative_form1(page_open, user_data):
     el_t = user_data[0]['el_fix_after_fill']
     for field, list_tup_nevalid in invalid_values.items():
         # кількість прогонів циклу дорівнює кількості невалідів у списку
-        for el_nevalid in list_tup_nevalid:
-            tb_f_n = page_open.get_by_role("textbox", name=field, exact=True)
-            el_nevalid_data = el_nevalid[0]
-            el_nevalid_t = el_nevalid[1]
-            debug(f"заповнення поля невалідністю {el_nevalid_data} по типу {el_nevalid_t}",
-                  f"{field}")
-            print("Тип объекта tb_f_n:", type(tb_f_n))
-            print("Метод fill:", tb_f_n.fill)
-            import inspect
-            print("fill из модуля:", inspect.getmodule(tb_f_n.fill))
-
-            tb_f_n.fill(el_nevalid_data)
+        for el_invalid in list_tup_nevalid:
+            tb_f_neg = page_open.get_by_role("textbox", name=field, exact=True)
+            el_invalid_data = el_invalid[0]
+            el_invalid_t = el_invalid[1]
+            debug(f"заповнення поля невалідністю {el_invalid_data} по типу {el_invalid_t}",f"{field}")
+            tb_f_neg.fill(el_invalid_data)
             #####################################################################
             # умова, що вибирає чи треба якось фіксувати введення даних у поле, чи це трапляється при події виходу з поля
             # 0 - це фіксація о події виходу, 1 - натисканням Enter, 2 - натисканням кнопки
             if user_data[0]["fix_enter"] == 1:
-                tb_f_n.press("Enter")
-                debug(f"Зафіксоване введення невалідних даних {el_nevalid_data} клавішею Enter", f"{field}")
+                tb_f_neg.press("Enter")
+                debug(f"Зафіксоване введення невалідних даних {el_invalid_data} клавішею Enter", f"{field}")
             ######################################################################
             # в деяких випадках підтвердження введених даних
             if el_t == '':
-                confirmation(page_open, el_nevalid_data, field)
+                confirmation(page_open, el_invalid_data, field)
             #######################################################################
             for field_v, val_valid in user_data[0].items():
                 if field_v not in ("url", field):
