@@ -54,7 +54,7 @@ class ConfigInputDialog(QDialog):
         cnt_layout = QHBoxLayout()
         cnt_layout.addWidget(QLabel("Кількість полів:"))
         self.spin = QSpinBox()
-        self.spin.setMinimum(1)
+        self.spin.setMinimum(0)
         self.spin.setMaximum(20)
         cnt_layout.addWidget(self.spin)
         main_layout.addLayout(cnt_layout)
@@ -64,7 +64,7 @@ class ConfigInputDialog(QDialog):
         main_layout.addLayout(self.entries_layout)
 
         # === Фіксація вводу у поле ===
-        label_fix = QLabel("Фіксація введеннданих у кожне поле")
+        label_fix = QLabel("Фіксація введених даних у кожне поле")
         main_layout.addWidget(label_fix)
 
         # === Радиокнопки ===
@@ -128,6 +128,8 @@ class ConfigInputDialog(QDialog):
         # === Кнопки OK и Скасувати ===
         btn_layout = QHBoxLayout()
         self.btnOK = QPushButton("OK")
+        # Устанавливаем кнопку по умолчанию
+        self.btnOK.setDefault(True)
         self.btnCnl = QPushButton("Скасувати")
         btn_layout.addWidget(self.btnOK)
         btn_layout.addWidget(self.btnCnl)
@@ -155,22 +157,22 @@ class ConfigInputDialog(QDialog):
                 widget.deleteLater()
 
         self.line_edits = []
-        for i in range(self.spin.value()):
+        for i in range(self.spin.value()+1):
             container = QWidget()
             h_layout = QHBoxLayout(container)
             if i == 0:
                 h_layout.addWidget(QLabel('Title:'))
-                title_edit = QLineEdit("URL")
+                title_edit = QLineEdit("URL of page")
             else:
-                h_layout.addWidget(QLabel(f'Title {i + 1}:'))
-                title_edit = QLineEdit(f"Поле {i + 1}")
+                h_layout.addWidget(QLabel(f'Title {i}:'))
+                title_edit = QLineEdit(f"Поле {i}")
             h_layout.addWidget(title_edit)
             if i == 0:
                 h_layout.addWidget(QLabel("Name:"))
-                name_edit = QLineEdit("url")
+                name_edit = QLineEdit("url_of_page")
             else:
-                h_layout.addWidget(QLabel(f"Name {i + 1}:"))
-                name_edit = QLineEdit(f"textbox{i + 1}")
+                h_layout.addWidget(QLabel(f"Name {i}:"))
+                name_edit = QLineEdit(f"textbox{i}")
             h_layout.addWidget(name_edit)
 
             # чекбокс "Обов'язкове"
@@ -584,6 +586,7 @@ class DynamicDialog(QDialog):
         self.result = {}
         self.result_invalid = {}
         self.result_title_fields = {}
+        self.result_fields = {}
         main_layout = QVBoxLayout(self)
         # ---- предупреждающий текст ----
         self.warning_label = QLabel("⚠ По замовчуванню для кожного поля тільки одне правило: БУТИ НЕ ПУСТИМ!")
@@ -614,19 +617,22 @@ class DynamicDialog(QDialog):
             chkb = QCheckBox("Обов'язкове", gb_widget)
             # привязываем чекбокс к комбобоксу
             # cmb.checkbox = chkb
+            if name == 'url_of_page':
+                cmb.addItems(input_url)
+                cmb.setCurrentText(input_url[0])
             if name == 'url':
                 cmb.addItems(input_url)
                 cmb.setCurrentText(input_url[0])
-            if name == 'login':
+            if name in ('login', 'Login', 'First name', 'first name', 'First_name', 'first_name'):
                 cmb.addItems(input_login)
                 cmb.setCurrentText(input_login[0])
-            if name == 'login_l':
+            if name in ('login_l', 'Last name', 'last name', 'Last_name', 'last_name'):
                 cmb.addItems(input_login_l)
                 cmb.setCurrentText(input_login_l[0])
-            if name == 'password':
+            if name in ('password', 'Password'):
                 cmb.addItems(input_password)
                 cmb.setCurrentText(input_password[0])
-            if name == 'email':
+            if name in ('email', 'Email'):
                 cmb.addItems(input_email)
                 cmb.setCurrentText(input_email[0])
             if required:
@@ -672,6 +678,8 @@ class DynamicDialog(QDialog):
         font.setBold(True)
 
         self.btnOK = QPushButton("Введення")
+        # Устанавливаем кнопку по умолчанию
+        self.btnOK.setDefault(True)
         self.btnOK.setFont(font)
         self.btnCnl = QPushButton("Відміна")
         self.btnCnl.setFont(font)
@@ -817,6 +825,8 @@ class DynamicDialog(QDialog):
             if wrapper.chkb.isChecked():
                 if wrapper.cmb.currentText() != "":
                     self.result[name] = wrapper.cmb.currentText()
+                    if name != 'url_of_page':
+                        self.result_fields[name] = wrapper.cmb.currentText()
                 else:
                     titles.append(wrapper.gb.title())
         # self.result['fix_enter'] = self.
@@ -857,11 +867,11 @@ def get_user_input():
         dlg.result['check_attr'] = input_dlg.attr_input.text()
         dlg.result['el_fix_after_fill'] = input_dlg.html_input.text()
         dlg.result['txt_el_fix_after_fill'] = input_dlg.text_input.text()
-        result_f = dlg.result, dlg.result_invalid, dlg.result_title_fields
+        result_f = dlg.result, dlg.result_invalid, dlg.result_title_fields, dlg.result_fields
         return result_f
     return None
 # ---- Основной запуск ----
 if __name__ == "__main__":
     get1_2 = get_user_input()
     if get1_2 is not None:
-        print(str(get1_2[0])+"\n"+str(get1_2[1])+"\n"+str(get1_2[2]))
+        print(str(get1_2[0])+"\n"+str(get1_2[1])+"\n"+str(get1_2[2])+"\n"+str(get1_2[3]))
