@@ -32,35 +32,35 @@ def click_and_wait_url_change(
 
 
 def enter_to_fieldspage(page_open: Page) -> Page:
-    # ## https: // www.qa - practice.com /
-    # ## перехід на сторінку, де заповнюються поля
-    # expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
-    # debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
-    # link_input = page_open.get_by_role("link", name="Text input")
-    #
-    # changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
-    #
-    # debug("здійснено клік на посиланні Text input", "Перехід на сторінку елементів введення даних")
-    # assert changed, "Не відкрилась сторінка елементів введення даних"
-    # debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
-    # expect(page_open.get_by_role("heading", name="Input field")).to_be_visible()
-    # debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
-    # expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
-    # debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
-
-
-    ### http://127.0.0.1:5000/")
-    expect(page_open.get_by_role("link", name="Register")).to_be_visible()
-    debug("знайдено посилання Register", "Перевірка наявності посилання Regiser")
-    link_input = page_open.get_by_role("link", name="Register")
+    ## https: // www.qa - practice.com /
+    ## перехід на сторінку, де заповнюються поля
+    expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
+    debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
+    link_input = page_open.get_by_role("link", name="Text input")
 
     changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
 
-    debug("здійснено клік на посиланні Register", "Перехід на сторінку реєстрації користувача")
-    assert changed, "Не відкрилась сторінка реєстрації користувача"
+    debug("здійснено клік на посиланні Text input", "Перехід на сторінку елементів введення даних")
+    assert changed, "Не відкрилась сторінка елементів введення даних"
+    debug("відкрилась сторінка елементів введення даних", "Перехід на сторінку елементів введення даних")
+    expect(page_open.get_by_role("heading", name="Input field")).to_be_visible()
+    debug("знайдено заголовок Input field", "Перевірка наявності заголовка Input field")
+    expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
+    debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
 
-    expect(page_open.get_by_role("heading", name="Register")).to_be_visible()
-    debug("здійснено перехід на сторінку", "Перехід на сторінку реєстрації користувача")
+
+    # ### http://127.0.0.1:5000/")
+    # expect(page_open.get_by_role("link", name="Register")).to_be_visible()
+    # debug("знайдено посилання Register", "Перевірка наявності посилання Regiser")
+    # link_input = page_open.get_by_role("link", name="Register")
+    #
+    # changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
+    #
+    # debug("здійснено клік на посиланні Register", "Перехід на сторінку реєстрації користувача")
+    # assert changed, "Не відкрилась сторінка реєстрації користувача"
+    #
+    # expect(page_open.get_by_role("heading", name="Register")).to_be_visible()
+    # debug("здійснено перехід на сторінку", "Перехід на сторінку реєстрації користувача")
 
 
     # expect(page_open.get_by_role("link", name="Login")).to_be_visible()
@@ -79,7 +79,7 @@ def enter_to_fieldspage(page_open: Page) -> Page:
 
 def confirmation(page_open: Page, value, field):
     expect(page_open.get_by_text(f"Your input was: {value}")).to_be_visible()
-    debug(f"Підтверджене валідне введення {value}", f"{field}")
+    debug(f"Підтверджене введення {value}", f"{field}")
 
 def after_fill_fields(page_open: Page, el: str == '', txt: str == '') -> bool:
     if el != '':

@@ -671,7 +671,7 @@ class DynamicDialog(QDialog):
             # cmb.focusOut.connect(self.on_focusOut)
             # событие потери фокуса групбоксом
             gb_widget.focusLeft.connect(self.on_gb_focus_left)
-            # gb_widget.focusEntered.connect(self.on_gb_focus_entered)
+            gb_widget.focusEntered.connect(self.on_gb_focus_entered)
 
         # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()
@@ -721,6 +721,12 @@ class DynamicDialog(QDialog):
             # всё ок — обновляем previous_text
             self.previous_text = text
             return True
+
+    def on_gb_focus_entered(self):
+        gb = self.sender()
+        self.previous_text = gb.cmb.currentText()
+
+
     # втрата фокусу групбоксом
     def on_gb_focus_left(self):
         gb = self.sender()
@@ -728,15 +734,11 @@ class DynamicDialog(QDialog):
         gr_t_title = gb.title()
         gr_t = gb.objectName()
 
-        # for name, wrapper in gb.items():
-        #     chck_stat = wrapper.chkb.isChecked()
-        #     if wrapper.cmb is combo:
-        #         if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
-        #             self.reject()
         # Якщо chars == ".", дозволяємо все
         if chars == ".":
             pattern = rf"^[{chars}]+$"
-            self.previous_text = gb.cmb.currentText()
+            # self.previous_text = gb.cmb.currentText()
+            self.previous_text = ''
             return True
 
         # Перевірка на відповідність pattern

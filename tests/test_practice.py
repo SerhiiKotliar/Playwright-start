@@ -474,20 +474,16 @@ def test_negative_form1(page_open: Page, user_data):
         print('\n')
         for field, list_tup_invalid in invalid_values.items():
             try:
-                # value = ""
-                # field_n = ""
                 safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
                 # кількість прогонів циклу дорівнює кількості невалідів у списку
                 for el_invalid in list_tup_invalid:
                     # value_n = ""
                     field_n = ""
-                    # try:
                     el_invalid_data = el_invalid[0]
                     el_invalid_t = el_invalid[1]
                     tb_f_neg = page_open.get_by_role("textbox", name=field, exact=True)
                     debug(f"заповнення поля невалідністю {el_invalid_data} по типу {el_invalid_t}",f"{field}")
                     tb_f_neg.fill(el_invalid_data)
-                    # value = el_invalid_data
                     field_n = field
                     #####################################################################
                     # умова, що вибирає чи треба якось фіксувати введення даних у поле, чи це трапляється при події виходу з поля
@@ -523,12 +519,13 @@ def test_negative_form1(page_open: Page, user_data):
                         print('\n')
                         # raise AssertionError(
                         #     f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {el_invalid_data}")
-                        failed_cases.append((field_n, value, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {el_invalid_data}"))
+                        failed_cases.append((field_n, el_invalid_data, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {el_invalid_data}"))
                         # continue
                         # Элемент не появился — просто пропускаем
-                    # в деяких випадках підтвердження введених даних
-                    if el_t == '':
-                        confirmation(page_open, el_invalid_data, field)
+                    else:
+                        # в деяких випадках підтвердження введених валідних даних
+                        if el_t == '':
+                            confirmation(page_open, el_invalid_data, field)
                     #######################################################################
                     for field_v, val_valid in user_data[3].items():
                         if field_v != field:
@@ -584,10 +581,11 @@ def test_negative_form1(page_open: Page, user_data):
                                 #     f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_v}' при введенні валідних даних: {val_valid}")
                                 failed_cases.append((field_n, value, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_v}' при введенні валідних даних: {val_valid}"))
                                 # continue
+                            else:
                                 # Элемент не появился — просто пропускаем
-                            # в деяких випадках підтвердження введених даних
-                            if el_t == '':
-                                confirmation(page_open, val_valid, field_v)
+                                # в деяких випадках підтвердження введених валідних даних
+                                if el_t == '':
+                                    confirmation(page_open, val_valid, field_v)
                         #############################################################################
                     with allure.step("Дії після заповнення полів невалідними  даними"):
                         # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
@@ -639,7 +637,7 @@ def test_negative_form1(page_open: Page, user_data):
                                         "Скрін сторінки", screenshot)
                                     print('\n')
                                     raise Exception(
-                                        f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
+                                        "З невідомих причин не відкрилась сторінка входу у профіль користувача")
                                     # failed_cases.append((field_n, value, f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача"))
                                 # now = datetime.now()
                                 # screenshot = page_open.screenshot(type='png',
