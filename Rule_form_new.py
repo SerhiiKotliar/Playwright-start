@@ -670,7 +670,7 @@ class DynamicDialog(QDialog):
             # событие потери фокуса комбобоксом
             # cmb.focusOut.connect(self.on_focusOut)
             # событие потери фокуса групбоксом
-            gb_widget.focusLeft.connect(lambda _, c=cmb, n=name: self.on_gb_focus_left)
+            gb_widget.focusLeft.connect(self.on_gb_focus_left)
             # gb_widget.focusEntered.connect(self.on_gb_focus_entered)
 
         # ---- Кнопки OK/Відміна внизу ----
@@ -722,17 +722,17 @@ class DynamicDialog(QDialog):
             self.previous_text = text
             return True
     # втрата фокусу групбоксом
-    def on_gb_focus_left(self, combo, field_name):
+    def on_gb_focus_left(self):
         gb = self.sender()
         global chars, pattern, len_min, len_max, rule_invalid, check_on
         gr_t_title = gb.title()
         gr_t = gb.objectName()
 
-        for name, wrapper in gb.items():
-            chck_stat = wrapper.chkb.isChecked()
-            if wrapper.cmb is combo:
-                if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
-                    self.reject()
+        # for name, wrapper in gb.items():
+        #     chck_stat = wrapper.chkb.isChecked()
+        #     if wrapper.cmb is combo:
+        #         if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
+        #             self.reject()
         # Якщо chars == ".", дозволяємо все
         if chars == ".":
             pattern = rf"^[{chars}]+$"
@@ -814,10 +814,9 @@ class DynamicDialog(QDialog):
         dlg.setModal(True)
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
-            # if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
-                # self.reject()
-            # if not entries_rules(combo.currentText(), chck_stat, field_name, entries=cur_rules):
-            #     self.reject()
+            if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
+                self.reject()
+
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
