@@ -702,7 +702,12 @@ class DynamicDialog(QDialog):
         # если chars == ".", разрешаем всё
         if chars == ".":
             return True
-        ok, bad = validate_chars_mode(text, chars)
+        if len(self.previous_text) < len(text):
+            # текст доодається
+            ok, bad = validate_chars_mode(text, chars)
+        else:
+            # текст видаляється
+            ok = True
         if not ok:
             QMessageBox.warning(self, "Помилка вводу", f"Недопустимий символ: '{bad}'")
             combo.blockSignals(True)
@@ -714,7 +719,7 @@ class DynamicDialog(QDialog):
             # всё ок — обновляем previous_text
             self.previous_text = text
             return True
-
+    # втрата фокусу групбоксом
     def on_gb_focus_left(self):
         gb = self.sender()
         global chars, pattern, len_min, len_max, rule_invalid, check_on

@@ -50,17 +50,19 @@ PROFILE_HTML = """
 
 def validate_username(username):
     """Только буквы и цифры, длина 4–12"""
-    if not re.match(r"^[A-Za-z0-9]{4,12}$", username):
+    if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{4,12}$", username):
         return False
     return True
 
 def validate_password(password):
-    """Минимум 8 символов, хотя бы одна буква и одна цифра"""
-    if len(password) < 8:
-        return False
-    if not re.search(r"[A-Za-z]", password):
-        return False
-    if not re.search(r"[0-9]", password):
+    """Минимум 8 максимум 25 символов, хотя бы одна буква и одна цифра"""
+    # if len(password) < 8 or len(password) > 25:
+    #     return False
+    # if not re.search(r"[A-Za-z]", password):
+    #     return False
+    # if not re.search(r"[0-9]", password):
+    #     return False
+    if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{8,25}$", password):
         return False
     return True
 
@@ -68,37 +70,75 @@ def validate_password(password):
 def index():
     return '<p><a href="/register">Register</a> | <a href="/login">Login</a></p>'
 
+# @app.route("/register", methods=["GET", "POST"])
+# def register():
+#     error = None
+#     if request.method == "POST":
+#         u = request.form["username"].strip()
+#         p = request.form["password"]
+#
+#         if u in USERS:
+#             error = "User exists"
+#         elif not validate_username(u):
+#             error = "Invalid username (4-12 letters/numbers)"
+#         elif not validate_password(p):
+#             error = "Invalid password (min 8 chars, at least 1 letter and 1 digit)"
+#         else:
+#             USERS[u] = p
+#             session["username"] = u
+#             return redirect(url_for("profile"))
+#
+#     return render_template_string(REGISTER_HTML, error=error)
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    error = None
     if request.method == "POST":
         u = request.form["username"].strip()
         p = request.form["password"]
-
         if u in USERS:
-            error = "User exists"
+            session["last_error"] = "User exists"
         elif not validate_username(u):
-            error = "Invalid username (4-12 letters/numbers)"
+            session["last_error"] = "Invalid username (4-12 letters/numbers no spaces no Cyrillic)"
         elif not validate_password(p):
-            error = "Invalid password (min 8 chars, at least 1 letter and 1 digit)"
+            session["last_error"] = "Invalid password (min 8 chars, at least 1 letter and 1 digit no spaces no Cyrillic)"
         else:
             USERS[u] = p
             session["username"] = u
+            session.pop("last_error", None)  # сброс ошибки при успехе
             return redirect(url_for("profile"))
-
+        return redirect(url_for("register"))  # редирект — чтобы сбросить POST
+    # если GET — отобразить и тут же удалить ошибку
+    error = session.pop("last_error", None)
     return render_template_string(REGISTER_HTML, error=error)
 
+
+
 @app.route("/login", methods=["GET", "POST"])
+# def login():
+#     error = None
+#     if request.method == "POST":
+#         u = request.form["username"].strip()
+#         p = request.form["password"]
+#         if USERS.get(u) == p:
+#             session["username"] = u
+#             return redirect(url_for("profile"))
+#         error = "Invalid username or password"
+#     return render_template_string(LOGIN_HTML, error=error)
 def login():
-    error = None
     if request.method == "POST":
         u = request.form["username"].strip()
         p = request.form["password"]
         if USERS.get(u) == p:
             session["username"] = u
+            session.pop("last_error", None)
             return redirect(url_for("profile"))
-        error = "Invalid username or password"
+        else:
+            session["last_error"] = "Invalid username or password"
+            return redirect(url_for("login"))
+
+    error = session.pop("last_error", None)
     return render_template_string(LOGIN_HTML, error=error)
+
 
 @app.route("/profile")
 def profile():
