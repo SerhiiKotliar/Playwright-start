@@ -29,10 +29,27 @@ class MyDialog(QDialog, Ui_Dialog):
         self.chkbCyfry.toggled.connect(self.on_CHKC_toggled)
         self.chkbProbel.toggled.connect(self.on_CHKP_toggled)
         self.cmbLocaliz.activated.connect(self.on_item_activated_localiz)
+        self.cmbLocaliz.currentIndexChanged.connect(self.on_index_changed)
         self.cmbLocaliz_2.activated.connect(self.on_item_activated_localiz_2)
+        self.cmbLocaliz_2.currentIndexChanged.connect(self.on_index_changed2)
         self.spinBoxLenMin.editingFinished.connect(self.on_editing_finished_min)
         self.spinBoxLenMax.editingFinished.connect(self.on_editing_finished_max)
 
+    def on_index_changed(self, index):
+        """Вызывается при изменении индекса"""
+        text = self.cmbLocaliz.itemText(index)
+        if text == "латиниця і кирилиця":
+            self.chkbLocaliz_at_least_one.setEnabled(True)
+        else:
+            self.chkbLocaliz_at_least_one.setEnabled(False)
+
+    def on_index_changed2(self, index):
+        """Вызывается при изменении индекса"""
+        text = self.cmbLocaliz_2.itemText(index)
+        if text == "обидва":
+            self.chkbRegistr_at_least_one.setEnabled(True)
+        else:
+            self.chkbRegistr_at_least_one.setEnabled(False)
 
 
     def on_spec_toggled(self, checked: bool):
@@ -40,6 +57,9 @@ class MyDialog(QDialog, Ui_Dialog):
         self.chkbNo_absent.setChecked(False)
         self.chkbURL.setChecked(False)
         self.chkbEmail.setChecked(False)
+        if self.chkbSpecS.isChecked():
+            self.chkbSpecS_at_least_one.setChecked(True)
+        self.chkbSpecS_at_least_one.setEnabled(checked)
         self.tbSpec.setEnabled(checked)
         if self.tbSpec.isEnabled() == False:
             self.tbSpec.setText("")
@@ -67,6 +87,11 @@ class MyDialog(QDialog, Ui_Dialog):
         self.chkbNo_absent.setChecked(False)
         self.chkbURL.setChecked(False)
         self.chkbEmail.setChecked(False)
+        if self.chkbCyfry.isChecked():
+            self.chkbCyfry_at_least_one.setEnabled(True)
+            self.chkbCyfry_at_least_one.setChecked(True)
+        else:
+            self.chkbCyfry_at_least_one.setEnabled(False)
 
     def on_CHKP_toggled(self, checked: bool):
         self.chkbNo_absent.setChecked(False)
@@ -111,6 +136,10 @@ class MyDialog(QDialog, Ui_Dialog):
         email_in = self.chkbEmail.isChecked()
         url_in = self.chkbURL.isChecked()
         absent_in = self.chkbNo_absent.isChecked()
+        register_one = self.chkbRegistr_at_least_one.isChecked()
+        localiz_one = self.chkbLocaliz_at_least_one.isChecked()
+        cyfry_one = self.chkbCyfry_at_least_one.isChecked()
+        spec_one = self.chkbSpecS_at_least_one.isChecked()
 
         # Спінбокси
         len_min = self.spinBoxLenMin.value()
@@ -119,9 +148,13 @@ class MyDialog(QDialog, Ui_Dialog):
         self.result = {
             "no_absent": absent_in,
             "register": register,
+            "register_at_least_one": register_one,
             "localiz": localiz,
+            "localiz_at_least_one": localiz_one,
             "cyfry": cyfry,
+            "cyfry_at_least_one": cyfry_one,
             "spec": spec,
+            "spec_at_least_one": spec_one,
             "probel": probel,
             "len_min": len_min,
             "len_max": len_max,
