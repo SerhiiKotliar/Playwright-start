@@ -398,6 +398,8 @@ def entries_rules(log, required, fame, **kwargs):
                 elif both_reg:
                     if register_at_least_one:
                         local = lat_Cyr_1
+                    else:
+                        local = lat_Cyr
                 else:
                     local = lat_Cyr
         elif key == "localiz_at_least_one" and value:
@@ -407,6 +409,11 @@ def entries_rules(log, required, fame, **kwargs):
                 local = lat_Cyr_up_1
             elif low:
                 local = lat_Cyr_low_1
+            elif both_reg:
+                if register_at_least_one:
+                    local = lat_Cyr_1
+                else:
+                    local = lat_Cyr
             else:
                 local = lat_Cyr_1
         elif key == "cyfry" and value:
@@ -891,39 +898,39 @@ class DynamicDialog(QDialog):
             #     txt_err += "має бути з текстом у двох регістрах\n"
             for el_t in rule_invalid[gr_t]:
                 if el_t[:7] == "localiz":
-                    localiz = el_t[7:]
-            loc_text = detect_script(gb.cmb.currentText())
-            if localiz != loc_text:
-
-            # if "Latin" in rule_invalid[gr_t] and loc_text == "Latin":
-            #     txt_err += "має бути з кирилицею\n"
-            # if "Cyrillic" in rule_invalid[gr_t] and loc_text == "Cyrillic":
-            #     txt_err += "має бути з латиницею\n"
-            # if "upreglat" in rule_invalid[gr_t] and loc_text == "upreglat":
-            #     txt_err += "має бути з малими латинськими літерами\n"
-            # if "lowreglat" in rule_invalid[gr_t] and loc_text == "lowreglat":
-            #     txt_err += "має бути з великими латинськими літерами\n"
-            # if "upregcyr" in rule_invalid[gr_t] and loc_text == "upregcyr":
-            #     txt_err += "має бути з малими кириличними літерами\n"
-            # if "lowregcyr" in rule_invalid[gr_t] and loc_text == "lowregcyr":
-            #     txt_err += "має бути з великими кириличними літерами\n"
-            #     #####################################################
-            # if "lat_Cyr" in rule_invalid[gr_t] and loc_text == "lat_Cyr":
-            #     txt_err += "має не бути з латинскими та кириличними літерами\n"
-            # if "lat_Cyr_1" in rule_invalid[gr_t] and loc_text == "lat_Cyr_1":
-            #     txt_err += "має не бути ні з 1 латинською та ні з 1 кириличною літерами\n"
-            # if "Cyrillic_1" in rule_invalid[gr_t] and loc_text == "Cyrillic_1":
-            #     txt_err += "має бути без кириличних літер\n"
-            # if "latin_1" in rule_invalid[gr_t] and loc_text == "latin_1":
-            #     txt_err += "має бути без латинських літер\n"
-            # if "lat_Cyr_up" in rule_invalid[gr_t] and loc_text == "lat_Cyr_up":
-            #     txt_err += "має бути без великих латинських та кириличних літер\n"
-            # if "lat_Cyr_low" in rule_invalid[gr_t] and loc_text == "lat_Cyr_low":
-            #     txt_err += "має бути без малих латинських та кириличних літер\n"
-            # if "lat_Cyr_up_1" in rule_invalid[gr_t] and loc_text == "lat_Cyr_up_1":
-            #     txt_err += "має бути без великих латинських та кириличних літер\n"
-            # if "lat_Cyr_low_1" in rule_invalid[gr_t] and loc_text == "lat_Cyr_low_1":
-            #     txt_err += "має бути без малих латинських та кириличних літер\n"
+                    localiz = el_t[8:]
+                    loc_text = detect_script(gb.cmb.currentText())
+                    if localiz != loc_text:
+                        if localiz == "latin":
+                            txt_err += "має бути з латиницею\n"
+                        if localiz == "Cyrillic":
+                            txt_err += "має бути з кирилицею\n"
+                        if localiz == "lowreglat":
+                            txt_err += "має бути з малою латиницею\n"
+                        if localiz == "upreglat":
+                            txt_err += "має бути з великою латиницею\n"
+                        if localiz == "loeregcyr":
+                            txt_err += "має бути з малою кирилицею\n"
+                        if localiz == "upregcyr":
+                            txt_err += "має бути з великою кирилицею\n"
+                        if localiz == "latin_1":
+                            txt_err += "має бути хоча б з 1 символом латиниці\n"
+                        if localiz == "Cyrillic_1":
+                            txt_err += "має бути хоча б з 1 символом кирилиці\n"
+                        if localiz == "lat_Cyr":
+                            txt_err += "може бути з латиницею і кирилицею\n"
+                        if localiz == 'lat_Cyr_1':
+                            txt_err += "має бути хоча б з 1 символом латиниці і 1 символом кирилиці\n"
+                        if localiz == 'lat_Cyr_up':
+                            txt_err += "може бути з великими символами латиниці і кирилиці\n"
+                        if localiz == "lat_Cyr_low":
+                            txt_err += "може бути з малими символами латиниці і кирилиці\n"
+                        if localiz == "lat_Cyr_up_1":
+                            txt_err += "має бути хоча б з 1 великим символом латиниці і 1 великим символом кирилиці\n"
+                        if localiz == "lat_Cyr_low_1":
+                            txt_err += "має бути хоча б з 1 малим символом латиниці і 1 малим символом кирилиці\n"
+                        break
+            if txt_err != "":
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
                 gb.cmb.setFocus()
                 return False
@@ -965,7 +972,7 @@ class DynamicDialog(QDialog):
             cur_rules = dlg.result  # ← берём результат после закрытия
             if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
                 self.reject()
-
+        wrapper.cmb.setFocus()
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
@@ -997,7 +1004,13 @@ class DynamicDialog(QDialog):
         if len(titles) > 0:
             QMessageBox.warning(self, f"Поля {titles}", "Обов'язкові дані не введені.")
             return False
-        self.result_invalid = rule_invalid
+        for key, value in rule_invalid.items():
+            val_new = []
+            for el in value:
+                if el[:7] != "localiz":
+                    val_new.append(el)
+            self.result_invalid[key] = val_new
+        # self.result_invalid = rule_invalid
         self.accept()
 
     def on_cnl_clicked(self):
