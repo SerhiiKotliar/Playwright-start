@@ -929,7 +929,7 @@ class DynamicDialog(QDialog):
                             txt_err += "має бути хоча б з 1 великим символом латиниці і 1 великим символом кирилиці\n"
                         if localiz == "lat_Cyr_low_1":
                             txt_err += "має бути хоча б з 1 малим символом латиниці і 1 малим символом кирилиці\n"
-                        break
+                        # break
             if txt_err != "":
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
                 gb.cmb.setFocus()
@@ -972,7 +972,8 @@ class DynamicDialog(QDialog):
             cur_rules = dlg.result  # ← берём результат после закрытия
             if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
                 self.reject()
-        wrapper.cmb.setFocus()
+        # wrapper.cmb.setFocus()
+        combo.setFocus()
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
