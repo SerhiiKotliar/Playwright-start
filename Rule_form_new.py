@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
 )
 # import re
 import allure
+
+# from main_file import both_reg
 from pyside_dialog import MyDialog
 # from functools import partial
 from mycombo import QComboBox, WhichBinding
@@ -28,10 +30,18 @@ rule_invalid = {}
 # password_invalid = []
 Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
 latin = "A-Za-z"
+lat_Cyr = f"[{latin}{Cyrillic}]"
 upregcyr = "А-ЯЁЇІЄҐ"
 lowregcyr = "а-яїієёґ"
 upreglat = "A-Z"
 lowreglat = "a-z"
+lat_Cyr_1 = "(?=.*[A-ZА-ЯЁЇІЄҐ])(?=.*[a-zа-яїієёґ])[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]"
+Cyrillic_1 = "(?=.*[А-ЯЁЇІЄҐ])(?=.*[а-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]"
+latin_1 = "(?=.*[A-Z])(?=.*[a-z])[A-Za-z]"
+lat_Cyr_up = f"[{upreglat}{upregcyr}]"
+lat_Cyr_low = f"[{lowreglat}{lowregcyr}]"
+lat_Cyr_up_1 = f"(?=.*[A-Z])(?=.*[А-ЯЁЇІЄҐ])[{upreglat}{upregcyr}]"
+lat_Cyr_low_1 = f"(?=.*[a-z])(?=.*[а-яёїієґ])[{lowreglat}{lowregcyr}]"
 chars: str = "."
 pattern = rf"^[{chars}]+$"
 len_min = 0
@@ -291,34 +301,50 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
     # pytest.fail(message, pytrace=False)
 
 
-
 def detect_script(text: str) -> str:
-    if re.search(r"[А-Яа-яЁёЇїІіЄєҐґ]", text):
+    if re.fullmatch(r"[А-Яа-яЁёЇїІіЄєҐґ]", text):
         return "Cyrillic"
-    elif re.search(r"[A-Za-z]", text):
+    elif re.fullmatch(r"[A-Za-z]", text):
         return "Latin"
-    elif re.search(r"[a-z]", text):
+    elif re.fullmatch(r"[a-z]", text):
         return "lowreglat"
-    elif re.search(r"[A-Z]", text):
+    elif re.fullmatch(r"[A-Z]", text):
         return "upreglat"
-    elif re.search(r"[а-яїієёґ]", text):
+    elif re.fullmatch(r"[а-яїієёґ]", text):
         return "lowregcyr"
-    elif re.search(r"[А-ЯЁЇІЄҐ]", text):
+    elif re.fullmatch(r"[А-ЯЁЇІЄҐ]", text):
         return "upregcyr"
+    ############################################
+    elif re.fullmatch(r"[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]", text):
+        return "lat_Cyr"
+    elif re.search(r"(?=.*[A-ZА-ЯЁЇІЄҐ])(?=.*[a-zа-яїієёґ])[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]", text):
+        return "lat_Cyr_1"
+    elif re.search(r"(?=.*[А-ЯЁЇІЄҐ])(?=.*[а-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]", text):
+        return "Cyrillic_1"
+    elif re.search(r"(?=.*[A-Z])(?=.*[a-z])[A-Za-z]", text):
+        return "latin_1"
+    elif re.fullmatch(r"[A-ZА-ЯЁЇІЄҐ]", text):
+        return "lat_Cyr_up"
+    elif re.fullmatch(r"[a-zа-яёїієґ]", text):
+        return "lat_Cyr_low"
+    elif re.search(r"(?=.*[A-Z])(?=.*[А-ЯЁЇІЄҐ])[A-ZА-ЯЁЇІЄҐ]", text):
+        return "lat_Cyr_up_1"
+    elif re.search(r"(?=.*[a-z])(?=.*[а-яёїієґ])[a-zа-яёїієґ]", text):
+        return "lat_Cyr_low_1"
     return "Unknown"
 
 def entries_rules(log, required, fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat
+    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat, lat_Cyr_1, latin_1, Cyrillic_1, lat_Cyr_up, lat_Cyr_low, lat_Cyr_1, lat_Cyr
 
     entries = kwargs["entries"]
     # инициализация переменных
     local = ""
     latin = "A-Za-z"
     Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
-    # upregcyr = "А-ЯЁЇІЄҐ"
-    # lowregcyr = "а-яїієёґ"
-    # upreglat = "A-Z"
-    # lowreglat = "a-z"
+    upregcyr = "А-ЯЁЇІЄҐ"
+    lowregcyr = "а-яїієёґ"
+    upreglat = "A-Z"
+    lowreglat = "a-z"
     both_reg = False
     digits_str = ""
     spec_escaped = ""
@@ -337,14 +363,21 @@ def entries_rules(log, required, fame, **kwargs):
                 up = True
             elif value == "малий":
                 low = True
+            elif value == "будь який":
+                any_reg = True
             elif value == "обидва":
                 both_reg = True
-        elif key == 'localiz':
+        elif key == "register_at_least_one":
+            register_at_least_one = value
+        elif key == 'localiz' and value:
             if value == 'латиниця':
                 if up:
                     local = upreglat
                 elif low:
                     local = lowreglat
+                elif both_reg:
+                    if register_at_least_one:
+                        local = latin_1
                 else:
                     local = latin
             elif value == 'кирилиця':
@@ -352,20 +385,51 @@ def entries_rules(log, required, fame, **kwargs):
                     local = upregcyr
                 elif low:
                     local = lowregcyr
+                elif both_reg:
+                    if register_at_least_one:
+                        local = Cyrillic_1
                 else:
                     local = Cyrillic
+            elif value == "латиниця і кирилиця":
+                if up:
+                    local = lat_Cyr_up
+                elif low:
+                    local = lat_Cyr_low
+                elif both_reg:
+                    if register_at_least_one:
+                        local = lat_Cyr_1
+                else:
+                    local = lat_Cyr
+        elif key == "localiz_at_least_one" and value:
+            # localiz_at_least_one = value
+            # if localiz_at_least_one:
+            if up:
+                local = lat_Cyr_up_1
+            elif low:
+                local = lat_Cyr_low_1
+            else:
+                local = lat_Cyr_1
         elif key == "cyfry" and value:
             digits_str = "0-9"
+        elif key == "cyfry_at_least_one" and value:
+            # cyfry_at_least_one = value
+            # if cyfry_at_least_one:
+            digits_str = f"(?=.*\d)[{digits_str}]"
         elif key == "spec" and value:
             if isinstance(value, str):
                 spec_escaped = "".join(re.escape(ch) for ch in value)
             else:
                 spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
                 spec_escaped = "".join(re.escape(ch) for ch in spec)
+        elif key == "spec_at_least_one":
+            spec_at_least_one = value
         elif key == "len_min":
             len_min = value
         elif key == "len_max":
-            len_max = value
+            if value and value != 0:
+                len_max = value
+            else:
+                len_max = None
         elif key == "email_in":
             email = value
         elif key == "url_in":
@@ -390,29 +454,55 @@ def entries_rules(log, required, fame, **kwargs):
             parts.append(local)
         if digits_str:
             parts.append(digits_str)
-        if not is_probel and not no_absent:
-            parts.append(' ')
+        # if not is_probel and not no_absent:
+        #     parts.append(' ')
         if spec_escaped:
+            if spec_at_least_one:
+                spec_escaped = f"(?=.*[{spec_escaped}])"
             parts.append(spec_escaped)
         chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
+    # є пробіли
     if not is_probel:
         # pattern = "^(?=.*\s)["+f"{chars}"+"]+$"
         # pattern = "^(?=.*\s)["+f"{chars}]\{{len_min, len_max}\}$"
         # pattern = rf"^(?=.*\s)[{chars}]{{{len_min},{len_max}}}$"
         # не пустое с пробелами
         if no_absent:
+            # хоч один пробіл без меж довжини строки
             pattern = rf"^(?=.*\s)[{chars}]+$"
         else:
-            pattern = rf"^(?=.*\s)[{chars}]{{{len_min},{len_max}}}$"
+            # хоч один пробіл в межах довжини строки
+            if len_max is not None:
+                pattern = rf"^(?=.*\s)[{chars}]{{{len_min},{len_max}}}$"
+            else:
+                pattern = rf"^(?=.*\s)[{chars}]{{{len_min}}}$"
+    # немає пробілів
     else:
         # pattern = "^["+f"{chars}"+"]+$"
         # pattern = "^["+f"{chars}]\{{len_min}, {len_max}\}$"
         # pattern = rf"^[{chars}]{{{len_min},{len_max}}}$"
-        # не пустое без пробелов
+        # не пустое без пробелов без ограничения длины строки
         if no_absent:
-            pattern = rf"^[{chars}]+$"
+            if "(?=." in chars:
+                pattern = rf"^{chars}+$"
+            else:
+                pattern = rf"^[{chars}]+$"
         else:
-            pattern = rf"^[{chars}]{{{len_min},{len_max}}}$"
+            if len_max is not None:
+                if "(?=." in chars:
+                    pattern = rf"^{chars}{{{len_min},{len_max}}}$"
+                else:
+                    # набір символів в межах довжини строки без пробілів
+                    pattern = rf"^[{chars}]{{{len_min},{len_max}}}$"
+            else:
+                if "(?=." in chars:
+                    pattern = rf"^{chars}{{{len_min}}}$"
+                else:
+                    pattern = rf"^[{chars}]{{{len_min}}}$"
+                # # набір символів в межах довжини строки без пробілів
+                # pattern = rf"^[{chars}]{{{len_min}}}$"
+
+
     if email:
         pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     elif url:
@@ -427,8 +517,12 @@ def entries_rules(log, required, fame, **kwargs):
     if url:
         rule_invalid[fame].append("no_url")
     # if ((len(log) < len_min or len(log) > len_max) and (not email) and (not url) and (not no_absent)):
-    if not email and (not url) and (not no_absent):
-        rule_invalid[fame].append(f"len {len_min} {len_max}")
+    if (not email) and (not url) and (not no_absent):
+        if len_max is not None:
+            rule_invalid[fame].append(f"len {len_min} {len_max}")
+        else:
+            rule_invalid[fame].append(f"len {len_min}")
+
     if email:
         rule_invalid[fame].append("no_email")
     if both_reg:
@@ -447,18 +541,48 @@ def entries_rules(log, required, fame, **kwargs):
             rule_invalid[fame].append("no_probel")
     if local == latin:
         rule_invalid[fame].append("Cyrillic")
+        rule_invalid[fame].append("localiz latin")
     elif local == upreglat:
         rule_invalid[fame].append("lowreglat")
+        rule_invalid[fame].append("localiz upreglat")
     elif local == lowreglat:
         rule_invalid[fame].append("upreglat")
+        rule_invalid[fame].append("localiz lowreglat")
     elif local == Cyrillic:
         rule_invalid[fame].append("latin")
+        rule_invalid[fame].append("localiz Cyrillic")
     elif local == upregcyr:
         rule_invalid[fame].append("lowregcyr")
+        rule_invalid[fame].append("localiz upregcyr")
     elif local == lowregcyr:
         rule_invalid[fame].append("upregcyr")
-    if both_reg:
-        rule_invalid[fame].append("one_reg_log")
+        rule_invalid[fame].append("localiz lowregcyr")
+    elif local == Cyrillic_1:
+        rule_invalid[fame].append("lowregcyr")
+        rule_invalid[fame].append("localiz Cyrillic_1")
+    elif local == latin_1:
+        rule_invalid[fame].append("lowreglat")
+        rule_invalid[fame].append("localiz latin_1")
+    elif local == lat_Cyr_1:
+        rule_invalid[fame].append("Cyrillic")
+        rule_invalid[fame].append("localiz lat_Cyr_1")
+    elif local == lat_Cyr:
+        rule_invalid[fame].apped("latin")
+        rule_invalid[fame].append("localiz lat_Cyr")
+    elif local == lat_Cyr_up:
+        rule_invalid[fame].append("lat_Cyr_low")
+        rule_invalid[fame].append("localiz lat_Cyr_up")
+    elif local == lat_Cyr_low:
+        rule_invalid[fame].append("lat_Cyr_up")
+        rule_invalid[fame].append("localiz lat_Cyr_low")
+    elif local == lat_Cyr_up_1:
+        rule_invalid[fame].append("lat_Cyr_low")
+        rule_invalid[fame].append("localiz lat_Cyr_up_1")
+    elif local == lat_Cyr_low_1:
+        rule_invalid[fame].append("lat_Cyr_up")
+        rule_invalid[fame].append("localiz lat_Cyr_low_1")
+    # if both_reg:
+    #     rule_invalid[fame].append("one_reg_log")
     if no_absent and not "absent" in rule_invalid[fame]:
         rule_invalid[fame].append("absent")
     return pattern
@@ -701,10 +825,11 @@ class DynamicDialog(QDialog):
         global chars, pattern
         if not text:
             return True
+        pred_txt = self.previous_text
         # если chars == ".", разрешаем всё
         if chars == ".":
             return True
-        if len(self.previous_text) < len(text):
+        if len(pred_txt) < len(text):
             # текст доодається
             ok, bad = validate_chars_mode(text, chars)
         else:
@@ -713,7 +838,7 @@ class DynamicDialog(QDialog):
         if not ok:
             QMessageBox.warning(self, "Помилка вводу", f"Недопустимий символ: '{bad}'")
             combo.blockSignals(True)
-            combo.setCurrentText(self.previous_text)
+            combo.setCurrentText(pred_txt)
             combo.blockSignals(False)
             combo.setFocus()
             return False
@@ -733,7 +858,7 @@ class DynamicDialog(QDialog):
         global chars, pattern, len_min, len_max, rule_invalid, check_on
         gr_t_title = gb.title()
         gr_t = gb.objectName()
-
+        # cur_txt = gb.cmb.currentText()
         # Якщо chars == ".", дозволяємо все
         if chars == ".":
             pattern = rf"^[{chars}]+$"
@@ -743,7 +868,7 @@ class DynamicDialog(QDialog):
 
         # Перевірка на відповідність pattern
         txt_err = ""
-        if not bool(re.fullmatch(pattern, gb.cmb.currentText())):# and gb.cmb.currentText() != "":
+        if not bool(re.fullmatch(pattern, gb.cmb.currentText())):
             if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
                 txt_err += "має містити принаймні одну маленьку літеру\n"
             if "no_upper" in rule_invalid[gr_t] and not any(c.isupper() for c in gb.cmb.currentText()):
@@ -762,24 +887,46 @@ class DynamicDialog(QDialog):
                 txt_err += "не має бути з пробілами\n"
             if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
                 txt_err += "має бути з пробілами\n"
-            if "one_reg_log" in rule_invalid[gr_t]:
-                txt_err += "має бути з текстом у двох регістрах\n"
+            # if "one_reg_log" in rule_invalid[gr_t]:
+            #     txt_err += "має бути з текстом у двох регістрах\n"
+            for el_t in rule_invalid[gr_t]:
+                if el_t[:7] == "localiz":
+                    localiz = el_t[7:]
             loc_text = detect_script(gb.cmb.currentText())
-            if "Latin" in rule_invalid[gr_t] and loc_text == "Latin":
-                txt_err += "має бути з кирилицею\n"
-            if "Cyrillic" in rule_invalid[gr_t] and loc_text == "Cyrillic":
-                txt_err += "має бути з латиницею\n"
-            if "upreglat" in rule_invalid[gr_t] and loc_text != "loureglat":
-                txt_err += "має бути з малими латинськими літерами\n"
-            if "lowreglat" in rule_invalid[gr_t] and loc_text != "upreglat":
-                txt_err += "має бути з великими латинськими літерами\n"
-            if "upregcyr" in rule_invalid[gr_t] and loc_text != "lowregcyr":
-                txt_err += "має бути з малими кириличними літерами\n"
-            if "lowregcyr" in rule_invalid[gr_t] and loc_text != "upregcyr":
-                txt_err += "має бути з великими кириличними літерами\n"
-            QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
-            gb.cmb.setFocus()
-            return False
+            if localiz != loc_text:
+
+            # if "Latin" in rule_invalid[gr_t] and loc_text == "Latin":
+            #     txt_err += "має бути з кирилицею\n"
+            # if "Cyrillic" in rule_invalid[gr_t] and loc_text == "Cyrillic":
+            #     txt_err += "має бути з латиницею\n"
+            # if "upreglat" in rule_invalid[gr_t] and loc_text == "upreglat":
+            #     txt_err += "має бути з малими латинськими літерами\n"
+            # if "lowreglat" in rule_invalid[gr_t] and loc_text == "lowreglat":
+            #     txt_err += "має бути з великими латинськими літерами\n"
+            # if "upregcyr" in rule_invalid[gr_t] and loc_text == "upregcyr":
+            #     txt_err += "має бути з малими кириличними літерами\n"
+            # if "lowregcyr" in rule_invalid[gr_t] and loc_text == "lowregcyr":
+            #     txt_err += "має бути з великими кириличними літерами\n"
+            #     #####################################################
+            # if "lat_Cyr" in rule_invalid[gr_t] and loc_text == "lat_Cyr":
+            #     txt_err += "має не бути з латинскими та кириличними літерами\n"
+            # if "lat_Cyr_1" in rule_invalid[gr_t] and loc_text == "lat_Cyr_1":
+            #     txt_err += "має не бути ні з 1 латинською та ні з 1 кириличною літерами\n"
+            # if "Cyrillic_1" in rule_invalid[gr_t] and loc_text == "Cyrillic_1":
+            #     txt_err += "має бути без кириличних літер\n"
+            # if "latin_1" in rule_invalid[gr_t] and loc_text == "latin_1":
+            #     txt_err += "має бути без латинських літер\n"
+            # if "lat_Cyr_up" in rule_invalid[gr_t] and loc_text == "lat_Cyr_up":
+            #     txt_err += "має бути без великих латинських та кириличних літер\n"
+            # if "lat_Cyr_low" in rule_invalid[gr_t] and loc_text == "lat_Cyr_low":
+            #     txt_err += "має бути без малих латинських та кириличних літер\n"
+            # if "lat_Cyr_up_1" in rule_invalid[gr_t] and loc_text == "lat_Cyr_up_1":
+            #     txt_err += "має бути без великих латинських та кириличних літер\n"
+            # if "lat_Cyr_low_1" in rule_invalid[gr_t] and loc_text == "lat_Cyr_low_1":
+            #     txt_err += "має бути без малих латинських та кириличних літер\n"
+                QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
+                gb.cmb.setFocus()
+                return False
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
         chars == "."
@@ -887,8 +1034,8 @@ def get_user_input():
         result_f = dlg.result, dlg.result_invalid, dlg.result_title_fields, dlg.result_fields
         return result_f
     return None
-# ---- Основной запуск ----
-if __name__ == "__main__":
-    get1_2 = get_user_input()
-    if get1_2 is not None:
-        print(str(get1_2[0])+"\n"+str(get1_2[1])+"\n"+str(get1_2[2])+"\n"+str(get1_2[3]))
+# # ---- Основной запуск ----
+# if __name__ == "__main__":
+#     get1_2 = get_user_input()
+#     if get1_2 is not None:
+#         print(str(get1_2[0])+"\n"+str(get1_2[1])+"\n"+str(get1_2[2])+"\n"+str(get1_2[3]))

@@ -136,10 +136,10 @@ class MyDialog(QDialog, Ui_Dialog):
         email_in = self.chkbEmail.isChecked()
         url_in = self.chkbURL.isChecked()
         absent_in = self.chkbNo_absent.isChecked()
-        register_one = self.chkbRegistr_at_least_one.isChecked()
-        localiz_one = self.chkbLocaliz_at_least_one.isChecked()
-        cyfry_one = self.chkbCyfry_at_least_one.isChecked()
-        spec_one = self.chkbSpecS_at_least_one.isChecked()
+        register_one = self.chkbRegistr_at_least_one.isChecked() and self.chkbRegistr_at_least_one.isEnabled()
+        localiz_one = self.chkbLocaliz_at_least_one.isChecked() and self.chkbLocaliz_at_least_one.isEnabled()
+        cyfry_one = self.chkbCyfry_at_least_one.isChecked() and self.chkbCyfry_at_least_one.isEnabled()
+        spec_one = self.chkbSpecS_at_least_one.isChecked() and self.chkbSpecS_at_least_one.isEnabled()
 
         # Спінбокси
         len_min = self.spinBoxLenMin.value()
@@ -165,8 +165,8 @@ class MyDialog(QDialog, Ui_Dialog):
         self.accept()
 
 
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-#     dlg = MyDialog()
-#     dlg.show()
-#     sys.exit(app.exec())
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    dlg = MyDialog()
+    dlg.show()
+    sys.exit(app.exec())

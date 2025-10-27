@@ -164,12 +164,17 @@ def invalid_val(user_data):
         # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
             if el[:3] == 'len':
                 lminmax = el[4:]
-                lmin = int(lminmax.split(" ", 1)[0])
-                lmax = int(lminmax.split(" ", 1)[1])
+                if el.count(" ") > 1:
+                    lmin = int(lminmax.split(" ", 1)[0])
+                    lmax = int(lminmax.split(" ", 1)[1])
+                    second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
+                    ar_inv.append(second)
+                else:
+                    lmin = int(lminmax.split(" ", 1)[0])
+                    # second = 0
                 first = ((user_data[0][field] * 6)[:(lmin - 1)], "lenmin")
-                second = ((user_data[0][field] * 6)[:(lmax + 2)], "lenmax")
                 ar_inv.append(first)
-                ar_inv.append(second)
+                # ar_inv.append(second)
             elif el == "absent":
                 ar_inv.append(("", "absent"))
             elif el == "no_url":
@@ -204,9 +209,25 @@ def invalid_val(user_data):
                 ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
             elif el == "upregcyr":
                 ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            elif el == "one_reg_log":
-                ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
-                ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
+            # elif el == "lat_Cyr":
+            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+            # elif el == "lat_Cyr_1":
+            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+            elif el == "lat_Cyr_up":
+                ar_inv.append(("QWERTYUIOPЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "lat_Cyr_up"))
+            elif el == "lat_Cyr_low":
+                ar_inv.append(("qwertyuiopйцукенгшщзхъїієёґ", "lat_Cyr_low"))
+            # elif el == "lat_Cyr_up_1":
+            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+            # elif el == "lat_Cyr_low_1":
+            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+            # elif el == "Cyrillic_1":
+            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+            # elif el == "latin_1":
+            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+            # elif el == "one_reg_log":
+            #     ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
+            #     ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
             else:
                 ar_inv.append(("no_absent", "no_absent"))
         inval_el[field] =ar_inv
