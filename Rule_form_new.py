@@ -1,4 +1,5 @@
 # from PyQt6.sip import wrapper
+from PyQt6.sip import wrapper
 from PySide6.QtCore import QLocale, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -20,6 +21,7 @@ from typing import Tuple, Set, Optional
 from datetime import datetime
 import os
 import pytest
+from itertools import zip_longest
 # import invalid_datas
 
 rule_invalid = {}
@@ -301,36 +303,41 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
     # pytest.fail(message, pytrace=False)
 
 
-def detect_script(text: str) -> str:
-    if re.fullmatch(r"[А-Яа-яЁёЇїІіЄєҐґ]", text):
+def detect_script(text1: str) -> str:
+    text = re.sub(r"[^A-Za-zА-Яа-яЁёЇїІіЄєҐґ]", "", text1)
+    if re.fullmatch(r"[А-Яа-яЁёЇїІіЄєҐґ]+", text):
         return "Cyrillic"
-    elif re.fullmatch(r"[A-Za-z]", text):
-        return "Latin"
-    elif re.fullmatch(r"[a-z]", text):
+    elif re.fullmatch(r"[A-Za-z]+", text):
+        return "latin"
+    elif re.fullmatch(r"[a-z]+", text):
         return "lowreglat"
-    elif re.fullmatch(r"[A-Z]", text):
+    elif re.fullmatch(r"[A-Z]+", text):
         return "upreglat"
-    elif re.fullmatch(r"[а-яїієёґ]", text):
+    elif re.fullmatch(r"[а-яїієёґ]+", text):
         return "lowregcyr"
-    elif re.fullmatch(r"[А-ЯЁЇІЄҐ]", text):
+    elif re.fullmatch(r"[А-ЯЁЇІЄҐ]+", text):
         return "upregcyr"
     ############################################
-    elif re.fullmatch(r"[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]", text):
+    elif re.fullmatch(r"[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]+", text):
         return "lat_Cyr"
-    elif re.search(r"(?=.*[A-ZА-ЯЁЇІЄҐ])(?=.*[a-zа-яїієёґ])[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]", text):
+    elif re.fullmatch(r"(?=.*[A-ZА-ЯЁЇІЄҐ])(?=.*[a-zа-яїієёґ])[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]+", text):
         return "lat_Cyr_1"
-    elif re.search(r"(?=.*[А-ЯЁЇІЄҐ])(?=.*[а-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]", text):
+    elif re.fullmatch(r"(?=.*[А-ЯЁЇІЄҐ])(?=.*[а-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]+", text):
         return "Cyrillic_1"
-    elif re.search(r"(?=.*[A-Z])(?=.*[a-z])[A-Za-z]", text):
+    elif re.fullmatch(r"(?=.*[A-Z])(?=.*[a-z])[A-Za-z]+", text):
         return "latin_1"
-    elif re.fullmatch(r"[A-ZА-ЯЁЇІЄҐ]", text):
+    elif re.fullmatch(r"[A-ZА-ЯЁЇІЄҐ]+", text):
         return "lat_Cyr_up"
-    elif re.fullmatch(r"[a-zа-яёїієґ]", text):
+    elif re.fullmatch(r"[a-zа-яёїієґ]+", text):
         return "lat_Cyr_low"
-    elif re.search(r"(?=.*[A-Z])(?=.*[А-ЯЁЇІЄҐ])[A-ZА-ЯЁЇІЄҐ]", text):
+    elif re.fullmatch(r"(?=.*[A-Z])(?=.*[А-ЯЁЇІЄҐ])[A-ZА-ЯЁЇІЄҐ]+", text):
         return "lat_Cyr_up_1"
-    elif re.search(r"(?=.*[a-z])(?=.*[а-яёїієґ])[a-zа-яёїієґ]", text):
+    elif re.fullmatch(r"(?=.*[a-z])(?=.*[а-яёїієґ])[a-zа-яёїієґ]+", text):
         return "lat_Cyr_low_1"
+    # elif re.fullmatch(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]", text):
+    #     return "latin"
+    # elif re.fullmatch(r"(http://|https://)([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(:\d+)?(/[^\s?#]*)?(\?[^\s#]*)?(#[^\s]*)?", text):
+    #     return "latin"
     return "Unknown"
 
 def entries_rules(log, required, fame, **kwargs):
@@ -523,6 +530,7 @@ def entries_rules(log, required, fame, **kwargs):
     rule_invalid[fame] = []
     if url:
         rule_invalid[fame].append("no_url")
+        rule_invalid[fame].append("localiz latin")
     # if ((len(log) < len_min or len(log) > len_max) and (not email) and (not url) and (not no_absent)):
     if (not email) and (not url) and (not no_absent):
         if len_max is not None:
@@ -532,6 +540,7 @@ def entries_rules(log, required, fame, **kwargs):
 
     if email:
         rule_invalid[fame].append("no_email")
+        rule_invalid[fame].append("localiz latin")
     if both_reg:
         rule_invalid[fame].append("no_lower")
         rule_invalid[fame].append("no_upper")
@@ -875,64 +884,88 @@ class DynamicDialog(QDialog):
 
         # Перевірка на відповідність pattern
         txt_err = ""
-        if not bool(re.fullmatch(pattern, gb.cmb.currentText())):
-            if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
-                txt_err += "має містити принаймні одну маленьку літеру\n"
-            if "no_upper" in rule_invalid[gr_t] and not any(c.isupper() for c in gb.cmb.currentText()):
-                txt_err += "має містити принаймні одну велику літеру\n"
-            if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
-                txt_err += "має містити принаймні одну цифру\n"
-            if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped for c in gb.cmb.currentText()):
-                txt_err += f"має містити принаймні один спеціальний символ з {spec_escaped}\n"
-            if "no_email" in rule_invalid[gr_t]:
-                txt_err += "має бути формату email\n"
-            if "no_url" in rule_invalid[gr_t]:
-                txt_err += "має бути формату URL\n"
-            if f"len {len_min} {len_max}" in rule_invalid[gr_t] and (len_max < len(gb.cmb.currentText()) or len(gb.cmb.currentText()) < len_min):
-                txt_err += f"має мати від {len_min} до {len_max} символів включно\n"
-            if "probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') > -1:
-                txt_err += "не має бути з пробілами\n"
-            if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
-                txt_err += "має бути з пробілами\n"
+        # if not bool(re.fullmatch(pattern, gb.cmb.currentText())):
+        #     if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
+        #         txt_err += "має містити принаймні одну маленьку літеру\n"
+        #     if "no_upper" in rule_invalid[gr_t] and not any(c.isupper() for c in gb.cmb.currentText()):
+        #         txt_err += "має містити принаймні одну велику літеру\n"
+        #     if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
+        #         txt_err += "має містити принаймні одну цифру\n"
+        #     if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped for c in gb.cmb.currentText()):
+        #         txt_err += f"має містити принаймні один спеціальний символ з {spec_escaped}\n"
+        #     if "no_email" in rule_invalid[gr_t]:
+        #         txt_err += "має бути формату email\n"
+        #     if "no_url" in rule_invalid[gr_t]:
+        #         txt_err += "має бути формату URL\n"
+        #     if f"len {len_min} {len_max}" in rule_invalid[gr_t] and (len_max < len(gb.cmb.currentText()) or len(gb.cmb.currentText()) < len_min):
+        #         txt_err += f"має мати від {len_min} до {len_max} символів включно\n"
+        #     if "probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') > -1:
+        #         txt_err += "не має бути з пробілами\n"
+        #     if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
+        #         txt_err += "має бути з пробілами\n"
             # if "one_reg_log" in rule_invalid[gr_t]:
             #     txt_err += "має бути з текстом у двох регістрах\n"
-            for el_t in rule_invalid[gr_t]:
-                if el_t[:7] == "localiz":
-                    localiz = el_t[8:]
-                    loc_text = detect_script(gb.cmb.currentText())
-                    if localiz != loc_text:
-                        if localiz == "latin":
-                            txt_err += "має бути з латиницею\n"
-                        if localiz == "Cyrillic":
-                            txt_err += "має бути з кирилицею\n"
-                        if localiz == "lowreglat":
-                            txt_err += "має бути з малою латиницею\n"
-                        if localiz == "upreglat":
-                            txt_err += "має бути з великою латиницею\n"
-                        if localiz == "loeregcyr":
-                            txt_err += "має бути з малою кирилицею\n"
-                        if localiz == "upregcyr":
-                            txt_err += "має бути з великою кирилицею\n"
-                        if localiz == "latin_1":
-                            txt_err += "має бути хоча б з 1 символом латиниці\n"
-                        if localiz == "Cyrillic_1":
-                            txt_err += "має бути хоча б з 1 символом кирилиці\n"
-                        if localiz == "lat_Cyr":
-                            txt_err += "може бути з латиницею і кирилицею\n"
-                        if localiz == 'lat_Cyr_1':
-                            txt_err += "має бути хоча б з 1 символом латиниці і 1 символом кирилиці\n"
-                        if localiz == 'lat_Cyr_up':
-                            txt_err += "може бути з великими символами латиниці і кирилиці\n"
-                        if localiz == "lat_Cyr_low":
-                            txt_err += "може бути з малими символами латиниці і кирилиці\n"
-                        if localiz == "lat_Cyr_up_1":
-                            txt_err += "має бути хоча б з 1 великим символом латиниці і 1 великим символом кирилиці\n"
-                        if localiz == "lat_Cyr_low_1":
-                            txt_err += "має бути хоча б з 1 малим символом латиниці і 1 малим символом кирилиці\n"
+        for el_t in rule_invalid[gr_t]:
+            if el_t[:7] == "localiz":
+                localiz = el_t[8:]
+                loc_text = detect_script(gb.cmb.currentText())
+                if loc_text == "lat_Cyr":
+                    result = "".join((c1 + c2) if c1 != c2 else "" for c1, c2 in zip_longest(localiz, loc_text, fillvalue=""))
+                    if result[:1] == "_":
+                        loc_text = localiz
+                if localiz != loc_text:
+                    if localiz == "latin":
+                        txt_err += "має бути з латиницею\n"
+                    if localiz == "Cyrillic":
+                        txt_err += "має бути з кирилицею\n"
+                    if localiz == "lowreglat":
+                        txt_err += "має бути з малою латиницею\n"
+                    if localiz == "upreglat":
+                        txt_err += "має бути з великою латиницею\n"
+                    if localiz == "loeregcyr":
+                        txt_err += "має бути з малою кирилицею\n"
+                    if localiz == "upregcyr":
+                        txt_err += "має бути з великою кирилицею\n"
+                    if localiz == "latin_1":
+                        txt_err += "має бути хоча б з 1 символом латиниці\n"
+                    if localiz == "Cyrillic_1":
+                        txt_err += "має бути хоча б з 1 символом кирилиці\n"
+                    if localiz == "lat_Cyr":
+                        txt_err += "може бути з латиницею і кирилицею\n"
+                    if localiz == 'lat_Cyr_1':
+                        txt_err += "має бути хоча б з 1 символом латиниці і 1 символом кирилиці\n"
+                    if localiz == 'lat_Cyr_up':
+                        txt_err += "може бути з великими символами латиниці і кирилиці\n"
+                    if localiz == "lat_Cyr_low":
+                        txt_err += "може бути з малими символами латиниці і кирилиці\n"
+                    if localiz == "lat_Cyr_up_1":
+                        txt_err += "має бути хоча б з 1 великим символом латиниці і 1 великим символом кирилиці\n"
+                    if localiz == "lat_Cyr_low_1":
+                        txt_err += "має бути хоча б з 1 малим символом латиниці і 1 малим символом кирилиці\n"
+            else:
+                if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
+                    txt_err += "має містити принаймні одну маленьку літеру\n"
+                if "no_upper" in rule_invalid[gr_t] and not any(c.isupper() for c in gb.cmb.currentText()):
+                    txt_err += "має містити принаймні одну велику літеру\n"
+                if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
+                    txt_err += "має містити принаймні одну цифру\n"
+                if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped for c in gb.cmb.currentText()):
+                    txt_err += f"має містити принаймні один спеціальний символ з {spec_escaped}\n"
+                if "no_email" in rule_invalid[gr_t] and not bool(re.fullmatch(pattern, gb.cmb.currentText())):
+                    txt_err += "має бути формату email\n"
+                if "no_url" in rule_invalid[gr_t] and not bool(re.fullmatch(pattern, gb.cmb.currentText())):
+                    txt_err += "має бути формату URL\n"
+                if f"len {len_min} {len_max}" in rule_invalid[gr_t] and (
+                        len_max < len(gb.cmb.currentText()) or len(gb.cmb.currentText()) < len_min):
+                    txt_err += f"має мати від {len_min} до {len_max} символів включно\n"
+                if "probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') > -1:
+                    txt_err += "не має бути з пробілами\n"
+                if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
+                    txt_err += "має бути з пробілами\n"
                         # break
             if txt_err != "":
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
-                gb.cmb.setFocus()
+                # gb.cmb.setFocus()
                 return False
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
@@ -1015,6 +1048,9 @@ class DynamicDialog(QDialog):
         self.accept()
 
     def on_cnl_clicked(self):
+        # gb = self.sender()
+        # if wrapper.cmb.hasFocus():
+        #     self.btnCnl.setFocus()
         self.reject()
 
 def get_user_input():

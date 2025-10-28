@@ -1,4 +1,3 @@
-# app_validated.py
 from flask import Flask, request, render_template_string, redirect, url_for, session
 import re
 
@@ -10,134 +9,149 @@ USERS = {}
 
 REGISTER_HTML = """
 <!doctype html>
-<title>Register</title>
-<h2>Register</h2>
-<form method="post" action="/register">
-  <label for="username">Username</label>
-  <input id="username" name="username" type="text" required><br>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Register</title>
+</head>
+<body>
+  <h2>Register</h2>
+  <form method="post" action="/register">
+    <label for="username">Username</label><br>
+    <input id="username" name="username" type="text" value="{{ username or '' }}" required><br>
+    {% if errors.get('username') %}
+      <p style="color:red">{{ errors['username'] }}</p>
+    {% endif %}
 
-  <label for="password">Password</label>
-  <input id="password" name="password" type="password" required><br>
+    <label for="password">Password</label><br>
+    <input id="password" name="password" type="password" required><br>
+    {% if errors.get('password') %}
+      <p style="color:red">{{ errors['password'] }}</p>
+    {% endif %}
 
-  <button type="submit">Register</button>
-</form>
-{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+    <button type="submit">Register</button>
+  </form>
+
+  <p><a href="/login">Already registered? Login</a></p>
+</body>
+</html>
 """
 
 LOGIN_HTML = """
 <!doctype html>
-<title>Login</title>
-<h2>Login</h2>
-<form method="post" action="/login">
-  <label for="username">Username</label>
-  <input id="username" name="username" type="text" required><br>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+</head>
+<body>
+  <h2>Login</h2>
+  <form method="post" action="/login">
+    <label for="username">Username</label><br>
+    <input id="username" name="username" type="text" value="{{ username or '' }}" required><br>
+    {% if errors.get('username') %}
+      <p style="color:red">{{ errors['username'] }}</p>
+    {% endif %}
 
-  <label for="password">Password</label>
-  <input id="password" name="password" type="password" required><br>
+    <label for="password">Password</label><br>
+    <input id="password" name="password" type="password" required><br>
+    {% if errors.get('password') %}
+      <p style="color:red">{{ errors['password'] }}</p>
+    {% endif %}
 
-  <button type="submit">Login</button>
-</form>
-{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+    <button type="submit">Login</button>
+  </form>
+
+  <p><a href="/register">Create new account</a></p>
+</body>
+</html>
 """
 
 PROFILE_HTML = """
 <!doctype html>
-<title>Profile</title>
-<h2>Profile</h2>
-<p>Welcome {{ username }}!</p>
-<a href="/logout">Logout</a>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Profile</title>
+</head>
+<body>
+  <h2>Welcome, {{ username }}!</h2>
+  <p><a href="/logout">Logout</a></p>
+</body>
+</html>
 """
 
+
+# --- Проверки ---
 def validate_username(username):
-    """Только буквы и цифры, длина 4–12"""
-    if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{4,12}$", username):
-        return False
-    return True
+    """4–12 символов, только латиница и цифры, хотя бы 1 буква"""
+    return bool(re.fullmatch(r"(?=.*[A-Za-z])[A-Za-z0-9]{4,12}", username))
+
 
 def validate_password(password):
-    """Минимум 8 максимум 25 символов, хотя бы одна буква и одна цифра"""
-    # if len(password) < 8 or len(password) > 25:
-    #     return False
-    # if not re.search(r"[A-Za-z]", password):
-    #     return False
-    # if not re.search(r"[0-9]", password):
-    #     return False
-    if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{8,25}$", password):
-        return False
-    return True
+    """8–25 символов, хотя бы 1 буква и 1 цифра"""
+    return bool(re.fullmatch(r"(?=.*[A-Za-z])(?=.*\\d)[A-Za-z0-9]{8,25}", password))
 
+
+# --- Маршруты ---
 @app.route("/")
 def index():
     return '<p><a href="/register">Register</a> | <a href="/login">Login</a></p>'
 
-# @app.route("/register", methods=["GET", "POST"])
-# def register():
-#     error = None
-#     if request.method == "POST":
-#         u = request.form["username"].strip()
-#         p = request.form["password"]
-#
-#         if u in USERS:
-#             error = "User exists"
-#         elif not validate_username(u):
-#             error = "Invalid username (4-12 letters/numbers)"
-#         elif not validate_password(p):
-#             error = "Invalid password (min 8 chars, at least 1 letter and 1 digit)"
-#         else:
-#             USERS[u] = p
-#             session["username"] = u
-#             return redirect(url_for("profile"))
-#
-#     return render_template_string(REGISTER_HTML, error=error)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == "POST":
-        u = request.form["username"].strip()
-        p = request.form["password"]
-        if u in USERS:
-            session["last_error"] = "User exists"
-        elif not validate_username(u):
-            session["last_error"] = "Invalid username (4-12 letters/numbers no spaces no Cyrillic)"
-        elif not validate_password(p):
-            session["last_error"] = "Invalid password (min 8 chars, at least 1 letter and 1 digit no spaces no Cyrillic)"
-        else:
-            USERS[u] = p
-            session["username"] = u
-            session.pop("last_error", None)  # сброс ошибки при успехе
-            return redirect(url_for("profile"))
-        return redirect(url_for("register"))  # редирект — чтобы сбросить POST
-    # если GET — отобразить и тут же удалить ошибку
-    error = session.pop("last_error", None)
-    return render_template_string(REGISTER_HTML, error=error)
+    errors = {}
+    username = ""
 
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"]
+
+        # Проверка ошибок
+        if username in USERS:
+            errors["username"] = "User exists"
+        elif not validate_username(username):
+            errors["username"] = "Invalid username (4–12 latin letters/numbers, no Cyrillic, no spaces)"
+        elif not validate_password(password):
+            errors["password"] = "Invalid password (8–25 chars, must have letters & digits, no Cyrillic, no spaces)"
+        else:
+            # Успешная регистрация
+            USERS[username] = password
+            session["username"] = username
+            session.pop("last_error", None)
+            return redirect(url_for("profile"))
+
+        # Сохраняем ошибки в сессию и делаем redirect
+        session["last_error"] = errors
+        session["last_username"] = username
+        return redirect(url_for("register"))
+
+    # --- GET ---
+    errors = session.pop("last_error", {})
+    username = session.pop("last_username", "")
+    return render_template_string(REGISTER_HTML, errors=errors, username=username)
 
 
 @app.route("/login", methods=["GET", "POST"])
-# def login():
-#     error = None
-#     if request.method == "POST":
-#         u = request.form["username"].strip()
-#         p = request.form["password"]
-#         if USERS.get(u) == p:
-#             session["username"] = u
-#             return redirect(url_for("profile"))
-#         error = "Invalid username or password"
-#     return render_template_string(LOGIN_HTML, error=error)
 def login():
-    if request.method == "POST":
-        u = request.form["username"].strip()
-        p = request.form["password"]
-        if USERS.get(u) == p:
-            session["username"] = u
-            session.pop("last_error", None)
-            return redirect(url_for("profile"))
-        else:
-            session["last_error"] = "Invalid username or password"
-            return redirect(url_for("login"))
+    errors = {}
+    username = ""
 
-    error = session.pop("last_error", None)
-    return render_template_string(LOGIN_HTML, error=error)
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"]
+
+        if username not in USERS:
+            errors["username"] = "User does not exist"
+        elif USERS.get(username) != password:
+            errors["password"] = "Invalid password"
+
+        if not errors:
+            session["username"] = username
+            return redirect(url_for("profile"))
+
+    return render_template_string(LOGIN_HTML, errors=errors, username=username)
 
 
 @app.route("/profile")
@@ -146,14 +160,12 @@ def profile():
         return redirect(url_for("login"))
     return render_template_string(PROFILE_HTML, username=session["username"])
 
+
 @app.route("/logout")
 def logout():
     session.pop("username", None)
     return redirect(url_for("index"))
 
-if __name__ == "__main__":
-    # import builtins
-    #
-    # print("fill" in dir(builtins))
 
+if __name__ == "__main__":
     app.run(debug=True)

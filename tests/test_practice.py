@@ -524,7 +524,7 @@ def test_negative_form1(page_open: Page, user_data):
                             check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
                         else:
                             # невідомі атрибути, але відома частина тексту повідомлення
-                            loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
+                            loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
                             if loc_er.count() > 0:
                                 expect(loc_er).to_be_visible(timeout=1000)
                                 check_m = "Повідомлення про помилку", loc_er.inner_text()
@@ -577,7 +577,7 @@ def test_negative_form1(page_open: Page, user_data):
                                     check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
                                 else:
                                     # невідомі атрибути, але відома частина тексту повідомлення
-                                    loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
+                                    loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
                                     if loc_er.count() > 0:
                                         expect(loc_er).to_be_visible(timeout=1000)
                                         check_m = "Повідомлення про помилку", loc_er.inner_text()
@@ -613,15 +613,11 @@ def test_negative_form1(page_open: Page, user_data):
                         # txt = user_data[0]['txt_el_fix_after_fill']
                         if el_t != '':
                             if not after_fill_fields(page_open, el_t, txt):
-                                loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
+                                loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
                                 if loc_er.count() > 0:
                                     expect(loc_er).to_be_visible(timeout=1000)
                                     debug(f"{loc_er.inner_text()}", f"Не відкрилась сторінка після кліку на кнопці {txt}")
-
-                                    # raise AssertionError(
-                                    #     f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
                                     failed_cases.append((field, el_invalid_data, f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}"))
-                                    # continue
                                     now = datetime.now()
                                     screenshot = page_open.screenshot(type='png',
                                                                       path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
@@ -630,11 +626,17 @@ def test_negative_form1(page_open: Page, user_data):
                                         "Скрін сторінки", screenshot)
                                     print('\n')
                                     er_txt = loc_er.inner_text()
-                                    # 4. Перезагружаем страницу — ошибка должна исчезнуть
+                                    # Перезагрузка страницы
                                     page_open.reload()
-                                    expect(loc_er).not_to_be_visible()
-                                    debug(f"Скинута помилка {er_txt}",
-                                          "Скидання помилки")
+                                    page_open.wait_for_load_state("domcontentloaded")
+                                    # Новый локатор после reload
+                                    loc_er1 = page_open.get_by_text(er_txt)
+                                    # # Проверка, что сообщение исчезло
+                                    expect(loc_er1).not_to_be_visible()
+
+                                    # expect(page_open.get_by_text(er_txt)).to_have_count(0)
+
+                                    debug(f"Скинута помилка {er_txt}","Скидання помилки")
                                     print('\n')
 
                             else:
@@ -666,7 +668,7 @@ def test_negative_form1(page_open: Page, user_data):
                                 # debug(
                                 #     f'Скриншот останньої сторінки після непроходження негативного тесту question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
                                 #     "Скрін сторінки", screenshot)
-                # ###################################################################################
+                    # ###################################################################################
                     # except AssertionError as e:
                     #     failed_cases.append((field_n, value, str(e)))
                     #     continue
@@ -687,10 +689,14 @@ def test_negative_form1(page_open: Page, user_data):
                 if alert.is_visible():
                     errors.append(alert.inner_text())
                     debug(alert.inner_text(), "ERROR")
-                if len(errors) > 1:
+                if len(errors) > 0:
                     debug(f"Знайдено помилки при введенні даних:\n{errors}", "Errors list:")
 
                 screenshot = page_open.screenshot()
+                now = datetime.now()
+                debug(
+                    f'Скриншот падіння або помилки у полі {field_n}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                    "Скрін сторінки", screenshot)
                 allure.attach(screenshot, name=f"Скриншот падіння або помилки у полі {field_n}",
                               attachment_type=allure.attachment_type.PNG)
         if failed_cases:
