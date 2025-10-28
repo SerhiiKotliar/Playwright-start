@@ -332,10 +332,11 @@ def test_positive_form(page_open, user_data):
             page_open = enter_to_fieldspage(page_open)
             ############################################################################
         with allure.step("Заповнення полів валідними даними"):
+            el_t = user_data[0]['el_fix_after_fill']
+            txt = user_data[0]['txt_el_fix_after_fill']
             for field in fields:
                 allure.dynamic.title(f"Позитивний тест: поле '{field}' отримує валідні дані")
                 value = user_data[0][field]
-                # if field != "url":
                 safe_field = re.sub(r'[\\/*?:"<>| ]', "", field)
                 tb = page_open.get_by_role("textbox", name=field, exact=True)
                 tb.fill(value)
@@ -359,7 +360,7 @@ def test_positive_form(page_open, user_data):
                         check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
                     else:
                         # невідомі атрибути, але відома частина тексту повідомлення
-                        loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
+                        loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
                         if loc_er.count() > 0:
                             expect(loc_er).to_be_visible(timeout=1000)
                             check_m = "Повідомлення про помилку", loc_er.inner_text()
@@ -376,7 +377,6 @@ def test_positive_form(page_open, user_data):
                         # Элемент не появился — просто пропускаем
             ###################################################################################
             # функція можливих дій після валідного заповнення усих полів
-            el_t = user_data[0]['el_fix_after_fill']
             # у разі відсутності елемента фіксації валідного введення
             if el_t == '':
                 confirmation(page_open, value, field)
@@ -386,8 +386,7 @@ def test_positive_form(page_open, user_data):
             el_t = user_data[0]['el_fix_after_fill']
             if el_t != '':
                 if not after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill']):
-                    txt = user_data[0]['txt_el_fix_after_fill']
-                    loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
+                    loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
                     if loc_er.count() > 0:
                         expect(loc_er).to_be_visible(timeout=1000)
                         debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
@@ -419,13 +418,13 @@ def test_positive_form(page_open, user_data):
         # Логування помилок форми
         errorsa = []
         if text_err != "":
-            errorsa.append(f"{field}': - '{text_err}")
+            errorsa.append(f"{field}': - '{text_err}\n")
         else:
-            errorsa.append(f"{field}': - '{e}")
+            errorsa.append(f"{field}': - '{e}\n")
         alert = page_open.get_by_role("alert").locator("div").first
         if alert.is_visible():
-            errorsa.append(f"{field}': - '{alert.inner_text()}")
-        if len(errorsa) > 1:
+            errorsa.append(f"{field}': - '{alert.inner_text()}\n")
+        if len(errorsa) > 0:
             debug(f"Знайдено помилки при введенні даних:\n{errorsa}", "AssertionErrors list:")
         # Скриншот страницы
         screenshot = page_open.screenshot()
@@ -439,16 +438,16 @@ def test_positive_form(page_open, user_data):
         errors = []
         check_n = fail_on_alert(page_open, "error", 2000)
         if check_n is not None:
-            errors.append(f"{field}': - '{check_n[1]}")
+            errors.append(f"{field}': - '{check_n[1]}\n")
         debug(f"Тест провалено: позитивний сценарій не пройдено \n{e}", "ERROR")
         debug(f"Current URL: {page_open.url}", "INFO")
         # Логування помилок форми
-        errors.append(f"{field}': - '{e}")
+        errors.append(f"{field}': - '{e}\n")
         alert = page_open.get_by_role("alert").locator("div").first
         if alert.is_visible():
-            errors.append(alert.inner_text())
+            errors.append(alert.inner_text()+"\n")
             debug(alert.inner_text(), "ERROR")
-        if len(errors) > 1:
+        if len(errors) > 0:
             debug(f"Знайдено помилки при введенні даних:\n{errors}", "Errors list:")
         # Скриншот страницы
         screenshot = page_open.screenshot()
@@ -471,7 +470,8 @@ def test_positive_form(page_open, user_data):
 # 🔹 Негативные тесты зависят от позитивного
 # @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
 @allure.epic("Реєстрація. Невалідні дані")
-def test_negative_form1(page_open: Page, user_data):
+@pytest.mark.dependency(depends=["positive"])
+def test_negative_form(page_open: Page, user_data):
     global valid_values, invalid_values, fields
     if len(fields) < 1:
         for field in user_data[3].keys():
@@ -486,6 +486,8 @@ def test_negative_form1(page_open: Page, user_data):
     for field_in, list_inv in invalid_values.items():
         count_tests_for_field[field_in] = len(list_inv)
     failed_cases = []  # тут збираємо всі провали
+    print('\n')
+    print("\nНегативний тест: по черзі поля невалідні", "Початок негативного тесту\n")
     with (allure.step('\nПерехід на головну сторінку сайту')):
         print('\n')
         ####################################################################################
@@ -535,7 +537,7 @@ def test_negative_form1(page_open: Page, user_data):
                         screenshot = page_open.screenshot(type='png',
                                                           path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
                         debug(
-                            f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                            f'Скриншот останньої сторінки після введення неваліду negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
                             "Скрін сторінки", screenshot)
                         print('\n')
                         # raise AssertionError(
@@ -591,17 +593,19 @@ def test_negative_form1(page_open: Page, user_data):
                                     f'Скриншот останньої сторінки після помилки при введенні валідних даних negativ_question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
                                     "Скрін сторінки", screenshot)
                                 print('\n')
-                                # 4. Перезагружаем страницу — ошибка должна исчезнуть
                                 er_txt = loc_er.inner_text()
+                                # Перезагрузка страницы
                                 page_open.reload()
-                                expect(loc_er).not_to_be_visible()
+                                page_open.wait_for_load_state("domcontentloaded")
+                                # Новый локатор после reload
+                                loc_er1 = page_open.get_by_text(er_txt)
+                                # # Проверка, что сообщение исчезло
+                                expect(loc_er1).not_to_be_visible()
+                                # expect(page_open.get_by_text(er_txt)).to_have_count(0)
                                 debug(f"Скинута помилка {er_txt}",
                                       "Скидання помилки")
                                 print('\n')
-                                # raise AssertionError(
-                                #     f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_v}' при введенні валідних даних: {val_valid}")
                                 failed_cases.append((field_n, value, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_v}' при введенні валідних даних: {val_valid}"))
-                                # continue
                             else:
                                 # Элемент не появился — просто пропускаем
                                 # в деяких випадках підтвердження введених валідних даних
@@ -610,7 +614,6 @@ def test_negative_form1(page_open: Page, user_data):
                         #############################################################################
                     with allure.step("Дії після заповнення полів невалідними  даними"):
                         # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-                        # txt = user_data[0]['txt_el_fix_after_fill']
                         if el_t != '':
                             if not after_fill_fields(page_open, el_t, txt):
                                 loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
@@ -633,9 +636,7 @@ def test_negative_form1(page_open: Page, user_data):
                                     loc_er1 = page_open.get_by_text(er_txt)
                                     # # Проверка, что сообщение исчезло
                                     expect(loc_er1).not_to_be_visible()
-
                                     # expect(page_open.get_by_text(er_txt)).to_have_count(0)
-
                                     debug(f"Скинута помилка {er_txt}","Скидання помилки")
                                     print('\n')
 
@@ -661,33 +662,19 @@ def test_negative_form1(page_open: Page, user_data):
                                     print('\n')
                                     raise Exception(
                                         "З невідомих причин не відкрилась сторінка входу у профіль користувача")
-                                    # failed_cases.append((field_n, value, f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача"))
-                                # now = datetime.now()
-                                # screenshot = page_open.screenshot(type='png',
-                                #                                   path=f'screenshots/negativ_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                                # debug(
-                                #     f'Скриншот останньої сторінки після непроходження негативного тесту question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                                #     "Скрін сторінки", screenshot)
                     # ###################################################################################
-                    # except AssertionError as e:
-                    #     failed_cases.append((field_n, value, str(e)))
-                    #     continue
-            # except AssertionError as e:
-            #     failed_cases.append((field_n, value, str(e)))
-            #     continue
-
             except Exception as e:
                 # логування інших помилок (поля, алерти тощо)
                 check_n = fail_on_alert(page_open, "error", 2000)
                 errors = []
 
                 if check_n is not None:
-                    errors.append(f"{field_n}': - '{check_n[1]}")
-                errors.append(f"{field_n}': - '{e}")
+                    errors.append(f"{field_n}': - '{check_n[1]}\n")
+                errors.append(f"{field_n}': - '{e}\n")
 
                 alert = page_open.get_by_role("alert").locator("div").first
                 if alert.is_visible():
-                    errors.append(alert.inner_text())
+                    errors.append(alert.inner_text()+"\n")
                     debug(alert.inner_text(), "ERROR")
                 if len(errors) > 0:
                     debug(f"Знайдено помилки при введенні даних:\n{errors}", "Errors list:")
@@ -711,281 +698,6 @@ def test_negative_form1(page_open: Page, user_data):
                   "ERRORS")
             print('\n')
             if txt_neg_int == len(failed_cases):
-                debug("Всі негативні тести пройдено успішно(впали)", "Результат негативних тестів")
-            else:
-                debug("Частково негативні тести пройдено успішно(впали)", "Результат негативних тестів")
-
-
-# 🔹 Негативные тесты зависят от позитивного
-# @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
-@allure.epic("Реєстрація. Невалідні дані")
-# @pytest.mark.dependency(depends=["positive"])
-def test_negative_form(page_open, user_data):
-    global valid_values, invalid_values, fields
-    if len(fields) < 1:
-        for field in user_data[3].keys():
-            # if field != "url" and field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
-            fields.append(field)
-    # список валідних даних
-    valid_values = valid_val(user_data)
-    # список зі словників (ключ поле а значення список кортежів (невалід, тип неваліду)
-    invalid_values = invalid_val(user_data)
-    # список кортежей из полей со списками словарей с валидными и невалидными данными
-    list_tuppels_negative_tests = generate_negative_cases()
-    # збір імен полів для невалідних тестів
-    # fields_for_negative_tests = [t[0] for t in list_tuppels_negative_tests if t[0] != "url"]
-    fields_for_negative_tests = [t[0] for t in list_tuppels_negative_tests]
-    dict_for_negative_tests = {}
-    count_tests_for_field = {}
-    for ff in fields_for_negative_tests:
-        dict_for_negative_tests[ff] = []
-    # перебіг по кортежам зі списками невалідних даних
-    for t in list_tuppels_negative_tests:
-        if t[0] in dict_for_negative_tests.keys():
-            dict_negative = {}
-            # for key, value in t[1].items():
-            #     if key != "url":
-            #         dict_negative[key] = value
-            dict_negative = t[1]
-            # створення словника зі списками невалідних даних по полях
-            # ключ це ім'я поля а значення список словників з полями і даними'
-            dict_for_negative_tests[t[0]].append(dict_negative)
-    failed_cases = []  # тут збираємо всі провали
-    print('\n')
-    print("Початок негативного тесту: по черзі одне поле невалідне, інші поля валідні")
-    print('\n')
-    with (allure.step('Перехід на головну сторінку сайту')):
-        ####################################################################################
-        page_open = enter_to_fieldspage(page_open)
-        #####################################################################################
-    with allure.step("Заповнення полів невалідами"):
-        for field, list_dicts_inv_data in dict_for_negative_tests.items():
-            # try:
-            count_tests_for_field[field] = len(list_dicts_inv_data)
-            allure.dynamic.title(f"Негативний тест: поле '{field}' отримує невалідні дані")
-            print('\n')
-            debug(f"Негативний тест: поле отримує невалідні дані", f"{field}")
-            #     поточний словник з черговим негативом для поля
-            for dict_cur_data in list_dicts_inv_data:
-                try:
-                    for field_key, el_list in dict_cur_data.items():
-                        safe_field = re.sub(r'[\\/*?:"<>| ]', "", field_key)
-                        neg = False
-                        value = ""
-                        if isinstance(el_list, tuple):
-                            el_list_n = el_list[0]
-                            el_list_d = el_list[1]
-                            neg = True
-                        else:
-                            el_list_d = el_list
-
-                        tb = page_open.get_by_role("textbox", name=field_key, exact=True)
-                        print('\n')
-                        if neg:
-                            debug(f"заповнення поля невалідністю {el_list_n} по типу {el_list_d}",
-                                  f"{field_key}")
-                            tb.fill(el_list_n)
-                            value = el_list_n
-                            str_att = f"введені невалідні дані {el_list_n} у поле {field_key}:"
-                            debug(str_att, f"{field_key}")
-                            allure.attach(str_att + " " + "\"" + str(el_list_n) + "\"", name=f"{field_key}")
-                        else:
-                            debug(f"заповнення поля валідними даними {el_list_d}",
-                                  f"{field_key}")
-                            tb.fill(el_list_d)
-                            value = el_list_d
-                            str_att = f"введені валідні дані {el_list_d} у поле {field_key}:"
-                            debug(str_att, f"{field_key}")
-                            allure.attach(str_att + " " + "\"" + str(el_list_d) + "\"", name=f"{field_key}")
-                        #####################################################################
-                        # умова, що вибирає чи треба якось фіксувати введення даних у поле, чи це трапляється при події виходу з поля
-                        # 0 - це фіксація о події виходу, 1 - натисканням Enter, 2 - натисканням кнопки
-                        if user_data[0]["fix_enter"] == 1:
-                            tb.press("Enter")
-                            debug(f"Зафіксоване введення даних {value} клавішею Enter", f"{field_key}")
-                        ######################################################################
-                        # функція перевірки появи alert про помилку
-                        check_m = fail_on_alert(page_open, "error", 2000)
-                        if check_m is None:
-                            # перевірка на появу повідомлень про помилки після введення даних у поле
-                            # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
-                            # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                            if user_data[0]["check_attr"] != '':
-                                # відомі атрибути повідомлення про помилку
-                                check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-                            else:
-                                # невідомі атрибути, але відома частина тексту повідомлення
-                                loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
-                                if loc_er.count() > 0:
-                                    expect(loc_er).to_be_visible(timeout=1000)
-                                    check_m = "Повідомлення про помилку", loc_er.inner_text()
-
-                        if check_m is not None:
-                            text_err = check_m[1]
-                            now = datetime.now()
-                            screenshot = page_open.screenshot(type='png',
-                                                              path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                            debug(
-                                f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                                "Скрін сторінки", screenshot)
-                            raise AssertionError(
-                                f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
-                            # Элемент не появился — просто пропускаем
-                    ###################################################################################
-
-                    # функція можливих дій після заповнення усих полів
-                    el_t = user_data[0]['el_fix_after_fill']
-                    # у разі відсутності елемента фіксації валідного введення
-                    if el_t == '':
-                        confirmation(page_open, value, field)
-                    with allure.step("Дії після заповнення полів валідними  даними"):
-                        # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-                        el_t = user_data[0]['el_fix_after_fill']
-                        if el_t != '':
-                            if not after_fill_fields(page_open, el_t,
-                                                     user_data[0]['txt_el_fix_after_fill']):
-                                txt = user_data[0]['txt_el_fix_after_fill']
-                                loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
-                                if loc_er.count() > 0:
-                                    expect(loc_er).to_be_visible(timeout=1000)
-                                    debug(f"{loc_er.inner_text()}", f"Не відкрилась сторінка після кліку на кнопці {txt}")
-                                    raise AssertionError(
-                                        f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
-                                else:
-                                    raise AssertionError(
-                                        f"З невідомих причин не відкрилась сторінка після кліку на кнопці {txt}")
-                            loc_txt_reg = page_open.get_by_text(
-                                re.compile(r"^(Welcome .*|Congradulation .*)"))
-                            if loc_txt_reg.count() > 0:
-                                expect(loc_txt_reg).to_be_visible()
-                                debug("Підтверджено привітання користувача", "Вхід у профіль")
-                            else:
-                                debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-                                raise AssertionError(
-                                    f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
-                    # ###################################################################################
-                    # # функція можливих дій після заповнення усих полів
-                    # el_t = user_data[0]['el_fix_after_fill']
-                    # # у разі відсутності елемента фіксації валідного введення
-                    # if el_t == '':
-                    #     confirmation(page_open, value, field_key)
-                except AssertionError as e:
-                    failed_cases.append((field, el_list_n, str(e)))
-                    continue
-
-                except Exception as e:
-                    # логування інших помилок (поля, алерти тощо)
-                    check_n = fail_on_alert(page_open, "error", 2000)
-                    errors = []
-
-                    if check_n is not None:
-                        errors.append(f"{field_key}': - '{check_n[1]}")
-                    errors.append(f"{field_key}': - '{e}")
-
-                    alert = page_open.get_by_role("alert").locator("div").first
-                    if alert.is_visible():
-                        errors.append(alert.inner_text())
-                        debug(alert.inner_text(), "ERROR")
-                    if len(errors) > 1:
-                        debug(f"Знайдено помилки при введенні даних:\n{errors}", "Errors list:")
-
-                    screenshot = page_open.screenshot()
-                    allure.attach(screenshot, name=f"Скриншот падіння або помилки у полі {field_key}",
-                                  attachment_type=allure.attachment_type.PNG)
-            # ######################################################################
-            #     # функція перевірки появи alert про помилку
-            #     check_m = fail_on_alert(page_open, "error", 2000)
-            #     if check_m is None:
-            #         # перевірка на появу повідомлень про помилки після введення даних у поле
-            #         # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
-            #         # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-            #         if user_data[0]["check_attr"] != '':
-            #             # відомі атрибути повідомлення про помилку
-            #             check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-            #         else:
-            #             # невідомі атрибути, але відома частина тексту повідомлення
-            #             loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
-            #             if loc_er.count() > 0:
-            #                 expect(loc_er).to_be_visible(timeout=1000)
-            #                 check_m = "Повідомлення про помилку", loc_er.inner_text()
-            #
-            #     if check_m is not None:
-            #         text_err = check_m[1]
-            #         now = datetime.now()
-            #         screenshot = page_open.screenshot(type='png',
-            #                                           path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-            #         debug(
-            #             f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-            #             "Скрін сторінки", screenshot)
-            #         raise AssertionError(
-            #             f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {value}")
-            #     # Элемент не появился — просто пропускаем
-            #     ###################################################################################
-            #
-            #     # функція можливих дій після заповнення усих полів
-            #     el_t = user_data[0]['el_fix_after_fill']
-            #     # у разі відсутності елемента фіксації валідного введення
-            #     if el_t == '':
-            #         confirmation(page_open, value, field)
-            #     with allure.step("Дії після заповнення полів валідними  даними"):
-            #         # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-            #         el_t = user_data[0]['el_fix_after_fill']
-            #         if el_t != '':
-            #             if not after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill']):
-            #                 txt = user_data[0]['txt_el_fix_after_fill']
-            #                 loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User exists)"))
-            #                 if loc_er.count() > 0:
-            #                     expect(loc_er).to_be_visible(timeout=1000)
-            #                     debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
-            #                     raise AssertionError(
-            #                         f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
-            #                 else:
-            #                     raise AssertionError(
-            #                         f"З невідомих причин не відкрилась сторінка після кліку на кнопці {txt}")
-            #             loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome .*|Congradulation .*)"))
-            #             if loc_txt_reg.count() > 0:
-            #                 expect(loc_txt_reg).to_be_visible()
-            #                 debug("Підтверджено привітання користувача", "Вхід у профіль")
-            #             else:
-            #                 debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-            #                 raise AssertionError(
-            #                     f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
-            #     ##################################################################################
-        #     except AssertionError as e:
-        #         failed_cases.append((field, el_list_n, str(e)))
-        #         continue
-        #
-        #     except Exception as e:
-        #         # логування інших помилок (поля, алерти тощо)
-        #         check_n = fail_on_alert(page_open, "error", 2000)
-        #         errors = []
-        #
-        #         if check_n is not None:
-        #             errors.append(f"{field_key}': - '{check_n[1]}")
-        #         errors.append(f"{field_key}': - '{e}")
-        #
-        #         alert = page_open.get_by_role("alert").locator("div").first
-        #         if alert.is_visible():
-        #             errors.append(alert.inner_text())
-        #             debug(alert.inner_text(), "ERROR")
-        #         if len(errors) > 1:
-        #             debug(f"Знайдено помилки при введенні даних:\n{errors}", "Errors list:")
-        #
-        #         screenshot = page_open.screenshot()
-        #         allure.attach(screenshot, name=f"Скриншот падіння або помилки у полі {field_key}",
-        #                       attachment_type=allure.attachment_type.PNG)
-        # ###################################################################################
-        # після всіх ітерацій: якщо були фейли — виводимо інформацію
-        if failed_cases:
-            msg = "\n".join([f"{fld}='{val}' → {err}" for fld, val, err in failed_cases])
-            txt_neg_tests = ""
-            for key, neg_test in count_tests_for_field.items():
-                txt_neg_tests = txt_neg_tests + f"{neg_test} тестах(і) для поля '{key}'"
-            print('\n')
-            debug(f"{len(failed_cases)} помилок(ки), знайдено у {txt_neg_tests}:\n{msg}",
-                  "ERRORS")
-            print('\n')
-            if int(neg_test) == len(failed_cases):
                 debug("Всі негативні тести пройдено успішно(впали)", "Результат негативних тестів")
             else:
                 debug("Частково негативні тести пройдено успішно(впали)", "Результат негативних тестів")

@@ -48,7 +48,7 @@ def enter_to_fieldspage(page_open: Page) -> Page:
     # expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
     # debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
 
-
+    #
     ### http://127.0.0.1:5000/")
     expect(page_open.get_by_role("link", name="Register")).to_be_visible()
     debug("знайдено посилання Register", "Перевірка наявності посилання Regiser")
