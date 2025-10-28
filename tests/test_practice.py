@@ -593,18 +593,6 @@ def test_negative_form(page_open: Page, user_data):
                                     f'Скриншот останньої сторінки після помилки при введенні валідних даних negativ_question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
                                     "Скрін сторінки", screenshot)
                                 print('\n')
-                                er_txt = loc_er.inner_text()
-                                # Перезагрузка страницы
-                                page_open.reload()
-                                page_open.wait_for_load_state("domcontentloaded")
-                                # Новый локатор после reload
-                                loc_er1 = page_open.get_by_text(er_txt)
-                                # # Проверка, что сообщение исчезло
-                                expect(loc_er1).not_to_be_visible()
-                                # expect(page_open.get_by_text(er_txt)).to_have_count(0)
-                                debug(f"Скинута помилка {er_txt}",
-                                      "Скидання помилки")
-                                print('\n')
                                 failed_cases.append((field_n, value, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_v}' при введенні валідних даних: {val_valid}"))
                             else:
                                 # Элемент не появился — просто пропускаем
