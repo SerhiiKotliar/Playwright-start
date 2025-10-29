@@ -49,31 +49,31 @@ def enter_to_fieldspage(page_open: Page) -> Page:
     # debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
 
     #
-    ### http://127.0.0.1:5000/")
-    expect(page_open.get_by_role("link", name="Register")).to_be_visible()
-    debug("знайдено посилання Register", "Перевірка наявності посилання Regiser")
-    link_input = page_open.get_by_role("link", name="Register")
-
-    changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
-
-    debug("здійснено клік на посиланні Register", "Перехід на сторінку реєстрації користувача")
-    assert changed, "Не відкрилась сторінка реєстрації користувача"
-
-    expect(page_open.get_by_role("heading", name="Register")).to_be_visible()
-    debug("здійснено перехід на сторінку", "Перехід на сторінку реєстрації користувача")
-
     # ### http://127.0.0.1:5000/")
-    # expect(page_open.get_by_role("link", name="Login")).to_be_visible()
-    # debug("знайдено посилання Login", "Перевірка наявності посилання Login")
-    # link_input = page_open.get_by_role("link", name="Login")
+    # expect(page_open.get_by_role("link", name="Register")).to_be_visible()
+    # debug("знайдено посилання Register", "Перевірка наявності посилання Regiser")
+    # link_input = page_open.get_by_role("link", name="Register")
     #
     # changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
     #
-    # debug("здійснено клік на посиланні Login", "Перехід на сторінку входу користувача на сайт")
-    # assert changed, "Не відкрилась сторінка входу користувача на сайт"
+    # debug("здійснено клік на посиланні Register", "Перехід на сторінку реєстрації користувача")
+    # assert changed, "Не відкрилась сторінка реєстрації користувача"
     #
-    # expect(page_open.get_by_role("heading", name="Login")).to_be_visible()
-    # debug("здійснено перехід на сторінку", "Перехід на сторінку входу користувача на сайт")
+    # expect(page_open.get_by_role("heading", name="Register")).to_be_visible()
+    # debug("здійснено перехід на сторінку", "Перехід на сторінку реєстрації користувача")
+
+    ### http://127.0.0.1:5000/")
+    expect(page_open.get_by_role("link", name="Login")).to_be_visible()
+    debug("знайдено посилання Login", "Перевірка наявності посилання Login")
+    link_input = page_open.get_by_role("link", name="Login")
+
+    changed, new_url = click_and_wait_url_change(page_open, lambda: link_input.click())
+
+    debug("здійснено клік на посиланні Login", "Перехід на сторінку входу користувача на сайт")
+    assert changed, "Не відкрилась сторінка входу користувача на сайт"
+
+    expect(page_open.get_by_role("heading", name="Login")).to_be_visible()
+    debug("здійснено перехід на сторінку", "Перехід на сторінку входу користувача на сайт")
 
 
     # expect(page_open.get_by_role("link", name="Login")).to_be_visible()
