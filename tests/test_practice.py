@@ -482,7 +482,7 @@ def test_positive_form(page_open, user_data):
 # 🔹 Негативные тесты зависят от позитивного
 # @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
 @allure.epic("Реєстрація. Невалідні дані")
-@pytest.mark.dependency(depends=["positive"])
+# @pytest.mark.dependency(depends=["positive"])
 def test_negative_form(page_open: Page, user_data):
     global valid_values, invalid_values, fields
     if len(fields) < 1:

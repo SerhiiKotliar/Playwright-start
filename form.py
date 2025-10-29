@@ -162,7 +162,7 @@ class Ui_Dialog(object):
         # self.chkbCyfry_at_least_one.setChecked(True)
         self.chkbLocaliz_at_least_one = QCheckBox(Dialog)
         self.chkbLocaliz_at_least_one.setObjectName(u"chkbLocaliz_at_least_one")
-        self.chkbLocaliz_at_least_one.setEnabled(False)
+        self.chkbLocaliz_at_least_one.setEnabled(True)
         self.chkbLocaliz_at_least_one.setGeometry(QRect(390, 60, 131, 20))
         self.chkbLocaliz_at_least_one.setFont(font)
         self.chkbLocaliz_at_least_one.setLayoutDirection(Qt.LeftToRight)

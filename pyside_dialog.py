@@ -38,10 +38,10 @@ class MyDialog(QDialog, Ui_Dialog):
     def on_index_changed(self, index):
         """Вызывается при изменении индекса"""
         text = self.cmbLocaliz.itemText(index)
-        if text == "латиниця і кирилиця":
-            self.chkbLocaliz_at_least_one.setEnabled(True)
-        else:
-            self.chkbLocaliz_at_least_one.setEnabled(False)
+        # if text == "латиниця і кирилиця":
+        #     self.chkbLocaliz_at_least_one.setEnabled(True)
+        # else:
+        #     self.chkbLocaliz_at_least_one.setEnabled(False)
 
     def on_index_changed2(self, index):
         """Вызывается при изменении индекса"""
