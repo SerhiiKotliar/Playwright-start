@@ -84,13 +84,13 @@ PROFILE_HTML = """
 
 # --- Проверки ---
 def validate_username(username):
-    """4–12 символов, только латиница и цифры, хотя бы 1 буква"""
-    return bool(re.fullmatch(r"(?=.*[A-Za-z])[A-Za-z0-9]{4,12}", username))
+    """4–12 символов, только латиница и цифры, хотя бы 1 буква и одна цифра"""
+    return bool(re.fullmatch(r"(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{4,12}", username))
 
 
 def validate_password(password):
     """8–25 символов, хотя бы 1 буква и 1 цифра"""
-    return bool(re.fullmatch(r"(?=.*[A-Za-z])(?=.*\\d)[A-Za-z0-9]{8,25}", password))
+    return bool(re.fullmatch(r"(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9]{8,25}", password))
 
 
 # --- Маршруты ---

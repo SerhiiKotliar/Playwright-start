@@ -393,9 +393,21 @@ def test_positive_form(page_open, user_data):
                         raise AssertionError(
                             f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
                     else:
-                        raise AssertionError(
-                            f"З невідомих причин не відкрилась сторінка після кліку на кнопці {txt}")
-                loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome .*|Congradulation .*)"))
+                        debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
+                        now = datetime.now()
+                        screenshot = page_open.screenshot(type='png',
+                                                          path=f'screenshots/question_positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                        debug(
+                            f'Скриншот останньої сторінки після проходження негативного тесту з невідомих причин question_positive_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                            "Скрін сторінки", screenshot)
+                        print('\n')
+                        raise Exception(
+                            "З невідомих причин не відкрилась сторінка входу у профіль користувача")
+                    # else:
+                    #     raise AssertionError(
+                    #         f"З невідомих причин не відкрилась сторінка після кліку на кнопці {txt}")
+                else:
+                    loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
                 if loc_txt_reg.count() > 0:
                     expect(loc_txt_reg).to_be_visible()
                     debug("Підтверджено привітання користувача", "Вхід у профіль")
@@ -629,7 +641,7 @@ def test_negative_form(page_open: Page, user_data):
                                     print('\n')
 
                             else:
-                                loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome .*|Congradulation .*)"))
+                                loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
                                 if loc_txt_reg.count() > 0:
                                     expect(loc_txt_reg).to_be_visible()
                                     debug("Підтверджено привітання користувача", "Вхід у профіль")

@@ -50,6 +50,7 @@ len_min = 0
 len_max = 0
 spec_escaped = ""
 no_absent = False
+spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
 # check_on = False
 
 
@@ -304,6 +305,7 @@ def report_about(message: str, page_open=None, name="screenshot_of_final"):
 
 
 def detect_script(text1: str) -> str:
+    """Визначення локалізації тільки по буквам"""
     text = re.sub(r"[^A-Za-zА-Яа-яЁёЇїІіЄєҐґ]", "", text1)
     if re.fullmatch(r"[А-Яа-яЁёЇїІіЄєҐґ]+", text):
         return "Cyrillic"
@@ -341,7 +343,7 @@ def detect_script(text1: str) -> str:
     return "Unknown"
 
 def entries_rules(log, required, fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat, lat_Cyr_1, latin_1, Cyrillic_1, lat_Cyr_up, lat_Cyr_low, lat_Cyr_1, lat_Cyr
+    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat, lat_Cyr_1, latin_1, Cyrillic_1, lat_Cyr_up, lat_Cyr_low, lat_Cyr_1, lat_Cyr, spec
 
     entries = kwargs["entries"]
     # инициализация переменных
@@ -433,7 +435,7 @@ def entries_rules(log, required, fame, **kwargs):
             if isinstance(value, str):
                 spec_escaped = "".join(re.escape(ch) for ch in value)
             else:
-                spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
+                # spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
                 spec_escaped = "".join(re.escape(ch) for ch in spec)
         elif key == "spec_at_least_one":
             spec_at_least_one = value
@@ -531,13 +533,11 @@ def entries_rules(log, required, fame, **kwargs):
     if url:
         rule_invalid[fame].append("no_url")
         rule_invalid[fame].append("localiz latin")
-    # if ((len(log) < len_min or len(log) > len_max) and (not email) and (not url) and (not no_absent)):
     if (not email) and (not url) and (not no_absent):
         if len_max is not None:
             rule_invalid[fame].append(f"len {len_min} {len_max}")
         else:
             rule_invalid[fame].append(f"len {len_min}")
-
     if email:
         rule_invalid[fame].append("no_email")
         rule_invalid[fame].append("localiz latin")
@@ -811,6 +811,7 @@ class DynamicDialog(QDialog):
             # cmb.focusOut.connect(self.on_focusOut)
             # событие потери фокуса групбоксом
             gb_widget.focusLeft.connect(self.on_gb_focus_left)
+            # подія отримання фокусу групбоксом
             gb_widget.focusEntered.connect(self.on_gb_focus_entered)
 
         # ---- Кнопки OK/Відміна внизу ----
@@ -871,15 +872,15 @@ class DynamicDialog(QDialog):
     # втрата фокусу групбоксом
     def on_gb_focus_left(self):
         gb = self.sender()
-        global chars, pattern, len_min, len_max, rule_invalid, check_on
+        global chars, pattern, len_min, len_max, rule_invalid, spec
         gr_t_title = gb.title()
         gr_t = gb.objectName()
         # cur_txt = gb.cmb.currentText()
         # Якщо chars == ".", дозволяємо все
         if chars == ".":
             pattern = rf"^[{chars}]+$"
-            # self.previous_text = gb.cmb.currentText()
-            self.previous_text = ''
+            self.previous_text = gb.cmb.currentText()
+            # self.previous_text = ''
             return True
 
         # Перевірка на відповідність pattern
@@ -907,12 +908,14 @@ class DynamicDialog(QDialog):
             #     txt_err += "має бути з текстом у двох регістрах\n"
         for el_t in rule_invalid[gr_t]:
             if el_t[:7] == "localiz":
+                # локализация установленная, полная, с учётом всех символов и регистра
                 localiz = el_t[8:]
+                # сновная, определённая по символам, локализация (без цифр, спецсимволов и т.д.)
                 loc_text = detect_script(gb.cmb.currentText())
-                if loc_text == "lat_Cyr":
-                    result = "".join((c1 + c2) if c1 != c2 else "" for c1, c2 in zip_longest(localiz, loc_text, fillvalue=""))
-                    if result[:1] == "_":
-                        loc_text = localiz
+                # if loc_text == "lat_Cyr":
+                result = "".join((c1 + c2) if c1 != c2 else "" for c1, c2 in zip_longest(localiz, loc_text, fillvalue=""))
+                if result[:1] == "_":
+                    loc_text = localiz
                 if localiz != loc_text:
                     if localiz == "latin":
                         txt_err += "має бути з латиницею\n"
@@ -962,6 +965,10 @@ class DynamicDialog(QDialog):
                     txt_err += "не має бути з пробілами\n"
                 if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
                     txt_err += "має бути з пробілами\n"
+                if not "no_spec" in rule_invalid[gr_t] and any(c in spec for c in gb.cmb.currentText()):
+                    txt_err += "не має бути зі спецсимволами"
+                if not "no_digit" in rule_invalid[gr_t] and any(c.isdigit() for c in gb.cmb.currentText()):
+                    txt_err = "не мє бути з цифрами"
                         # break
             if txt_err != "":
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
@@ -977,24 +984,27 @@ class DynamicDialog(QDialog):
     def on_rules_clicked(self, combo, field_name):
         global rule_invalid
         for name, wrapper in self.gb.items():
+            # wrapper = GroupBoxWrapper()
             chck_stat = wrapper.chkb.isChecked()
             if wrapper.cmb is combo:
                 wrapper.cmb.setEditable(True)  # текущий делаем редактируемым
+                # combo.setEditable(True)
                 wrapper.gb.setStyleSheet("background-color: rgb(255, 255, 200);")  # подсветка
             else:
-                if wrapper.cmb.isEditable():
-                    # сохранить введённый текст
-                    current_text = wrapper.cmb.currentText().strip()
-                    if current_text:
-                        items = [wrapper.cmb.itemText(i) for i in range(wrapper.cmb.count())]
-                        if current_text not in items:
-                            wrapper.cmb.addItem(current_text)  # добавляем в список
-                        # получаем индекс добавленного или существующего значения
-                        idx = wrapper.cmb.findText(current_text)
-                        if idx >= 0:
-                            wrapper.cmb.setCurrentIndex(idx)
-                    # теперь можно выключить редактирование
-                wrapper.cmb.setEditable(False)
+            # #для случая когда поле, а не комбобокс
+            #     if wrapper.cmb.isEditable():
+            #         # сохранить введённый текст
+            #         current_text = wrapper.cmb.currentText().strip()
+            #         if current_text:
+            #             items = [wrapper.cmb.itemText(i) for i in range(wrapper.cmb.count())]
+            #             if current_text not in items:
+            #                 wrapper.cmb.addItem(current_text)  # добавляем в список
+            #             # получаем индекс добавленного или существующего значения
+            #             idx = wrapper.cmb.findText(current_text)
+            #             if idx >= 0:
+            #                 wrapper.cmb.setCurrentIndex(idx)
+            #         # теперь можно выключить редактирование
+            #     wrapper.cmb.setEditable(False)
                 wrapper.gb.setStyleSheet("background-color: rgb(85, 255, 127);")
         rule_invalid[field_name] = []
         dlg = MyDialog()
@@ -1003,7 +1013,8 @@ class DynamicDialog(QDialog):
         dlg.setModal(True)
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
-            if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
+            # if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
+            if not entries_rules(combo.currentText(), chck_stat, field_name, entries=cur_rules):
                 self.reject()
         # wrapper.cmb.setFocus()
         combo.setFocus()
