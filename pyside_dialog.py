@@ -17,6 +17,8 @@ class MyDialog(QDialog, Ui_Dialog):
 
         # кнопки
         self.btnOk.clicked.connect(self.on_ok)
+        self.btnok.setDefault(True)
+        self.btnOk.setAutoDefault(True)
         self.btnCnl.clicked.connect(self.reject)
 
         # --- нове: вмикаємо/вимикаємо tbSpec по чекбоксу ---
@@ -35,13 +37,13 @@ class MyDialog(QDialog, Ui_Dialog):
         self.spinBoxLenMin.editingFinished.connect(self.on_editing_finished_min)
         self.spinBoxLenMax.editingFinished.connect(self.on_editing_finished_max)
 
-    def on_index_changed(self, index):
-        """Вызывается при изменении индекса"""
-        text = self.cmbLocaliz.itemText(index)
-        # if text == "латиниця і кирилиця":
-        #     self.chkbLocaliz_at_least_one.setEnabled(True)
-        # else:
-        #     self.chkbLocaliz_at_least_one.setEnabled(False)
+    # def on_index_changed(self, index):
+    #     """Вызывается при изменении индекса"""
+    #     text = self.cmbLocaliz.itemText(index)
+    #     # if text == "латиниця і кирилиця":
+    #     #     self.chkbLocaliz_at_least_one.setEnabled(True)
+    #     # else:
+    #     #     self.chkbLocaliz_at_least_one.setEnabled(False)
 
     def on_index_changed2(self, index):
         """Вызывается при изменении индекса"""

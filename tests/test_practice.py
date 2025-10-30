@@ -2,9 +2,6 @@ import allure
 import pytest
 from playwright.sync_api import expect
 
-# from Rule_form_new import lat_Cyr_up
-# from Rule_form_new import lat_Cyr_up, lat_Cyr_low
-# from Rule_form_new import report_about, report_bug_and_stop
 from conftest import page_open
 from helper import debug
 import re

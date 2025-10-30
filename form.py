@@ -18,7 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QComboBox,
     QDialog, QFrame, QLabel, QLineEdit,
     QPushButton, QSizePolicy, QSpinBox, QWidget)
-
+# Форма налаштування тестів
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
