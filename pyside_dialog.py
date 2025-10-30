@@ -17,7 +17,7 @@ class MyDialog(QDialog, Ui_Dialog):
 
         # кнопки
         self.btnOk.clicked.connect(self.on_ok)
-        self.btnok.setDefault(True)
+        self.btnOk.setDefault(True)
         self.btnOk.setAutoDefault(True)
         self.btnCnl.clicked.connect(self.reject)
 
@@ -31,7 +31,7 @@ class MyDialog(QDialog, Ui_Dialog):
         self.chkbCyfry.toggled.connect(self.on_CHKC_toggled)
         self.chkbProbel.toggled.connect(self.on_CHKP_toggled)
         self.cmbLocaliz.activated.connect(self.on_item_activated_localiz)
-        self.cmbLocaliz.currentIndexChanged.connect(self.on_index_changed)
+        # self.cmbLocaliz.currentIndexChanged.connect(self.on_index_changed)
         self.cmbLocaliz_2.activated.connect(self.on_item_activated_localiz_2)
         self.cmbLocaliz_2.currentIndexChanged.connect(self.on_index_changed2)
         self.spinBoxLenMin.editingFinished.connect(self.on_editing_finished_min)
