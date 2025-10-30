@@ -122,7 +122,7 @@ class ConfigInputDialog(QDialog):
 
         # === Поле вводу для атрибута ===
         self.attr_input = QLineEdit()
-        self.attr_input.setText('//*[@id="error_1_id_text_string"]')
+        # self.attr_input.setText('//*[@id="error_1_id_text_string"]')
         main_layout.addWidget(self.attr_input)
 
         # === Остаточна фіксація ===
@@ -159,14 +159,6 @@ class ConfigInputDialog(QDialog):
         btn_layout.addWidget(self.btnOK)
         btn_layout.addWidget(self.btnCnl)
         main_layout.addLayout(btn_layout)
-
-        # кнопки
-        # btn_layout = QHBoxLayout()
-        # self.btnOK = QPushButton("OK")
-        # self.btnCnl = QPushButton("Скасувати")
-        # btn_layout.addWidget(self.btnOK)
-        # btn_layout.addWidget(self.btnCnl)
-        # main_layout.addLayout(btn_layout)
 
         self.spin.valueChanged.connect(self.update_entries)
         self.btnOK.clicked.connect(self.accept)
@@ -933,6 +925,9 @@ def diff_char(bigger: str, smaller: str) -> str:
 class DynamicDialog(QDialog):
     def __init__(self, config, parent=None, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test=""):
         super().__init__(parent)
+        self.gb_focus_left_triggered = False  # флаг, вызывалось ли on_gb_focus_left
+        self._focus_processing = False  # <— добавляем внутренний флаг
+        self.current_groupbox = None
         self.setWindowTitle("Введення даних у тест    "+name_of_test)
         self.resize(640, 140)
         self.result = {}
@@ -1023,7 +1018,7 @@ class DynamicDialog(QDialog):
             # событие потери фокуса групбоксом
             gb_widget.focusLeft.connect(self.on_gb_focus_left)
             # подія отримання фокусу групбоксом
-            gb_widget.focusEntered.connect(self.on_gb_focus_entered)
+            gb_widget.focusEntered.connect(lambda: self.on_gb_focus_entered(gb_widget))
 
         # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()
@@ -1033,6 +1028,7 @@ class DynamicDialog(QDialog):
         self.btnOK = QPushButton("Введення")
         # Устанавливаем кнопку по умолчанию
         self.btnOK.setDefault(True)
+        self.btnOK.setAutoDefault(True)
         self.btnOK.setFont(font)
         self.btnCnl = QPushButton("Відміна")
         self.btnCnl.setFont(font)
@@ -1075,48 +1071,42 @@ class DynamicDialog(QDialog):
             self.previous_text = text
             return True
 
-    def on_gb_focus_entered(self):
-        gb = self.sender()
+    def on_gb_focus_entered(self, gb):
+        if gb is None:
+            gb = self.sender()  # если не передали явно, берём источник сигнала
+        if gb is None:
+            return
+        self.current_groupbox = gb
+        # gb = self.sender()
+        self.active_groupbox = gb
         self.previous_text = gb.cmb.currentText()
+        self.gb_focus_left_triggered = False
 
 
     # втрата фокусу групбоксом
-    def on_gb_focus_left(self):
-        gb = self.sender()
+    def on_gb_focus_left(self, gb=None):
+        if self._focus_processing:
+            return False  # предотвращаем повторный вызов
+        self._focus_processing = True
+        if gb is None:
+            gb = self.sender()  # если вызвано сигналом — возьмём sender
+        # gb = self.sender()
         global chars, pattern, len_min, len_max, rule_invalid, spec
         gr_t_title = gb.title()
         gr_t = gb.objectName()
-        # cur_txt = gb.cmb.currentText()
         # Якщо chars == ".", дозволяємо все
         if chars == ".":
             pattern = rf"^[{chars}]+$"
             self.previous_text = gb.cmb.currentText()
-            # self.previous_text = ''
+            self.gb_focus_left_triggered = True
+            self._focus_processing = False  # обязательно снять блокировку даже при ошибке
+            if self.current_groupbox == gb:
+                self.current_groupbox = None
             return True
 
         # Перевірка на відповідність pattern
         txt_err = ""
-        # if not bool(re.fullmatch(pattern, gb.cmb.currentText())):
-        #     if "no_lower" in rule_invalid[gr_t] and not any(c.islower() for c in gb.cmb.currentText()):
-        #         txt_err += "має містити принаймні одну маленьку літеру\n"
-        #     if "no_upper" in rule_invalid[gr_t] and not any(c.isupper() for c in gb.cmb.currentText()):
-        #         txt_err += "має містити принаймні одну велику літеру\n"
-        #     if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
-        #         txt_err += "має містити принаймні одну цифру\n"
-        #     if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped for c in gb.cmb.currentText()):
-        #         txt_err += f"має містити принаймні один спеціальний символ з {spec_escaped}\n"
-        #     if "no_email" in rule_invalid[gr_t]:
-        #         txt_err += "має бути формату email\n"
-        #     if "no_url" in rule_invalid[gr_t]:
-        #         txt_err += "має бути формату URL\n"
-        #     if f"len {len_min} {len_max}" in rule_invalid[gr_t] and (len_max < len(gb.cmb.currentText()) or len(gb.cmb.currentText()) < len_min):
-        #         txt_err += f"має мати від {len_min} до {len_max} символів включно\n"
-        #     if "probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') > -1:
-        #         txt_err += "не має бути з пробілами\n"
-        #     if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
-        #         txt_err += "має бути з пробілами\n"
-            # if "one_reg_log" in rule_invalid[gr_t]:
-            #     txt_err += "має бути з текстом у двох регістрах\n"
+        self.gb_focus_left_triggered = True
         for el_t in rule_invalid[gr_t]:
             sp_simv = has_text_special_chars(pattern)
             sp_sim1 = any(c in spec for c in gb.cmb.currentText())
@@ -1125,7 +1115,6 @@ class DynamicDialog(QDialog):
                 localiz = el_t[8:]
                 # сновная, определённая по символам, локализация (без цифр, спецсимволов и т.д.)
                 loc_text = detect_script(gb.cmb.currentText())
-                # if loc_text == "lat_Cyr":
                 result = "".join((c1 + c2) if c1 != c2 else "" for c1, c2 in zip_longest(localiz, loc_text, fillvalue=""))
                 if result[:1] == "_":
                     loc_text = localiz
@@ -1192,21 +1181,21 @@ class DynamicDialog(QDialog):
                     txt_err += "не має бути з пробілами\n"
                 if "no_probel" in rule_invalid[gr_t] and gb.cmb.currentText().find(' ') == -1:
                     txt_err += "має бути з пробілами\n"
-                # if not re.search(r"[^A-Za-zА-Яа-яЁёЇїІіЄєҐґ0-9\s]", pattern) and any(c in spec for c in gb.cmb.currentText()):
-                #     txt_err += "не має бути зі спецсимволами"
                 if not has_text_special_chars(pattern) and any(c in spec for c in gb.cmb.currentText()):
                     txt_err += "не має бути зі спецсимволами"
                 if not re.search(r"\d", pattern) and any(c.isdigit() for c in gb.cmb.currentText()):
-                    txt_err = "не мє бути з цифрами"
-                        # break
+                    txt_err = "не має бути з цифрами"
             if txt_err != "":
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
-                # gb.cmb.setFocus()
+                self._focus_processing = False  # обязательно снять блокировку даже при ошибке
                 return False
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
         chars == "."
         pattern = rf"^[{chars}]+$"
+        self._focus_processing = False  # обязательно снять блокировку даже при ошибке
+        if self.current_groupbox == gb:
+            self.current_groupbox = None
         return True
 
     # нажатие на кнопку Правила
@@ -1250,6 +1239,10 @@ class DynamicDialog(QDialog):
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
+        if not self.gb_focus_left_triggered:
+            # if not self.on_gb_focus_left():
+            if not self.on_gb_focus_left(self.current_groupbox):
+                return False
         global rule_invalid
         titles = []
         for name, wrapper in self.gb.items():
@@ -1302,10 +1295,32 @@ def get_user_input():
         app = QApplication(sys.argv)
         created_app = True
     input_dlg = ConfigInputDialog()
-    if input_dlg.exec() != QDialog.Accepted:
-        return None  # пользователь отменил ввод
 
+    # Заполняем отдельные поля
+    # input_dlg.attr_input.setText('//*[@id="error_1_id_text_string"]')
+    input_dlg.html_input.setText('button')
+    input_dlg.text_input.setText('Register')
+    input_dlg.radio_button.setChecked(False) #фіксація ввеедення кнопкою
+    input_dlg.radio_event.setChecked(True) #фіксація введення по події виходу з поля
+    input_dlg.radio_enter.setChecked(False) #фіксація введення клавішею Enter
+    # Задаём количество полей (вызовет update_entries и создаст line_edits)
+    input_dlg.spin.setValue(2)
+
+    # Теперь можно заполнять каждое поле напрямую через виджеты
+    titles = ['URL of page', 'Користувач', 'Пароль']
+    names = ['url_of_page', 'Username', 'Password']
+
+    for i, (title, name) in enumerate(zip(titles, names)):
+        t_edit, n_edit, chk = input_dlg.line_edits[i]
+        t_edit.setText(title)
+        n_edit.setText(name)
+        chk.setChecked(True)
+
+    # Запускаем диалог
+    if input_dlg.exec() != QDialog.Accepted:
+        return None
     config = input_dlg.get_config()
+
     dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
                       input_login_l=input_data['login_l'], input_password=input_data['password'],
                       input_email=input_data['email'], name_of_test="")
