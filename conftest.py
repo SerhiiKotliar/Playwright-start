@@ -18,7 +18,7 @@ from helper import debug
 #     data["_root"] = root
 #     return data
 #############################################################################
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def user_data():
 
     result, result_inv, result_tit_f, result_fields = get_user_input()  # открытие формы

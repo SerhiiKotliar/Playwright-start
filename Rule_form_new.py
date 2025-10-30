@@ -811,7 +811,7 @@ def entries_rules(log, required, fame, **kwargs):
     #     rule_invalid[fame].append("one_reg_log")
     if no_absent and not "absent" in rule_invalid[fame]:
         rule_invalid[fame].append("absent")
-    print(pattern)
+    # print(pattern)
     return pattern
 
 EXTRA_CYRILLIC = {
