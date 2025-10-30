@@ -1,6 +1,9 @@
 import allure
 import pytest
 from playwright.sync_api import expect
+
+# from Rule_form_new import lat_Cyr_up
+# from Rule_form_new import lat_Cyr_up, lat_Cyr_low
 # from Rule_form_new import report_about, report_bug_and_stop
 from conftest import page_open
 from helper import debug
@@ -16,7 +19,14 @@ from utils import  checking_for_errors
 fields = []
 valid_values = []
 invalid_values = {}
-
+Cyrillic = "АаБбВвГгДдЕеЄєЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯаяЁёЇїІіЄєҐґ"
+latin = "AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx"
+lowregcyr = "абвгдеёжзийлмнопрстуфхцчшщъыьэюяїієґ"
+upregcyr = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЇІЄҐ"
+lowreglat = "azeyuiopfdghjklqwrtscvbnmx"
+upreglat = "AZEYUIOPFDGHJKLQWRTSCVBNMX"
+lat_Cyr_up = "QWERTYUIOPЙЦУКЕНГШЩЗХЪЁЇІЄҐ"
+lat_Cyr_low = "qwertyuiopйцукенгшщзхъїієёґ"
 def fill_field_js(page, field_name, value):
     page.evaluate(
         """([field, val]) => {
@@ -65,17 +75,6 @@ def fill_if_exists(page: Page, field: str, value: str, timeout: int = 5000):
     Использует get_text_field(), ждёт видимости и делает fill() или type().
     """
     tb = get_text_field(page, field)
-    #
-    # try:
-    #     tb.wait_for(state="visible", timeout=timeout)
-    # except Exception:
-    #     print(f"⚠️ Поле {field} не стало видимым за {timeout/1000} сек, продолжаем")
-    #     print("DEBUG HTML:", tb.evaluate("el => el.outerHTML"))
-    #
-    # try:
-    #     tb.scroll_into_view_if_needed()
-    # except Exception:
-    #     print(f"⚠️ scroll_into_view_if_needed не сработал для {field}")
 
     try:
         tb.fill(value)
@@ -159,6 +158,9 @@ def invalid_val(user_data):
     # перебір по назвам полів
     for field in fields:
         ar_inv = []
+        add_str = ""
+        lmin = None
+        lmax = None
         # перебір по назвам полів для розбору типу невалідних даних зі списків
         for el in user_data[1][field]:
         # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
@@ -198,25 +200,64 @@ def invalid_val(user_data):
             elif el == "no_probel":
                 ar_inv.append((user_data[0][field].replace(" ", ""), "no_probel"))
             elif el == "Cyrillic":
-                ar_inv.append(("АЯаяЁёЇїІіЄєҐґ", "Cyrillic"))
+                if lmax is not None:
+                    add_str = Cyrillic[:lmax]
+                else:
+                    add_str = Cyrillic
+                ar_inv.append((add_str, "Cyrillic"))
             elif el == "latin":
-                ar_inv.append(("AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx", "latin"))
+                if lmax is not None:
+                    add_str = latin[:lmax]
+                else:
+                    add_str = latin
+                ar_inv.append((add_str, "latin"))
+                # ar_inv.append(("AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx", "latin"))
             elif el == "lowreglat":
-                ar_inv.append(("qwertyuiop", "lowreglat"))
+                if lmax is not None:
+                    add_str = lowreglat[:lmax]
+                else:
+                    add_str = lowreglat
+                ar_inv.append((add_str, "lowreglat"))
+                # ar_inv.append(("qwertyuiop", "lowreglat"))
             elif el == "upreglat":
-                ar_inv.append(("QWERTYUIOP", "upreglat"))
+                if lmax is not None:
+                    add_str = upreglat[:lmax]
+                else:
+                    add_str = upreglat
+                ar_inv.append((add_str, "upreglat"))
+                # ar_inv.append(("QWERTYUIOP", "upreglat"))
             elif el == "lowregcyr":
-                ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
+                if lmax is not None:
+                    add_str = lowregcyr[:lmax]
+                else:
+                    add_str = lowregcyr
+                ar_inv.append((add_str, "lowregcyr"))
+                # ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
             elif el == "upregcyr":
-                ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
+                if lmax is not None:
+                    add_str = upregcyr[:lmax]
+                else:
+                    add_str = upregcyr
+                ar_inv.append((add_str, "upregcyr"))
+                # ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
             # elif el == "lat_Cyr":
             #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
             # elif el == "lat_Cyr_1":
             #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
             elif el == "lat_Cyr_up":
-                ar_inv.append(("QWERTYUIOPЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "lat_Cyr_up"))
+                if lmax is not None:
+                    add_str = lat_Cyr_up[:lmax]
+                else:
+                    add_str = lat_Cyr_up
+                ar_inv.append((add_str, "lat_Cyr_up"))
+                # ar_inv.append(("QWERTYUIOPЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "lat_Cyr_up"))
             elif el == "lat_Cyr_low":
-                ar_inv.append(("qwertyuiopйцукенгшщзхъїієёґ", "lat_Cyr_low"))
+                if lmax is not None:
+                    add_str = lat_Cyr_low[:lmax]
+                else:
+                    add_str = lat_Cyr_low
+                ar_inv.append((add_str, "lat_Cyr_low"))
+                # ar_inv.append(("qwertyuiopйцукенгшщзхъїієёґ", "lat_Cyr_low"))
             # elif el == "lat_Cyr_up_1":
             #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
             # elif el == "lat_Cyr_low_1":
@@ -228,6 +269,18 @@ def invalid_val(user_data):
             # elif el == "one_reg_log":
             #     ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
             #     ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
+            elif el == "add_spec":
+                if lmax is not None:
+                    add_str = user_data[0][field][:lmax-1]
+                else:
+                    add_str = user_data[0][field][:-1]
+                ar_inv.append((add_str + "#", "add_spec"))
+            elif el == "add_digit":
+                if lmax is not None:
+                    add_str = user_data[0][field][:lmax-1]
+                else:
+                    add_str = user_data[0][field][:-1]
+                ar_inv.append((add_str + "5", "add_digit"))
             else:
                 ar_inv.append(("no_absent", "no_absent"))
         inval_el[field] =ar_inv

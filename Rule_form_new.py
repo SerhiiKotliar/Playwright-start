@@ -648,6 +648,10 @@ def entries_rules(log, required, fame, **kwargs):
         rule_invalid[fame].append("no_digit")
     if spec_escaped and spec_escaped_1:
         rule_invalid[fame].append("no_spec")
+    if has_text_special_chars(pattern):
+        rule_invalid[fame].append("add_spec")
+    if digits_str == "":
+        rule_invalid[fame].append("add_digit")
     # немає пробілів
     if is_probel and not no_absent:
         rule_invalid[fame].append("probel")
