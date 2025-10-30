@@ -9,9 +9,9 @@ from PySide6.QtWidgets import (
 import allure
 from pyside_dialog import MyDialog
 from Config_dialog import ConfigInputDialog
-from form_filling_fields import DynamikDialog
+from form_filling_fields import DynamicDialog
 from mycombo import QComboBox, WhichBinding
-from mygroupbox_dynamic import MyGroupBox
+# from mygroupbox_dynamic import MyGroupBox
 import sys
 import re, unicodedata
 from typing import Tuple, Set, Optional

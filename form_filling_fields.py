@@ -3,6 +3,11 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
     QComboBox, QCheckBox, QMessageBox, QRadioButton, QButtonGroup
 )
+from PySide6.QtGui import QFont
+from PySide6.QtCore import QLocale, Qt
+from mygroupbox_dynamic import MyGroupBox
+from Rule_form_new import rule_invalid
+
 
 # ---- Wrapper для удобного обращения ----
 class GroupBoxWrapper:
