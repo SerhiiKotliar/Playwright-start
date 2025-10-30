@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QFont
 from PySide6.QtCore import QLocale, Qt
 from mygroupbox_dynamic import MyGroupBox
-# from Rule_form_new import rule_invalid
 from pyside_dialog import MyDialog
 import re, unicodedata
 from typing import Tuple, Set, Optional
@@ -507,8 +506,6 @@ class DynamicDialog(QDialog):
         txt_err = ""
         self.gb_focus_left_triggered = True
         for el_t in rule_invalid[gr_t]:
-            # sp_simv = has_text_special_chars(pattern)
-            # sp_sim1 = any(c in spec for c in gb.cmb.currentText())
             if el_t[:7] == "localiz":
                 # локализация установленная, полная, с учётом всех символов и регистра
                 localiz = el_t[8:]
@@ -630,7 +627,6 @@ class DynamicDialog(QDialog):
         dlg.setModal(True)
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
-            # if not entries_rules(wrapper.cmb.currentText(), chck_stat, field_name, entries=cur_rules):
             if not entries_rules(combo.currentText(), chck_stat, field_name, entries=cur_rules):
                 self.reject()
         # wrapper.cmb.setFocus()
@@ -666,7 +662,6 @@ class DynamicDialog(QDialog):
                         self.result_fields[name] = wrapper.cmb.currentText()
                 else:
                     titles.append(wrapper.gb.title())
-        # self.result['fix_enter'] = self.
         if len(titles) > 0:
             QMessageBox.warning(self, f"Поля {titles}", "Обов'язкові дані не введені.")
             return False
@@ -676,13 +671,9 @@ class DynamicDialog(QDialog):
                 if el[:7] != "localiz":
                     val_new.append(el)
             self.result_invalid[key] = val_new
-        # self.result_invalid = rule_invalid
         self.accept()
 
     def on_cnl_clicked(self):
-        # gb = self.sender()
-        # if wrapper.cmb.hasFocus():
-        #     self.btnCnl.setFocus()
         self.reject()
 ########################################################################
 
@@ -692,12 +683,6 @@ def entries_rules(log, required, fame, **kwargs):
     entries = kwargs["entries"]
     # инициализация переменных
     local = ""
-    # latin = "[A-Za-z]"
-    # Cyrillic = "[А-Яа-яЁёЇїІіЄєҐґ]"
-    # upregcyr = "[А-ЯЁЇІЄҐ]"
-    # lowregcyr = "[а-яїієёґ]"
-    # upreglat = "[A-Z]"
-    # lowreglat = "[a-z]"
     both_reg = False
     digits_str = ""
     spec_escaped = ""

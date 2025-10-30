@@ -1,20 +1,11 @@
 
-# from PySide6.QtCore import QLocale, Qt
-# from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QApplication, QDialog, QSpinBox, QVBoxLayout, QHBoxLayout,
-    QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
-    QComboBox, QCheckBox, QMessageBox, QRadioButton, QButtonGroup
-)
+    QApplication, QDialog)
 import allure
-# from pyside_dialog import MyDialog
 from Config_dialog import ConfigInputDialog
 from form_filling_fields import DynamicDialog
-from mycombo import QComboBox, WhichBinding
-# from mygroupbox_dynamic import MyGroupBox
+from mycombo import WhichBinding
 import sys
-# import re, unicodedata
-# from typing import Tuple, Set, Optional
 from datetime import datetime
 import os
 import pytest

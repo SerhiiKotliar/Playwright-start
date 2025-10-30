@@ -24,62 +24,6 @@ lowreglat = "azeyuiopfdghjklqwrtscvbnmx"
 upreglat = "AZEYUIOPFDGHJKLQWRTSCVBNMX"
 lat_Cyr_up = "QWERTYUIOPЙЦУКЕНГШЩЗХЪЁЇІЄҐ"
 lat_Cyr_low = "qwertyuiopйцукенгшщзхъїієёґ"
-def fill_field_js(page, field_name, value):
-    page.evaluate(
-        """([field, val]) => {
-            const el = document.querySelector(`input[name="${field}"], textarea[name="${field}"]`);
-            if (el) {
-                el.value = val;
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }""",
-        [field_name, value]
-    )
-
-def press_enter_js(page, field_name):
-    page.evaluate(
-        """(field) => {
-            const el = document.querySelector(`input[name="${field}"], textarea[name="${field}"]`);
-            if (el) {
-                const eventInit = { key: 'Enter', code: 'Enter', bubbles: true };
-                el.dispatchEvent(new KeyboardEvent('keydown', eventInit));
-                el.dispatchEvent(new KeyboardEvent('keyup', eventInit));
-            }
-        }""",
-        field_name
-    )
-
-
-
-def get_text_field(page: Page, field: str):
-    """
-    Универсальный локатор для текстового поля или textarea.
-    Сначала пробует get_by_role, если не найдёт — fallback на CSS.
-    """
-    try:
-        # Сначала пытаемся по роли (работает, если есть label)
-        return page.get_by_role("textbox", name=field, exact=True)
-    except Exception:
-        # fallback: любой input или textarea с нужным name
-        return page.locator(f"input[name='{field}'], textarea[name='{field}']")
-
-
-
-def fill_if_exists(page: Page, field: str, value: str, timeout: int = 5000):
-    """
-    Надёжное заполнение текстового поля.
-    Использует get_text_field(), ждёт видимости и делает fill() или type().
-    """
-    tb = get_text_field(page, field)
-
-    try:
-        tb.fill(value)
-        # fill_field_js(page, field, value)
-    except Exception as e:
-        print(f"⚠️ fill() не сработал для {field}: {e}. Используем type()")
-        fill_field_js(page, field, value)
-    return tb
 
 
 URLMatcher = Union[str, Pattern[str], Callable[[str], bool]]
@@ -148,6 +92,8 @@ def valid_val(user_data):
     for field in fields:
         val_el.append(user_data[3][field])
     return val_el
+
+
 # список невалидных данных по полям
 def invalid_val(user_data):
     global fields
@@ -208,64 +154,42 @@ def invalid_val(user_data):
                 else:
                     add_str = latin
                 ar_inv.append((add_str, "latin"))
-                # ar_inv.append(("AaZzEeYyUuIiOoPpFfDdGgHhJjKkLlQqWwRrTtSsCcVvBbNnMmXx", "latin"))
             elif el == "lowreglat":
                 if lmax is not None:
                     add_str = lowreglat[:lmax]
                 else:
                     add_str = lowreglat
                 ar_inv.append((add_str, "lowreglat"))
-                # ar_inv.append(("qwertyuiop", "lowreglat"))
             elif el == "upreglat":
                 if lmax is not None:
                     add_str = upreglat[:lmax]
                 else:
                     add_str = upreglat
                 ar_inv.append((add_str, "upreglat"))
-                # ar_inv.append(("QWERTYUIOP", "upreglat"))
             elif el == "lowregcyr":
                 if lmax is not None:
                     add_str = lowregcyr[:lmax]
                 else:
                     add_str = lowregcyr
                 ar_inv.append((add_str, "lowregcyr"))
-                # ar_inv.append(("йцукенгшщзхъїієёґ", "lowregcyr"))
             elif el == "upregcyr":
                 if lmax is not None:
                     add_str = upregcyr[:lmax]
                 else:
                     add_str = upregcyr
                 ar_inv.append((add_str, "upregcyr"))
-                # ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            # elif el == "lat_Cyr":
-            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            # elif el == "lat_Cyr_1":
-            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
             elif el == "lat_Cyr_up":
                 if lmax is not None:
                     add_str = lat_Cyr_up[:lmax]
                 else:
                     add_str = lat_Cyr_up
                 ar_inv.append((add_str, "lat_Cyr_up"))
-                # ar_inv.append(("QWERTYUIOPЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "lat_Cyr_up"))
             elif el == "lat_Cyr_low":
                 if lmax is not None:
                     add_str = lat_Cyr_low[:lmax]
                 else:
                     add_str = lat_Cyr_low
                 ar_inv.append((add_str, "lat_Cyr_low"))
-                # ar_inv.append(("qwertyuiopйцукенгшщзхъїієёґ", "lat_Cyr_low"))
-            # elif el == "lat_Cyr_up_1":
-            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            # elif el == "lat_Cyr_low_1":
-            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            # elif el == "Cyrillic_1":
-            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            # elif el == "latin_1":
-            #     ar_inv.append(("ЙЦУКЕНГШЩЗХЪЁЇІЄҐ", "upregcyr"))
-            # elif el == "one_reg_log":
-            #     ar_inv.append((user_data[0][field].upper(), "one_reg_log_upper"))
-            #     ar_inv.append((user_data[0][field].lower(), "one_reg_log_lower"))
             elif el == "add_spec":
                 if lmax is not None:
                     add_str = user_data[0][field][:lmax-1]
@@ -282,26 +206,6 @@ def invalid_val(user_data):
                 ar_inv.append(("no_absent", "no_absent"))
         inval_el[field] =ar_inv
     return inval_el
-
-#
-# @allure.title("Позитивні та негативні тести: поля відображаються")
-# @pytest.mark.parametrize("scenario, expected_result", [
-#     ("valid", "PASS"),
-#     ("no_valid", "FAIL"),
-#     #("hidden", "FAIL"),
-# ])
-# # список кортежей из полей и списков словарей с невалидными и валидными данными
-# def generate_negative_cases():
-#     """Собираем все наборы: одно поле невалидное, остальные валидные"""
-#     global fields
-#     test_cases = []
-#     for i, field in enumerate(fields):
-#         # if field != 'fix_enter' and field != "check_attr" and field != 'el_fix_after_fill' and field != 'txt_el_fix_after_fill':
-#         for inv in invalid_values[field]:
-#             case = valid_values.copy()
-#             case[i] = inv
-#             test_cases.append((field, dict(zip(fields, case))))
-#     return test_cases
 
 
 @pytest.mark.skip(reason="Тест вимкнено")
