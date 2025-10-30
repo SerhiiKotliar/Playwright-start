@@ -31,22 +31,22 @@ rule_invalid = {}
 # url_invalid = []
 # email_invalid = []
 # password_invalid = []
-Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
+Cyrillic = "[А-Яа-яЁёЇїІіЄєҐґ]"
 Cyrillic_1 = "(?=.*[А-ЯЁЇІЄҐа-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]"
 Cyrillic_1_1 = "(?=.*[А-ЯЁЇІЄҐ])(?=.*[а-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]"
-latin = "A-Za-z"
+latin = "[A-Za-z]"
 latin_1 = "(?=.*[A-Za-z])[A-Za-z]"
 latin_1_1 = "(?=.*[A-Z])(?=.*[a-z])[A-Za-z]"
 lat_Cyr = f"[{latin}{Cyrillic}]"
 lat_Cyr_1 = "(?=.*[A-ZА-ЯЁЇІЄҐa-zа-яїієёґ])[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]"
 lat_Cyr_1_1 = "(?=.*[A-ZА-ЯЁЇІЄҐ])(?=.*[a-zа-яїієёґ])[A-Za-zА-Яа-яЁёЇїІіЄєҐґ]"
-upregcyr = "А-ЯЁЇІЄҐ"
+upregcyr = "[А-ЯЁЇІЄҐ]"
 upregcyr_1 = f"(?=.*{upregcyr})[{upregcyr}]"
-lowregcyr = "а-яїієёґ"
+lowregcyr = "[а-яїієёґ]"
 lowregcyr_1 = f"(?=.*{lowregcyr})[{lowregcyr}]"
-upreglat = "A-Z"
+upreglat = "[A-Z]"
 upreglat_1 = "(?=.*[A-Z])[A-Z]"
-lowreglat = "a-z"
+lowreglat = "[a-z]"
 lowreglat_1 = "(?=.*[a-z])[a-z]"
 lat_Cyr_up = f"[{upreglat}{upregcyr}]"
 lat_Cyr_up_1 = f"(?=.*[A-ZА-ЯЁЇІЄҐ])[{upreglat}{upregcyr}]"
@@ -60,6 +60,7 @@ spec_escaped = ""
 spec_escaped_1 = False
 no_absent = False
 spec = "!@#$%^&*()_=+[]{};:,.<>/?\\|-"
+# spec = "@#_=!$%^&§~`№<>;:'\",./?|-"
 digits_str = ""
 digits_str_1 = False
 # check_on = False
@@ -241,53 +242,131 @@ class GroupBoxWrapper:
 
 def has_text_special_chars(pattern: str) -> bool:
     """
-    Возвращает True, если регулярное выражение допускает спецсимволы
-    (небуквенно-цифровые) в тексте, который оно проверяет.
+    Возвращает True, если паттерн разрешает спецсимволы (не буквы и цифры).
     """
 
-    # текстовые спецсимволы, которые мы считаем “спецсимволами”
-    specials = set("@#_=!$%^&§~`№<>;:'\",./?|-")
-
-    try:
-        parsed = sre_parse.parse(pattern)
-    except re.error:
-        # некорректный regex — считаем, что спецсимволы не разрешены
-        return False
-
-    def _check(subpattern):
-        for tok, val in subpattern:
-            if tok == sre_parse.IN:
-                # класс символов [...]
-                for t, v in val:
-                    if t == sre_parse.LITERAL and chr(v) in specials:
-                        return True
-                    elif t == sre_parse.NOT_LITERAL:
-                        return True  # отрицательный класс
-                    elif t == sre_parse.RANGE:
-                        # диапазон: если он выходит за буквы и цифры
-                        start, end = chr(v[0]), chr(v[1])
-                        if not (start.isalnum() and end.isalnum()):
-                            return True
-            elif tok == sre_parse.ANY:
-                # точка . — может означать спецсимвол
+    # Сначала проверяем lookahead/lookbehind на наличие \W или специальных символов
+    lookahead_matches = re.finditer(r"\(\?[=!<](.*?)\)", pattern)
+    for match in lookahead_matches:
+        lookahead_content = match.group(1)
+        # Проверяем на \W в lookahead
+        if "\\W" in lookahead_content:
+            return True
+        # Проверяем на специальные символы в классах внутри lookahead
+        lookahead_class_matches = re.finditer(r"\[(.*?)\]", lookahead_content)
+        for class_match in lookahead_class_matches:
+            inside = class_match.group(1)
+            if contains_special_char_in_class(inside):
                 return True
-            elif tok == sre_parse.CATEGORY:
-                # категории: \W — небуквенно-цифровой символ
-                if val == sre_parse.CATEGORY_NOT_WORD:
+
+    # Удаляем lookahead/lookbehind утверждения для дальнейшего анализа
+    pattern_clean = re.sub(r"\(\?[=!<].*?\)", "", pattern)
+
+    # Проверка на \W или . вне классов
+    in_class = False
+    escaped = False
+    i = 0
+    while i < len(pattern_clean):
+        ch = pattern_clean[i]
+
+        if not escaped:
+            if ch == "\\":
+                escaped = True
+                # Проверяем \W (но не \w, \d, \s и т.д.)
+                if i + 1 < len(pattern_clean) and pattern_clean[i + 1] == "W":
                     return True
-            elif tok == sre_parse.SUBPATTERN:
-                # рекурсивно проверяем подпаттерн
-                if _check(val[1]):
-                    return True
-            elif tok == sre_parse.BRANCH:
-                # ветвление: проверяем все альтернативы
-                for branch in val[1]:
-                    if _check(branch):
+            elif ch == "[":
+                in_class = True
+            elif ch == "]":
+                in_class = False
+            elif ch == "." and not in_class:
+                return True
+        else:
+            escaped = False
+
+        i += 1
+
+    # Проверка классов символов [ ... ]
+    for m in re.finditer(r"\[(.*?)\]", pattern_clean):
+        inside = m.group(1)
+
+        # Обрабатываем escape-последовательности внутри класса
+        inside_clean = ""
+        j = 0
+        while j < len(inside):
+            c = inside[j]
+            if c == "\\":
+                if j + 1 < len(inside):
+                    next_char = inside[j + 1]
+                    # Если это \W - точно разрешает спецсимволы
+                    if next_char == "W":
                         return True
-        return False
+                    # Если это \w, \d, \s - пропускаем (это буквы/цифры/пробелы)
+                    elif next_char in "wds":
+                        inside_clean += next_char
+                        j += 1
+                    else:
+                        # Другие escape-последовательности могут быть спецсимволами
+                        return True
+                j += 1
+            else:
+                inside_clean += c
+                j += 1
 
-    return _check(parsed)
+        # отрицательный класс [^...]
+        if inside_clean.startswith("^"):
+            excluded = inside_clean[1:]
+            # Если исключаются ТОЛЬКО буквы и цифры (и возможно диапазоны между ними),
+            # то разрешаются спецсимволы
+            if all_characters_are_alnum(excluded):
+                return True
+        # положительный класс [ ... ]
+        else:
+            # Если есть хотя бы один явный не-буквенно-цифровой символ
+            if contains_special_char_in_class(inside_clean):
+                return True
 
+    return False
+
+
+def all_characters_are_alnum(chars: str) -> bool:
+    """Проверяет, содержат ли символы только буквы, цифры и их диапазоны."""
+    i = 0
+    while i < len(chars):
+        if chars[i] == '-':
+            if i > 0 and i < len(chars) - 1:
+                # Проверяем диапазон
+                start = chars[i - 1]
+                end = chars[i + 1]
+                if not (start.isalnum() and end.isalnum() and ord(start) < ord(end)):
+                    return False
+                i += 2
+            else:
+                return False
+        elif not chars[i].isalnum():
+            return False
+        else:
+            i += 1
+    return True
+
+
+def contains_special_char_in_class(chars: str) -> bool:
+    """Проверяет, содержит ли строка специальные символы в классе символов."""
+    i = 0
+    while i < len(chars):
+        if chars[i] == '-':
+            if i > 0 and i < len(chars) - 1:
+                # Это диапазон, пропускаем
+                i += 2
+            else:
+                # Одиночный '-' - это специальный символ
+                return True
+        elif not chars[i].isalnum() and chars[i] not in '^':
+            # Найден специальный символ (кроме ^ в начале)
+            return True
+        else:
+            i += 1
+    return False
 
 def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
     # додаємо повідомлення у Allure
@@ -424,12 +503,12 @@ def entries_rules(log, required, fame, **kwargs):
     entries = kwargs["entries"]
     # инициализация переменных
     local = ""
-    latin = "A-Za-z"
-    Cyrillic = "А-Яа-яЁёЇїІіЄєҐґ"
-    upregcyr = "А-ЯЁЇІЄҐ"
-    lowregcyr = "а-яїієёґ"
-    upreglat = "A-Z"
-    lowreglat = "a-z"
+    latin = "[A-Za-z]"
+    Cyrillic = "[А-Яа-яЁёЇїІіЄєҐґ]"
+    upregcyr = "[А-ЯЁЇІЄҐ]"
+    lowregcyr = "[а-яїієёґ]"
+    upreglat = "[A-Z]"
+    lowreglat = "[a-z]"
     both_reg = False
     digits_str = ""
     spec_escaped = ""
@@ -441,9 +520,10 @@ def entries_rules(log, required, fame, **kwargs):
     url = False
     up = False
     low = False
-    register_at_least_one = False
-    spec_at_least_one = False
-    localiz_at_least_one = False
+    register_at_least_one = entries['register_at_least_one']
+    spec_at_least_one = entries['spec_at_least_one']
+    localiz_at_least_one = entries['localiz_at_least_one']
+    cyfry_at_least_one = entries['cyfry_at_least_one']
 
     for key, value in entries.items():
         if key == 'register':
@@ -455,10 +535,10 @@ def entries_rules(log, required, fame, **kwargs):
                 any_reg = True
             elif value == "обидва":
                 both_reg = True
-        elif key == "register_at_least_one":
-            register_at_least_one = value
-        elif key == "localiz_at_least_one":
-            localiz_at_least_one = value
+        # elif key == "register_at_least_one":
+        #     register_at_least_one = value
+        # elif key == "localiz_at_least_one":
+        #     localiz_at_least_one = value
         elif key == 'localiz' and value:
             if value == 'латиниця':
                 if up:
@@ -527,17 +607,20 @@ def entries_rules(log, required, fame, **kwargs):
         #     else:
         #         local = lat_Cyr_1
         elif key == "cyfry" and value:
-            digits_str = "0-9"
-        elif key == "cyfry_at_least_one" and value:
-            digits_str = f"(?=.*\d)[{digits_str}]"
-            digits_str_1 = True
+            digits_str = "[0-9]"
+            if cyfry_at_least_one:
+                digits_str = f"(?=.*\d){digits_str}"
+                digits_str_1 = True
+        # elif key == "cyfry_at_least_one" and value:
+        #     digits_str = f"(?=.*\d){digits_str}"
+        #     digits_str_1 = True
         elif key == "spec" and value:
             if isinstance(value, str):
                 spec_escaped = "".join(re.escape(ch) for ch in value)
             else:
                 spec_escaped = "".join(re.escape(ch) for ch in spec)
-        elif key == "spec_at_least_one":
-            spec_at_least_one = value
+        # elif key == "spec_at_least_one":
+        #     spec_at_least_one = value
         elif key == "len_min":
             len_min = value
         elif key == "len_max":
@@ -555,11 +638,11 @@ def entries_rules(log, required, fame, **kwargs):
             is_probel = value
     if email:
         # chars = "a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-."
-        chars = "a-zA-Z0-9_.+-@"
+        chars = "[a-zA-Z0-9_.+-@]"
     elif url:
         # chars = "http?://[^\s/$.?#].[^\s"
         # chars = "a-zA-Z0-9\-_.~:/?#\[\]@!$&'()*+,;=%"
-        chars = "a-zA-Z0-9_.~:/?#@!$&'()*+,;=%-"
+        chars = "[a-zA-Z0-9_.~:/?#@!$&'()*+,;=%-]"
     elif no_absent:
         chars = "."
     else:
@@ -573,8 +656,10 @@ def entries_rules(log, required, fame, **kwargs):
         #     parts.append(' ')
         if spec_escaped:
             if spec_at_least_one:
-                spec_escaped = f"(?=.*[{spec_escaped}])"
+                spec_escaped = f"(?=.*[{spec_escaped}])[{spec_escaped}]"
                 spec_escaped_1 = True
+            else:
+                spec_escaped = f"[{spec_escaped}]"
             parts.append(spec_escaped)
         chars = "".join(parts) or "." # если ничего не выбрано — разрешаем всё
     # є пробіли
@@ -602,19 +687,19 @@ def entries_rules(log, required, fame, **kwargs):
             if "(?=." in chars:
                 pattern = rf"^{chars}+$"
             else:
-                pattern = rf"^[{chars}]+$"
+                pattern = rf"^{chars}+$"
         else:
             if len_max is not None:
                 if "(?=." in chars:
                     pattern = rf"^{chars}{{{len_min},{len_max}}}$"
                 else:
                     # набір символів в межах довжини строки без пробілів
-                    pattern = rf"^[{chars}]{{{len_min},{len_max}}}$"
+                    pattern = rf"^{chars}{{{len_min},{len_max}}}$"
             else:
                 if "(?=." in chars:
                     pattern = rf"^{chars}{{{len_min}}}$"
                 else:
-                    pattern = rf"^[{chars}]{{{len_min}}}$"
+                    pattern = rf"^{chars}{{{len_min}}}$"
                 # # набір символів в межах довжини строки без пробілів
                 # pattern = rf"^[{chars}]{{{len_min}}}$"
 
@@ -726,6 +811,7 @@ def entries_rules(log, required, fame, **kwargs):
     #     rule_invalid[fame].append("one_reg_log")
     if no_absent and not "absent" in rule_invalid[fame]:
         rule_invalid[fame].append("absent")
+    print(pattern)
     return pattern
 
 EXTRA_CYRILLIC = {
