@@ -11,14 +11,14 @@ class MyDialog(QDialog, Ui_Dialog):
         self.setupUi(self)   # створює інтерфейс
         # окно поверх всех
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-
+        self.setWindowTitle('Правило створення строк для поля  ')
         # модальный режим (блокирует остальные окна приложения)
         self.setModal(True)
 
         # кнопки
         self.btnOk.clicked.connect(self.on_ok)
         self.btnOk.setDefault(True)
-        self.btnOk.setAutoDefault(True)
+        self.btnOk.setAutoDefault()
         self.btnCnl.clicked.connect(self.reject)
 
         # --- нове: вмикаємо/вимикаємо tbSpec по чекбоксу ---
@@ -157,6 +157,7 @@ class MyDialog(QDialog, Ui_Dialog):
             "cyfry_at_least_one": cyfry_one,
             "spec": spec,
             "spec_at_least_one": spec_one,
+            "tb_spec": self.tbSpec.text(),
             "probel": probel,
             "len_min": len_min,
             "len_max": len_max,

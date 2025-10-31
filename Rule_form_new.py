@@ -107,6 +107,38 @@ def make_input_data(file_name):
 # файл у якому перелічені вхідні дані
 input_data = make_input_data("file_input_data.txt")
 
+
+def make_defaul_data(file_name):
+    # Словарь для хранения данных
+    data = {
+        "home_page": [],
+        "count_fields": [],
+        "titles_fields": [],
+        "names_fields": [],
+        "attr_err": [],
+        "html_el_t": [],
+        "txt_el_t": []
+    }
+    current_section = None
+
+    with open(file_name, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()  # Убираем пробелы и переносы строк
+            if not line:  # Пропускаем пустые строки
+                continue
+            if line.startswith("[") and line.endswith("]"):
+                # Определяем текущую секцию
+                section = line[1:-1].lower()
+                if section in data:
+                    current_section = section
+                else:
+                    current_section = None
+            elif current_section:
+                # Добавляем строки в соответствующий список
+                data[current_section].append(line)
+    return data
+
+
 # def diff_char(bigger: str, smaller: str) -> str:
 #     # ищем первую позицию, где строки расходятся
 #     for i, (c1, c2) in enumerate(zip(bigger, smaller)):
@@ -146,14 +178,16 @@ def get_user_input():
         n_edit.setText(name)
         chk.setChecked(True)
 
-    # Запускаем диалог
+    # Запускаем диалог конфигурации
     if input_dlg.exec() != QDialog.Accepted:
         return None
+    # dic = input_dlg.result
     config = input_dlg.get_config()
 
     dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
                       input_login_l=input_data['login_l'], input_password=input_data['password'],
                       input_email=input_data['email'], name_of_test="")
+    # запускаємо діалог введення даних у поля
     if dlg.exec() == QDialog.Accepted:
         if created_app:
             app.quit()

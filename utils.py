@@ -1,4 +1,4 @@
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Page, TimeoutError as AssertionError
 
 def checking_for_errors(page_open: Page, tag: str):
     # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
@@ -9,6 +9,6 @@ def checking_for_errors(page_open: Page, tag: str):
         if locator.count() > 0 and locator.is_visible():
             text_err = locator.inner_text()
             return locator, text_err
-    except PlaywrightTimeoutError:
+    except AssertionError:
             # Элемент не появился — просто пропускаем
         return None

@@ -303,8 +303,8 @@ def contains_special_char_in_class(chars: str) -> bool:
 
 
 
-
-# ---- Wrapper для удобного обращения ----
+##########################################################################################################
+# Wrapper для удобного обращения с групбоксом
 class GroupBoxWrapper:
     def __init__(self, gb, cmb, chkb, btn):
         self.gb = gb
@@ -323,12 +323,13 @@ class GroupBoxWrapper:
 
 # ---- Динамическая форма заполнения полей----
 class DynamicDialog(QDialog):
-    def __init__(self, config, parent=None, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test=""):
+    def __init__(self, config, parent=None, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test="", **def_settings):
+        self.entries_def = def_settings
         super().__init__(parent)
         self.gb_focus_left_triggered = False  # флаг, вызывалось ли on_gb_focus_left
         self._focus_processing = False  # <— добавляем внутренний флаг
         self.current_groupbox = None
-        self.setWindowTitle("Введення даних у тест    "+name_of_test)
+        self.setWindowTitle("Введення даних у тест для поля   ")
         self.resize(640, 140)
         self.result = {}
         self.result_invalid = {}
@@ -597,11 +598,15 @@ class DynamicDialog(QDialog):
     # нажатие на кнопку Правила
     def on_rules_clicked(self, combo, field_name):
         global rule_invalid
+        title_str = ""
         for name, wrapper in self.gb.items():
             # wrapper = GroupBoxWrapper()
-            chck_stat = wrapper.chkb.isChecked()
+            # chck_stat = wrapper.chkb.isChecked()
             if wrapper.cmb is combo:
                 wrapper.cmb.setEditable(True)  # текущий делаем редактируемым
+                title_str = wrapper.gb.title()
+                self.setWindowTitle('')
+                self.setWindowTitle("Правила створення строк для поля  " +title_str)
                 # combo.setEditable(True)
                 wrapper.gb.setStyleSheet("background-color: rgb(255, 255, 200);")  # подсветка
             else:
@@ -625,9 +630,27 @@ class DynamicDialog(QDialog):
 
         dlg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         dlg.setModal(True)
+        if self.entries_def is not None:
+            dlg.chkbLocaliz_at_least_one = self.entries_def['chk_localiz_1']
+            dlg.chkbRegistr_at_least_one = self.entries_def['chk_register_1']
+            dlg.chkbCyfry_at_least_one = self.entries_def['chk_cyfry_1']
+            dlg.chkbSpecS_at_least_one = self.entries_def['chk_spec_1']
+            dlg.chkbCyfry = self.entries_def['chk_cyfry']
+            dlg.chkbSpecs = self.entries_def['chk_spec']
+            dlg.chkbEmail = self.entries_def['chk_email']
+            dlg.chkbUrl = self.entries_def['chk_url']
+            dlg.chkbProbel = self.entries_def['chk_space']
+            dlg.chkbNo_absent = self.entries_def['chk_no_absent']
+            dlg.tbSpec.setText(self.entries_def['tb_spec'])
+            dlg.cmbLocaliz.currentText(self.entries_def['cmb_localiz'])
+            dlg.cmbLocaliz_2.currentText(self.entries_def['cmb_register'])
+            dlg.spinBoxLenMin.setValue(self.entries_def['n_min'])
+            dlg.spinBoxLenMax.setValue(self.entries_def['n_max'])
+        dlg.setWindowTitle(dlg.windowTitle()+title_str)
+        # запуск діалогу встановлення правил формування даних, що вводяться у поля
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
-            if not entries_rules(combo.currentText(), chck_stat, field_name, entries=cur_rules):
+            if not entries_rules(combo.currentText(), field_name, entries=cur_rules):
                 self.reject()
         # wrapper.cmb.setFocus()
         combo.setFocus()
@@ -677,7 +700,7 @@ class DynamicDialog(QDialog):
         self.reject()
 ########################################################################
 
-def entries_rules(log, required, fame, **kwargs):
+def entries_rules(log, fame, **kwargs):
     global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat, lat_Cyr_1, latin_1, Cyrillic_1, lat_Cyr_up, lat_Cyr_low, lat_Cyr_1, lat_Cyr, spec, digits_str_1, digits_str, spec_escaped, spec_escaped_1
 
     entries = kwargs["entries"]

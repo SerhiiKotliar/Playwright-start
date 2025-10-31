@@ -3,6 +3,8 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
     QComboBox, QCheckBox, QMessageBox, QRadioButton, QButtonGroup
 )
+# from PySide6.QtCore import QTimer
+
 
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
@@ -10,6 +12,11 @@ class ConfigInputDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Конфігурація перевірки полів")
         self.resize(400, 200)
+
+
+        self.config_data = []
+        self.line_edits = []  # Инициализируем здесь
+
 
         main_layout = QVBoxLayout(self)
 
@@ -93,16 +100,28 @@ class ConfigInputDialog(QDialog):
         self.btnOK = QPushButton("OK")
         # Устанавливаем кнопку по умолчанию
         self.btnOK.setDefault(True)
+        self.btnOK.setAutoDefault(True)
         self.btnCnl = QPushButton("Скасувати")
         btn_layout.addWidget(self.btnOK)
         btn_layout.addWidget(self.btnCnl)
         main_layout.addLayout(btn_layout)
 
         self.spin.valueChanged.connect(self.update_entries)
-        self.btnOK.clicked.connect(self.accept)
+        # self.btnOK.clicked.connect(self.accept)
+        self.btnOK.clicked.connect(self.on_ok_clicked)
         self.btnCnl.clicked.connect(self.reject)
+        # self.btnOK.pressed.connect(self.accept)
 
         self.update_entries()
+
+
+    def on_ok_clicked(self):
+        """Обработчик нажатия кнопки OK"""
+        # Блокируем сигналы перед сбором данных
+        self.spin.blockSignals(True)
+        self.config_data = self._collect_config()
+        self.spin.blockSignals(False)
+        self.accept()
 
     def update_entries(self):
         # очистка старых виджетов
@@ -110,7 +129,8 @@ class ConfigInputDialog(QDialog):
             widget = self.entries_layout.itemAt(i).widget()
             if widget:
                 widget.deleteLater()
-
+        # Временно отключаем сигнал, чтобы избежать рекурсии
+        self.spin.blockSignals(True)
         self.line_edits = []
         for i in range(self.spin.value()+1):
             container = QWidget()
@@ -136,12 +156,16 @@ class ConfigInputDialog(QDialog):
                 required_chk.setChecked(True)
             h_layout.addWidget(required_chk)
 
-
-
             self.entries_layout.addWidget(container)
             self.line_edits.append((title_edit, name_edit, required_chk))
+        # Включаем сигнал обратно
+        self.spin.blockSignals(False)
 
-    def get_config(self):
+    def _collect_config(self):
+        """Собирает конфигурацию из виджетов"""
+        if not self.line_edits:
+            return []
+
         return [
             {
                 "title": t.text(),
@@ -150,4 +174,24 @@ class ConfigInputDialog(QDialog):
             }
             for t, n, c in self.line_edits
         ]
+
+    def get_config(self):
+        """Возвращает сохраненную конфигурацию"""
+        return self.config_data
+
+
+
+    # def get_config(self):
+    #     """Возвращает конфигурацию полей"""
+    #     # if not hasattr(self, 'line_edits') or not self.line_edits:
+    #     #     return []
+    #
+    #     return [
+    #         {
+    #             "title": t.text(),
+    #             "name": n.text(),
+    #             "required": c.isChecked()
+    #         }
+    #         for t, n, c in self.line_edits
+    #     ]
 ##################################################################################################################

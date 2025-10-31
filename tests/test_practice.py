@@ -208,6 +208,37 @@ def invalid_val(user_data):
     return inval_el
 
 
+def check_er(page, n_field, val_er, attr_er):
+    # функція перевірки появи alert про помилку
+    check_m = fail_on_alert(page, "error", 2000)
+    if check_m is None:
+        # перевірка на появу повідомлень про помилки після введення даних у поле
+        # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
+        # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+        if attr_er != '':
+            # відомі атрибути повідомлення про помилку
+            check_m = checking_for_errors(page, attr_er)
+        else:
+            # невідомі атрибути, але відома частина тексту повідомлення
+            loc_er = page.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
+            if loc_er.count() > 0:
+                expect(loc_er).to_be_visible(timeout=1000)
+                check_m = "Повідомлення про помилку", loc_er.inner_text()
+
+    if check_m is not None:
+        safe_field = re.sub(r'[\\/*?:"<>| ]', "", n_field)
+        text_err = check_m[1]
+        now = datetime.now()
+        screenshot = page.screenshot(type='png',
+                                          path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+        debug(
+            f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+            "Скрін сторінки", screenshot)
+        raise AssertionError(
+            f"З'явилось повідомлення {text_err} про невалідний формат для поля '{n_field}' при введенні валідних даних: {val_er}")
+        # Элемент не появился — просто пропускаем
+
+
 @pytest.mark.skip(reason="Тест вимкнено")
 def test_collection_interactive_elements(page_open):
     import json
@@ -279,7 +310,7 @@ def test_positive_form(page_open, user_data):
     print("\nПозитивний тест: усі поля валідні", "Початок позитивного тесту\n")
     ##########################################################################
     try:
-        with allure.step('Перехід на головну сторінку сайту'):
+        with allure.step('Перехід з головної сторінки сайту на цільову'):
             text_err = ""
             ##########################################################################
             # функція переходу до сторінки з полями, що треба заповнити (page_open)
@@ -303,32 +334,8 @@ def test_positive_form(page_open, user_data):
                     tb.press("Enter")
                     debug(f"Зафіксоване введення даних {val} клавішею Enter", f"{field}")
                 ######################################################################
-                # функція перевірки появи alert про помилку
-                check_m = fail_on_alert(page_open, "error", 2000)
-                if check_m is None:
-                # перевірка на появу повідомлень про помилки після введення даних у поле
-                # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
-                # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                    if user_data[0]["check_attr"] != '':
-                        # відомі атрибути повідомлення про помилку
-                        check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-                    else:
-                        # невідомі атрибути, але відома частина тексту повідомлення
-                        loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-                        if loc_er.count() > 0:
-                            expect(loc_er).to_be_visible(timeout=1000)
-                            check_m = "Повідомлення про помилку", loc_er.inner_text()
-
-                if check_m is not None:
-                    text_err = check_m[1]
-                    now = datetime.now()
-                    screenshot = page_open.screenshot(type='png',
-                                         path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                    debug(f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                        "Скрін сторінки", screenshot )
-                    raise AssertionError(
-                        f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні валідних даних: {value}")
-                        # Элемент не появился — просто пропускаем
+                # функція перевірки появи alert та інших повідомлень про помилку
+                check_er(page_open, field, value, user_data[0]["check_attr"])
             ###################################################################################
             # функція можливих дій після валідного заповнення усих полів
             # у разі відсутності елемента фіксації валідного введення
@@ -337,55 +344,14 @@ def test_positive_form(page_open, user_data):
             ####################################################################################
         with allure.step("Дії після заповнення полів валідними  даними"):
             # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-            el_t = user_data[0]['el_fix_after_fill']
-            if el_t != '':
-                if not after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill']):
-                    loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-                    if loc_er.count() > 0:
-                        expect(loc_er).to_be_visible(timeout=1000)
-                        debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
-                        raise AssertionError(
-                            f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
-                    else:
-                        debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-                        now = datetime.now()
-                        screenshot = page_open.screenshot(type='png',
-                                                          path=f'screenshots/question_positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                        debug(
-                            f'Скриншот останньої сторінки після проходження негативного тесту з невідомих причин question_positive_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                            "Скрін сторінки", screenshot)
-                        print('\n')
-                        raise Exception(
-                            "З невідомих причин не відкрилась сторінка входу у профіль користувача")
-                    # else:
-                    #     raise AssertionError(
-                    #         f"З невідомих причин не відкрилась сторінка після кліку на кнопці {txt}")
-                else:
-                    loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
-                if loc_txt_reg.count() > 0:
-                    expect(loc_txt_reg).to_be_visible()
-                    debug("Підтверджено привітання користувача", "Вхід у профіль")
-                else:
-                    debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-                    raise AssertionError(
-                        f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
-                # Скриншот страницы
-                now = datetime.now()
-                screenshot = page_open.screenshot()
-                page_open.screenshot(type='png',
-                                     path=f'screenshots/positiv_reestr_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                debug(
-                    f'Скриншот сторінки реєстрації після заповнення полів positiv_reestr_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                    "Скрін сторінки", screenshot)
-                #########################################################################
-                # функція переходу до головної сторінки після реєстрації
-                exit_to_homepage = out_from_register(page_open)
-                ############################################################################
-                if exit_to_homepage:
-                    print('\n')
-                    debug("Підтверджено перехід на головну сторінку після реєстрації", "Головна сторінка")
-                else:
-                    debug(f"Перехід на головну сторінку відхилено з невідомих причин", "Головна сторінка")
+            after_fill_fields(page_open, el_t, txt, field)
+            #########################################################################
+            # функція переходу до головної сторінки після реєстрації
+            if out_from_register(page_open):
+                print('\n')
+                debug("Підтверджено перехід на головну сторінку після реєстрації", "Головна сторінка")
+            else:
+                debug(f"Перехід на головну сторінку відхилено з невідомих причин", "Головна сторінка")
         ##################################################################################
         print('\n')
         debug("Позитивні тести пройдено успішно", "PASSED")
@@ -493,32 +459,8 @@ def test_positive_form_login(page_open, user_data):
                     tb.press("Enter")
                     debug(f"Зафіксоване введення даних {val} клавішею Enter", f"{field}")
                 ######################################################################
-                # функція перевірки появи alert про помилку
-                check_m = fail_on_alert(page_open, "error", 2000)
-                if check_m is None:
-                # перевірка на появу повідомлень про помилки після введення даних у поле
-                # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
-                # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                    if user_data[0]["check_attr"] != '':
-                        # відомі атрибути повідомлення про помилку
-                        check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-                    else:
-                        # невідомі атрибути, але відома частина тексту повідомлення
-                        loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-                        if loc_er.count() > 0:
-                            expect(loc_er).to_be_visible(timeout=1000)
-                            check_m = "Повідомлення про помилку", loc_er.inner_text()
-
-                if check_m is not None:
-                    text_err = check_m[1]
-                    now = datetime.now()
-                    screenshot = page_open.screenshot(type='png',
-                                         path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                    debug(f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                        "Скрін сторінки", screenshot )
-                    raise AssertionError(
-                        f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні валідних даних: {value}")
-                        # Элемент не появился — просто пропускаем
+                # функція перевірки появи alert та інших повідомлень про помилку
+                check_er(page_open, field, value, user_data[0]["check_attr"])
             ###################################################################################
             # функція можливих дій після валідного заповнення усих полів
             # у разі відсутності елемента фіксації валідного введення
@@ -527,50 +469,14 @@ def test_positive_form_login(page_open, user_data):
             ####################################################################################
         with allure.step("Дії після заповнення полів валідними  даними"):
             # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-            el_t = user_data[0]['el_fix_after_fill']
-            if el_t != '':
-                if not after_fill_fields(page_open, el_t, user_data[0]['txt_el_fix_after_fill']):
-                    loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-                    if loc_er.count() > 0:
-                        expect(loc_er).to_be_visible(timeout=1000)
-                        debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
-                        raise AssertionError(
-                            f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
-                    else:
-                        debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-                        now = datetime.now()
-                        screenshot = page_open.screenshot(type='png',
-                                                          path=f'screenshots/question_positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                        debug(
-                            f'Скриншот останньої сторінки після проходження негативного тесту з невідомих причин question_positive_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                            "Скрін сторінки", screenshot)
-                        print('\n')
-                        raise Exception(
-                            "З невідомих причин не відкрилась сторінка входу у профіль користувача")
-                    # else:
-                    #     raise AssertionError(
-                    #         f"З невідомих причин не відкрилась сторінка після кліку на кнопці {txt}")
-                else:
-                    loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
-                if loc_txt_reg.count() > 0:
-                    expect(loc_txt_reg).to_be_visible()
-                    debug("Підтверджено привітання користувача", "Вхід у профіль")
-                else:
-                    debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-                    raise AssertionError(
-                        f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
-                # Скриншот страницы
-                now = datetime.now()
-                screenshot = page_open.screenshot()
-                page_open.screenshot(type='png',
-                                     path=f'screenshots/positiv_login_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                debug(
-                    f'Скриншот сторінки входу у профіль користувача після заповнення полів positiv_login_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                    "Скрін сторінки", screenshot)
-                #########################################################################
-                # функція переходу до головної сторінки після реєстрації
-                exit_to_homepage = out_from_register(page_open)
-                ############################################################################
+            after_fill_fields(page_open, el_t, txt, field)
+            #########################################################################
+            # функція переходу до головної сторінки після входу
+            if out_from_register(page_open):
+                print('\n')
+                debug("Підтверджено перехід на головну сторінку після входу", "Головна сторінка")
+            else:
+                debug(f"Перехід на головну сторінку відхилено з невідомих причин", "Головна сторінка")
         ##################################################################################
         print('\n')
         debug("Позитивні тести пройдено успішно", "PASSED")
