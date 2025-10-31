@@ -18,7 +18,7 @@ class MyDialog(QDialog, Ui_Dialog):
         # кнопки
         self.btnOk.clicked.connect(self.on_ok)
         self.btnOk.setDefault(True)
-        self.btnOk.setAutoDefault()
+        self.btnOk.setAutoDefault(True)
         self.btnCnl.clicked.connect(self.reject)
 
         # --- нове: вмикаємо/вимикаємо tbSpec по чекбоксу ---

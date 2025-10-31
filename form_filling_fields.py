@@ -630,22 +630,22 @@ class DynamicDialog(QDialog):
 
         dlg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         dlg.setModal(True)
-        if self.entries_def is not None:
-            dlg.chkbLocaliz_at_least_one = self.entries_def['chk_localiz_1']
-            dlg.chkbRegistr_at_least_one = self.entries_def['chk_register_1']
-            dlg.chkbCyfry_at_least_one = self.entries_def['chk_cyfry_1']
-            dlg.chkbSpecS_at_least_one = self.entries_def['chk_spec_1']
-            dlg.chkbCyfry = self.entries_def['chk_cyfry']
-            dlg.chkbSpecs = self.entries_def['chk_spec']
-            dlg.chkbEmail = self.entries_def['chk_email']
-            dlg.chkbUrl = self.entries_def['chk_url']
-            dlg.chkbProbel = self.entries_def['chk_space']
-            dlg.chkbNo_absent = self.entries_def['chk_no_absent']
-            dlg.tbSpec.setText(self.entries_def['tb_spec'])
-            dlg.cmbLocaliz.currentText(self.entries_def['cmb_localiz'])
-            dlg.cmbLocaliz_2.currentText(self.entries_def['cmb_register'])
-            dlg.spinBoxLenMin.setValue(self.entries_def['n_min'])
-            dlg.spinBoxLenMax.setValue(self.entries_def['n_max'])
+        # if self.entries_def is not None:
+        #     dlg.chkbLocaliz_at_least_one = self.entries_def['chk_localiz_1']
+        #     dlg.chkbRegistr_at_least_one = self.entries_def['chk_register_1']
+        #     dlg.chkbCyfry_at_least_one = self.entries_def['chk_cyfry_1']
+        #     dlg.chkbSpecS_at_least_one = self.entries_def['chk_spec_1']
+        #     dlg.chkbCyfry = self.entries_def['chk_cyfry']
+        #     dlg.chkbSpecs = self.entries_def['chk_spec']
+        #     dlg.chkbEmail = self.entries_def['chk_email']
+        #     dlg.chkbUrl = self.entries_def['chk_url']
+        #     dlg.chkbProbel = self.entries_def['chk_space']
+        #     dlg.chkbNo_absent = self.entries_def['chk_no_absent']
+        #     dlg.tbSpec.setText(self.entries_def['tb_spec'])
+        #     dlg.cmbLocaliz.currentText(self.entries_def['cmb_localiz'])
+        #     dlg.cmbLocaliz_2.currentText(self.entries_def['cmb_register'])
+        #     dlg.spinBoxLenMin.setValue(self.entries_def['n_min'])
+        #     dlg.spinBoxLenMax.setValue(self.entries_def['n_max'])
         dlg.setWindowTitle(dlg.windowTitle()+title_str)
         # запуск діалогу встановлення правил формування даних, що вводяться у поля
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
