@@ -122,7 +122,7 @@ class ConfigInputDialog(QDialog):
                     "required": checkbox.isChecked()
                 })
 
-        print(f"Собрано данных: {len(self.config_data)}")
+        # print(f"Собрано данных: {len(self.config_data)}")
         self.accept()
 
     def update_entries(self):

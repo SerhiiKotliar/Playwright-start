@@ -13,6 +13,7 @@ from itertools import zip_longest
 
 
 rule_invalid = {}
+rule_def_fields_settings = {}
 Cyrillic = "[А-Яа-яЁёЇїІіЄєҐґ]"
 Cyrillic_1 = "(?=.*[А-ЯЁЇІЄҐа-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]"
 Cyrillic_1_1 = "(?=.*[А-ЯЁЇІЄҐ])(?=.*[а-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]"
@@ -598,6 +599,7 @@ class DynamicDialog(QDialog):
     # нажатие на кнопку Правила
     def on_rules_clicked(self, combo, field_name):
         global rule_invalid
+        rule_def_fields_settings[field_name] = {}
         title_str = ""
         for name, wrapper in self.gb.items():
             # wrapper = GroupBoxWrapper()
@@ -630,28 +632,43 @@ class DynamicDialog(QDialog):
 
         dlg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         dlg.setModal(True)
-        # if self.entries_def is not None:
-        #     dlg.chkbLocaliz_at_least_one = self.entries_def['chk_localiz_1']
-        #     dlg.chkbRegistr_at_least_one = self.entries_def['chk_register_1']
-        #     dlg.chkbCyfry_at_least_one = self.entries_def['chk_cyfry_1']
-        #     dlg.chkbSpecS_at_least_one = self.entries_def['chk_spec_1']
-        #     dlg.chkbCyfry = self.entries_def['chk_cyfry']
-        #     dlg.chkbSpecs = self.entries_def['chk_spec']
-        #     dlg.chkbEmail = self.entries_def['chk_email']
-        #     dlg.chkbUrl = self.entries_def['chk_url']
-        #     dlg.chkbProbel = self.entries_def['chk_space']
-        #     dlg.chkbNo_absent = self.entries_def['chk_no_absent']
-        #     dlg.tbSpec.setText(self.entries_def['tb_spec'])
-        #     dlg.cmbLocaliz.currentText(self.entries_def['cmb_localiz'])
-        #     dlg.cmbLocaliz_2.currentText(self.entries_def['cmb_register'])
-        #     dlg.spinBoxLenMin.setValue(self.entries_def['n_min'])
-        #     dlg.spinBoxLenMax.setValue(self.entries_def['n_max'])
+        if self.entries_def is not None and field_name in self.entries_def.keys() and all(all(value is not None and value != "" for value in d.values()) for d in self.entries_def[field_name]):
+            dlg.chkbLocaliz_at_least_one.setChecked(self.entries_def[field_name]['chk_localiz_1'])
+            dlg.chkbRegistr_at_least_one.setChecked(self.entries_def[field_name]['chk_register_1'])
+            dlg.chkbCyfry_at_least_one.setChecked(self.entries_def[field_name]['chk_cyfry_1'])
+            dlg.chkbSpecS_at_least_one.setChecked(self.entries_def[field_name]['chk_spec_1'])
+            dlg.chkbCyfry.setChecked(self.entries_def[field_name]['chk_cyfry'])
+            dlg.chkbSpecS.setChecked(self.entries_def[field_name]['chk_spec'])
+            dlg.chkbEmail.setChecked(self.entries_def[field_name]['chk_email'])
+            dlg.chkbURL.setChecked(self.entries_def[field_name]['chk_url'])
+            dlg.chkbProbel.setChecked(self.entries_def[field_name]['chk_space'])
+            dlg.chkbNo_absent.setChecked(self.entries_def[field_name]['chk_no_absent'])
+            dlg.tbSpec.setText(self.entries_def[field_name]['tb_spec'])
+            dlg.cmbLocaliz.currentText(self.entries_def[field_name]['cmb_localiz'])
+            dlg.cmbLocaliz_2.currentText(self.entries_def[field_name]['cmb_register'])
+            dlg.spinBoxLenMin.setValue(self.entries_def[field_name]['n_min'])
+            dlg.spinBoxLenMax.setValue(self.entries_def[field_name]['n_max'])
         dlg.setWindowTitle(dlg.windowTitle()+title_str)
         # запуск діалогу встановлення правил формування даних, що вводяться у поля
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
             if not entries_rules(combo.currentText(), field_name, entries=cur_rules):
                 self.reject()
+            rule_def_fields_settings[field_name]['chk_no_absent'] = dlg.chkbNo_absent.isChecked()
+            rule_def_fields_settings[field_name]['cmb_register'] = dlg.cmbLocaliz_2.currentText()
+            rule_def_fields_settings[field_name]['chk_register_1'] = dlg.chkbRegistr_at_least_one.isChecked()
+            rule_def_fields_settings[field_name]['cmb_localiz'] = dlg.cmbLocaliz.currentText()
+            rule_def_fields_settings[field_name]['chk_localiz_1'] = dlg.chkbLocaliz_at_least_one.isChecked()
+            rule_def_fields_settings[field_name]['chk_cyfry'] = dlg.chkbCyfry.isChecked()
+            rule_def_fields_settings[field_name]['chk_cyfry_1'] = dlg.chkbCyfry_at_least_one.isChecked()
+            rule_def_fields_settings[field_name]['chk_spec'] = dlg.chkbSpecS.isChecked()
+            rule_def_fields_settings[field_name]['chk_spec_1'] = dlg.chkbSpecS_at_least_one.isChecked()
+            rule_def_fields_settings[field_name]['tb_spec'] = dlg.tbSpec.text()
+            rule_def_fields_settings[field_name]['probel'] = dlg.chkbProbel.isChecked()
+            rule_def_fields_settings[field_name]['len_min'] = dlg.spinBoxLenMin.value()
+            rule_def_fields_settings[field_name]['len_max'] = dlg.spinBoxLenMax.value()
+            rule_def_fields_settings[field_name]['email_in'] = dlg.chkbEmail.isChecked()
+            rule_def_fields_settings[field_name]['url_in'] = dlg.chkbURL.isChecked()
         # wrapper.cmb.setFocus()
         combo.setFocus()
 
@@ -793,7 +810,8 @@ def entries_rules(log, fame, **kwargs):
                 digits_str = f"(?=.*\d){digits_str}"
                 digits_str_1 = True
         elif key == "spec" and value:
-            if isinstance(value, str):
+            # if isinstance(value, str):
+            if len(value) < 28:
                 spec_escaped = "".join(re.escape(ch) for ch in value)
             else:
                 spec_escaped = "".join(re.escape(ch) for ch in spec)

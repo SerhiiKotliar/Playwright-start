@@ -165,11 +165,7 @@ def get_user_input():
     input_dlg.radio_button.setChecked(False) #фіксація ввеедення кнопкою
     input_dlg.radio_event.setChecked(True) #фіксація введення по події виходу з поля
     input_dlg.radio_enter.setChecked(False) #фіксація введення клавішею Enter
-    # Задаём количество полей (вызовет update_entries и создаст line_edits)
-    # Блокируем сигналы перед установкой начального значения
-    # input_dlg.spin.blockSignals(True)
     input_dlg.spin.setValue(2)  # Устанавливаем начальное значение
-    # input_dlg.spin.blockSignals(False)
 
     # Теперь можно заполнять каждое поле напрямую через виджеты
     titles = ['URL of page', 'Користувач', 'Пароль']
@@ -181,19 +177,10 @@ def get_user_input():
         checkbox.setChecked(True)
         i += 1
 
-    # input_dlg.spin.setValue(2)
-    # for i, (title, name) in enumerate(zip(titles, names)):
-        # t_edit, n_edit, chk = input_dlg.line_edits[i]
-        # t_edit, n_edit, chk = input_dlg.config_data[i]
-        # t_edit.setText(title)
-        # n_edit.setText(name)
-        # chk.setChecked(True)
-
     # Запускаем диалог конфигурации
     if input_dlg.exec() != QDialog.Accepted:
         return None
-    # dic = input_dlg.result
-    # input_dlg.spin.setValue(2)
+
     config = input_dlg.get_config()
 
     dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
