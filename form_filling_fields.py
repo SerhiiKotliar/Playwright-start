@@ -14,6 +14,7 @@ from itertools import zip_longest
 
 rule_invalid = {}
 rule_def_fields_settings = {}
+tbspec = ""
 Cyrillic = "[А-Яа-яЁёЇїІіЄєҐґ]"
 Cyrillic_1 = "(?=.*[А-ЯЁЇІЄҐа-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]"
 Cyrillic_1_1 = "(?=.*[А-ЯЁЇІЄҐ])(?=.*[а-яїієёґ])[А-Яа-яЁёЇїІіЄєҐґ]"
@@ -567,7 +568,7 @@ class DynamicDialog(QDialog):
                 if "no_digit" in rule_invalid[gr_t] and not any(c.isdigit() for c in gb.cmb.currentText()):
                     txt_err += "має містити принаймні одну цифру\n"
                 if "no_spec" in rule_invalid[gr_t] and not any(c in spec_escaped for c in gb.cmb.currentText()):
-                    txt_err += f"має містити принаймні один спеціальний символ з {spec_escaped}\n"
+                    txt_err += f"має містити принаймні один спеціальний символ з {tbspec}\n"
                 if "no_email" in rule_invalid[gr_t] and not bool(re.fullmatch(pattern, gb.cmb.currentText())):
                     txt_err += "має бути формату email\n"
                 if "no_url" in rule_invalid[gr_t] and not bool(re.fullmatch(pattern, gb.cmb.currentText())):
@@ -718,10 +719,11 @@ class DynamicDialog(QDialog):
 ########################################################################
 
 def entries_rules(log, fame, **kwargs):
-    global pattern, chars, len_min, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat, lat_Cyr_1, latin_1, Cyrillic_1, lat_Cyr_up, lat_Cyr_low, lat_Cyr_1, lat_Cyr, spec, digits_str_1, digits_str, spec_escaped, spec_escaped_1
+    global pattern, chars, len_min, tbspec, len_max, latin, Cyrillic, spec_escaped, rule_invalid, no_absent, upregcyr, upreglat, lowregcyr, lowreglat, lat_Cyr_1, latin_1, Cyrillic_1, lat_Cyr_up, lat_Cyr_low, lat_Cyr_1, lat_Cyr, spec, digits_str_1, digits_str, spec_escaped, spec_escaped_1
 
     entries = kwargs["entries"]
     # инициализация переменных
+    tbspec = ''
     local = ""
     both_reg = False
     digits_str = ""
@@ -815,6 +817,7 @@ def entries_rules(log, fame, **kwargs):
                 spec_escaped = "".join(re.escape(ch) for ch in value)
             else:
                 spec_escaped = "".join(re.escape(ch) for ch in spec)
+            tbspec = spec_escaped
         elif key == "len_min":
             len_min = value
         elif key == "len_max":
@@ -845,7 +848,7 @@ def entries_rules(log, fame, **kwargs):
             parts.append(digits_str)
         if spec_escaped:
             if spec_at_least_one:
-                spec_escaped = f"(?=.*[{spec_escaped}])[{spec_escaped}]"
+                spec_escaped = f"(?=.*[{spec_escaped}])[{spec}]"
                 spec_escaped_1 = True
             else:
                 spec_escaped = f"[{spec_escaped}]"

@@ -1,6 +1,7 @@
 
 from PySide6.QtWidgets import (
-    QApplication, QDialog)
+    QApplication, QDialog, QMessageBox, QFileDialog, QWidget, QPushButton, QVBoxLayout)
+from PySide6.QtCore import Qt
 import allure
 from Config_dialog import ConfigInputDialog
 from form_filling_fields import DynamicDialog
@@ -9,6 +10,7 @@ import sys
 from datetime import datetime
 import os
 import pytest
+import json
 
 
 
@@ -139,42 +141,80 @@ def make_defaul_data(file_name):
     return data
 
 
-# def diff_char(bigger: str, smaller: str) -> str:
-#     # ищем первую позицию, где строки расходятся
-#     for i, (c1, c2) in enumerate(zip(bigger, smaller)):
-#         if c1 != c2:
-#             return c1  # символ из "большей" строки
-#     # если отличий не нашли, то "лишний" символ — в конце
-#     return bigger[len(smaller)]
 
 
 def get_user_input():
     global number_of_test
-    # Проверяем, есть ли QApplication
     app = QApplication.instance()
     created_app = False
     if app is None:
         app = QApplication(sys.argv)
         created_app = True
+    # reply = QMessageBox.question(
+    #     None,
+    #     "КОНФІГУРАЦІЯ",
+    #     "СТВОРИТИ?",
+    #     QMessageBox.Yes | QMessageBox.No,
+    #     defaultButton=QMessageBox.No
+    # )
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Question)
+    msg.setWindowTitle("КОНФІГУРАЦІЯ")
+    msg.setText("СТВОРИТИ?")
+    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    msg.setDefaultButton(QMessageBox.No)
+    msg.setWindowFlags(msg.windowFlags() | Qt.WindowStaysOnTopHint)  # 👈 делает окно поверх всех
+    reply = msg.exec()
+    if reply == QMessageBox.Yes:
+        file_name, _ = QFileDialog.getOpenFileName(
+            None,
+            "Відкрити конфігурацію",
+            os.getcwd(),  # текущая директория
+            "JSON files (*.json);;All files (*)"
+        )
+
+        if file_name:
+            try:
+                with open(file_name, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+                QMessageBox.information(None, "Успіх", f"Файл успішно завантажено:\n{file_name}")
+                print(config_data)
+            except Exception as e:
+                QMessageBox.critical(None, "Помилка", f"Не вдалося відкрити файл:\n{e}")
+        else:
+            QMessageBox.information(None, "Скасовано", "Вибір файлу скасовано")
+    # Проверяем, есть ли QApplication
+    # app = QApplication.instance()
+    # created_app = False
+    # if app is None:
+    #     app = QApplication(sys.argv)
+    #     created_app = True
     input_dlg = ConfigInputDialog()
 
     # Заполняем отдельные поля
     # input_dlg.attr_input.setText('//*[@id="error_1_id_text_string"]')
-    input_dlg.html_input.setText('button')
-    input_dlg.text_input.setText('Register')
-    input_dlg.radio_button.setChecked(False) #фіксація ввеедення кнопкою
-    input_dlg.radio_event.setChecked(True) #фіксація введення по події виходу з поля
-    input_dlg.radio_enter.setChecked(False) #фіксація введення клавішею Enter
-    input_dlg.spin.setValue(2)  # Устанавливаем начальное значение
+    input_dlg.html_input.setText(config_data['HTML_element'])
+    input_dlg.text_input.setText(config_data['HTML_text'])
+    input_dlg.radio_button.setChecked(config_data['fix_button']) #фіксація ввеедення кнопкою
+    input_dlg.radio_event.setChecked(config_data['fix_event']) #фіксація введення по події виходу з поля
+    input_dlg.radio_enter.setChecked(config_data['fix_enter']) #фіксація введення клавішею Enter
+    input_dlg.attr_input.setText(config_data['attribut_error'])
+    input_dlg.spin.setValue(config_data['count_fields'])  # Устанавливаем начальное значение
 
     # Теперь можно заполнять каждое поле напрямую через виджеты
-    titles = ['URL of page', 'Користувач', 'Пароль']
-    names = ['url_of_page', 'Username', 'Password']
+    # titles = ['URL of page', 'Користувач', 'Пароль']
+    # names = ['url_of_page', 'Username', 'Password']
+    titles = []
+    names = []
+    titles = config_data['titles']
+    names = config_data['names']
+    requireds = config_data['required']
     i = 0
+    n = len(input_dlg.current_widgets)
     for title_edit, name_edit, checkbox in input_dlg.current_widgets:
         title_edit.setText(titles[i])
         name_edit.setText(names[i])
-        checkbox.setChecked(True)
+        checkbox.setChecked(requireds[i])
         i += 1
 
     # Запускаем диалог конфигурации

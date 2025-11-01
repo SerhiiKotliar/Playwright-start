@@ -3,8 +3,8 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QWidget, QGroupBox,
     QComboBox, QCheckBox, QMessageBox, QRadioButton, QButtonGroup
 )
-from PySide6.QtCore import Qt
-
+# from PySide6.QtCore import Qt
+import sys
 # ---- Форма ввода конфигурации ----
 class ConfigInputDialog(QDialog):
     def __init__(self, parent=None):
@@ -147,29 +147,29 @@ class ConfigInputDialog(QDialog):
         # Создаем новый список для виджетов текущей сессии
         self.current_widgets = []
 
-        for i in range(self.spin.value() + 1):
+        for i in range(self.spin.value()):
             container = QWidget()
             h_layout = QHBoxLayout(container)
 
-            if i == 0:
-                h_layout.addWidget(QLabel('Title:'))
-                title_edit = QLineEdit("URL of page")
-            else:
-                h_layout.addWidget(QLabel(f'Title {i}:'))
-                title_edit = QLineEdit(f"Поле {i}")
+            # if i == 0:
+            #     h_layout.addWidget(QLabel('Title:'))
+            #     title_edit = QLineEdit("URL of page")
+            # else:
+            h_layout.addWidget(QLabel(f'Title {i}:'))
+            title_edit = QLineEdit(f"Поле {i}")
             h_layout.addWidget(title_edit)
 
-            if i == 0:
-                h_layout.addWidget(QLabel("Name:"))
-                name_edit = QLineEdit("url_of_page")
-            else:
-                h_layout.addWidget(QLabel(f"Name {i}:"))
-                name_edit = QLineEdit(f"textbox{i}")
+            # if i == 0:
+            #     h_layout.addWidget(QLabel("Name:"))
+            #     name_edit = QLineEdit("url_of_page")
+            # else:
+            h_layout.addWidget(QLabel(f"Name {i}:"))
+            name_edit = QLineEdit(f"textbox{i}")
             h_layout.addWidget(name_edit)
 
             required_chk = QCheckBox("Обов'язкове")
-            if i == 0:
-                required_chk.setChecked(True)
+            # if i == 0:
+            #     required_chk.setChecked(True)
             h_layout.addWidget(required_chk)
 
             self.entries_layout.addWidget(container)
@@ -181,3 +181,8 @@ class ConfigInputDialog(QDialog):
         return self.config_data
 
 ##################################################################################################################
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    dlg_config = ConfigInputDialog()
+    dlg_config.show()
+    sys.exit(app.exec())
