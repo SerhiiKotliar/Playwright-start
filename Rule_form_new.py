@@ -11,6 +11,7 @@ from datetime import datetime
 import os
 import pytest
 import json
+from First_settings_dialog import SettingInputDialog as FirstSettingsDialog
 
 
 
@@ -158,17 +159,19 @@ def get_user_input():
     #     defaultButton=QMessageBox.No
     # )
     msg = QMessageBox()
+    msg.setWindowTitle("Конфігурація тестів")
+    msg.setText("Створити конфігурацію чи використати існуючу?")
     msg.setIcon(QMessageBox.Question)
-    msg.setWindowTitle("КОНФІГУРАЦІЯ")
-    msg.setText("СТВОРИТИ?")
-    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-    msg.setDefaultButton(QMessageBox.No)
-    msg.setWindowFlags(msg.windowFlags() | Qt.WindowStaysOnTopHint)  # 👈 делает окно поверх всех
-    reply = msg.exec()
-    if reply == QMessageBox.Yes:
+    # Добавляем две кнопки
+    msg.addButton("СТВОРИТИ", QMessageBox.YesRole)
+    no_btn = msg.addButton("ВИКОРИСТАТИ ІСНУЮЧУ", QMessageBox.NoRole)
+    msg.setDefaultButton(no_btn)
+    msg.exec()
+
+    if msg.clickedButton() == no_btn:
         file_name, _ = QFileDialog.getOpenFileName(
             None,
-            "Відкрити конфігурацію",
+            "Відкрити існуючу конфігурацію",
             os.getcwd(),  # текущая директория
             "JSON files (*.json);;All files (*)"
         )
@@ -177,12 +180,22 @@ def get_user_input():
             try:
                 with open(file_name, "r", encoding="utf-8") as f:
                     config_data = json.load(f)
-                QMessageBox.information(None, "Успіх", f"Файл успішно завантажено:\n{file_name}")
-                print(config_data)
+                # QMessageBox.information(None, "Успіх", f"Файл конфігурації успішно завантажено:\n{file_name}")
+                # print(config_data)
             except Exception as e:
                 QMessageBox.critical(None, "Помилка", f"Не вдалося відкрити файл:\n{e}")
         else:
-            QMessageBox.information(None, "Скасовано", "Вибір файлу скасовано")
+            QMessageBox.information(None, "Скасовано", "Вибір файлу конфігурації скасовано")
+    else:
+        dlg_config = FirstSettingsDialog()
+        # Запускаем диалог конфигурации
+        if dlg_config.exec() != QDialog.Accepted:
+            return None
+        else:
+            file_config = dlg_config.file_config
+            with open(file_config, "r", encoding="utf-8") as f:
+                config_data = json.load(f)
+
     # Проверяем, есть ли QApplication
     # app = QApplication.instance()
     # created_app = False
@@ -190,7 +203,6 @@ def get_user_input():
     #     app = QApplication(sys.argv)
     #     created_app = True
     input_dlg = ConfigInputDialog()
-
     # Заполняем отдельные поля
     # input_dlg.attr_input.setText('//*[@id="error_1_id_text_string"]')
     input_dlg.html_input.setText(config_data['HTML_element'])
@@ -200,7 +212,7 @@ def get_user_input():
     input_dlg.radio_enter.setChecked(config_data['fix_enter']) #фіксація введення клавішею Enter
     input_dlg.attr_input.setText(config_data['attribut_error'])
     input_dlg.spin.setValue(config_data['count_fields'])  # Устанавливаем начальное значение
-
+    input_data_to_fields = [config_data['home_page']]
     # Теперь можно заполнять каждое поле напрямую через виджеты
     # titles = ['URL of page', 'Користувач', 'Пароль']
     # names = ['url_of_page', 'Username', 'Password']
@@ -214,6 +226,7 @@ def get_user_input():
     for title_edit, name_edit, checkbox in input_dlg.current_widgets:
         title_edit.setText(titles[i])
         name_edit.setText(names[i])
+        input_data_to_fields.append('')
         checkbox.setChecked(requireds[i])
         i += 1
 
@@ -223,13 +236,15 @@ def get_user_input():
 
     config = input_dlg.get_config()
 
-    dlg = DynamicDialog(config, input_url=input_data['url'], input_login=input_data['login'],
-                      input_login_l=input_data['login_l'], input_password=input_data['password'],
-                      input_email=input_data['email'], name_of_test="")
+    # dlg = DynamicDialog(config, input_url=config_data['home_page'], input_login=input_data['login'],
+    #                   input_login_l=input_data['login_l'], input_password=input_data['password'],
+    #                   input_email=input_data['email'], name_of_test="")
+    dlg = DynamicDialog(config, input_data_to_fields, name_of_test="")
     # запускаємо діалог введення даних у поля
     if dlg.exec() == QDialog.Accepted:
         if created_app:
             app.quit()
+        # sys.exit(app.exec())
         if input_dlg.radio_event.isChecked():
             dlg.result["fix_enter"] = 0
         if input_dlg.radio_enter.isChecked():

@@ -325,7 +325,8 @@ class GroupBoxWrapper:
 
 # ---- Динамическая форма заполнения полей----
 class DynamicDialog(QDialog):
-    def __init__(self, config, parent=None, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test="", **def_settings):
+    # def __init__(self, config, parent=None, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test="", **def_settings):
+    def __init__(self, config, input_data_to_fields, parent=None, name_of_test="", **def_settings):
         self.entries_def = def_settings
         super().__init__(parent)
         self.gb_focus_left_triggered = False  # флаг, вызывалось ли on_gb_focus_left
@@ -351,6 +352,59 @@ class DynamicDialog(QDialog):
 
         # создаём GroupBox
         self.gb = {}
+        title = "URL of home_page"
+        name = "url_of_page"
+        required = True
+        gb_widget = MyGroupBox(title)
+        gb_widget.setObjectName(name)
+        gb_widget.setStyleSheet("background-color: rgb(85, 255, 127);")
+        gb_widget.setLocale(QLocale(QLocale.Ukrainian, QLocale.Ukraine))
+        gb_widget.setMinimumHeight(60)
+        self.result_title_fields[title] = name
+        # элементы
+        cmb = QComboBox(gb_widget)
+        cmb.setEditable(False)
+        chkb = QCheckBox("Обов'язкове", gb_widget)
+        # cmb.addItem(input_url)
+        # cmb.setCurrentText(input_url)
+        cmb.addItem(input_data_to_fields[0])
+        cmb.setCurrentText(input_data_to_fields[0])
+        cmb.checkbox = chkb
+        chkb.setChecked(required)
+        cmb.setStyleSheet("background-color: rgb(255, 255, 255);")
+
+        btn = QPushButton("Правила", gb_widget)
+
+        # прикрепляем ссылки внутрь gb_widget
+        gb_widget.cmb = cmb
+        gb_widget.chkb = chkb
+        gb_widget.btn = btn
+        # Обязательно зарегистрировать виджеты в MyGroupBox,
+        # чтобы он отслеживал их FocusOut:
+        gb_widget.watch_widget(cmb)
+        gb_widget.watch_widget(chkb)
+        gb_widget.watch_widget(btn)
+
+        # стандартная геометрия
+        cmb.setGeometry(10, 20, 400, 25)
+        chkb.setGeometry(420, 20, 100, 25)
+        btn.setGeometry(530, 15, 60, 30)
+        gb_widget.setFixedHeight(60)
+        self.scroll_layout.addWidget(gb_widget)
+        self.gb[name] = GroupBoxWrapper(gb_widget, cmb, chkb, btn)
+        # подключаем событие изменения чекбокса (с правильным захватом имени)
+        # chkb.toggled.connect(partial(self.on_required_toggled, name))
+        # подключаем сигнал с передачей combo и имени
+        btn.clicked.connect(lambda _, c=cmb, n=name: self.on_rules_clicked(c, n))
+        # запоминаем старое значение
+        self.previous_text = cmb.currentText()
+        # событие изменения текста
+        cmb.editTextChanged.connect(self.on_text_changed)
+        # событие потери фокуса групбоксом
+        gb_widget.focusLeft.connect(self.on_gb_focus_left)
+        # подія отримання фокусу групбоксом
+        gb_widget.focusEntered.connect(lambda: self.on_gb_focus_entered(gb_widget))
+        i = 1
         for cfg in config:
             title = cfg.get("title", "")
             name = cfg.get("name", "")
@@ -366,27 +420,28 @@ class DynamicDialog(QDialog):
             cmb.setEditable(False)
             chkb = QCheckBox("Обов'язкове", gb_widget)
             # привязываем чекбокс к комбобоксу
-            # cmb.checkbox = chkb
-            if name == 'url_of_page':
-                cmb.addItems(input_url)
-                cmb.setCurrentText(input_url[0])
-            if name == 'url':
-                cmb.addItems(input_url)
-                cmb.setCurrentText(input_url[0])
-            if name in ('login', 'Login', 'First name', 'first name', 'First_name', 'first_name'):
-                cmb.addItems(input_login)
-                cmb.setCurrentText(input_login[0])
-            if name in ('login_l', 'Last name', 'last name', 'Last_name', 'last_name'):
-                cmb.addItems(input_login_l)
-                cmb.setCurrentText(input_login_l[0])
-            if name in ('password', 'Password'):
-                cmb.addItems(input_password)
-                cmb.setCurrentText(input_password[0])
-            if name in ('email', 'Email'):
-                cmb.addItems(input_email)
-                cmb.setCurrentText(input_email[0])
+            cmb.checkbox = chkb
+            # if name == 'url_of_page':
+            #     cmb.addItems(input_url)
+            #     cmb.setCurrentText(input_url[0])
+            # if name == 'url':
+            #     cmb.addItems(input_url)
+            #     cmb.setCurrentText(input_url[0])
+            # if name in ('login', 'Login', 'First name', 'first name', 'First_name', 'first_name'):
+            #     cmb.addItems(input_login)
+            #     cmb.setCurrentText(input_login[0])
+            # if name in ('login_l', 'Last name', 'last name', 'Last_name', 'last_name'):
+            #     cmb.addItems(input_login_l)
+            #     cmb.setCurrentText(input_login_l[0])
+            # if name in ('password', 'Password'):
+            #     cmb.addItems(input_password)
+            #     cmb.setCurrentText(input_password[0])
+            # if name in ('email', 'Email'):
+            #     cmb.addItems(input_email)
+            #     cmb.setCurrentText(input_email[0])
+            cmb.addItem(input_data_to_fields[i])
             if required:
-                chkb.setChecked(True)
+                chkb.setChecked(required)
             cmb.setStyleSheet("background-color: rgb(255, 255, 255);")
 
             btn = QPushButton("Правила", gb_widget)
@@ -420,6 +475,7 @@ class DynamicDialog(QDialog):
             gb_widget.focusLeft.connect(self.on_gb_focus_left)
             # подія отримання фокусу групбоксом
             gb_widget.focusEntered.connect(lambda: self.on_gb_focus_entered(gb_widget))
+            i += 1
 
         # ---- Кнопки OK/Відміна внизу ----
         btn_layout = QHBoxLayout()

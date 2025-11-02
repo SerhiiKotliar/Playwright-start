@@ -537,7 +537,7 @@ def test_positive_form_login(page_open, user_data):
 # 🔹 Негативные тесты зависят от позитивного
 # @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
 @allure.epic("Реєстрація. Невалідні дані")
-@pytest.mark.skip(reason="Тест вимкнено")
+# @pytest.mark.skip(reason="Тест вимкнено")
 # @pytest.mark.dependency(depends=["positive"])
 def test_negative_form(page_open: Page, user_data):
     global valid_values, invalid_values, fields
@@ -671,7 +671,7 @@ def test_negative_form(page_open: Page, user_data):
                     with allure.step("Дії після заповнення полів невалідними  даними"):
                         # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
                         if el_t != '':
-                            if not after_fill_fields(page_open, el_t, txt):
+                            if not after_fill_fields(page_open, el_t, txt, field):
                                 loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
                                 if loc_er.count() > 0:
                                     expect(loc_er).to_be_visible(timeout=1000)
