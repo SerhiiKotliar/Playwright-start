@@ -11,6 +11,7 @@ import invalid_datas as in_d
 from datetime import datetime
 from enter_to_homepage import enter_to_fieldspage, confirmation, after_fill_fields, enter_to_fieldspage_login, out_from_register
 from utils import  checking_for_errors
+failed_cases = []
 
 # now = datetime.now()
 fields = []
@@ -208,7 +209,8 @@ def invalid_val(user_data):
     return inval_el
 
 
-def check_er(page, n_field, val_er, attr_er):
+def check_er(page, n_field, val_er, attr_er, neg):
+    global failed_cases
     # функція перевірки появи alert про помилку
     check_m = fail_on_alert(page, "error", 2000)
     if check_m is None:
@@ -234,7 +236,11 @@ def check_er(page, n_field, val_er, attr_er):
         debug(
             f'Скриншот останньої сторінки після помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
             "Скрін сторінки", screenshot)
-        raise AssertionError(
+        if neg:
+            failed_cases.append((n_field, val_er,
+                                 f"З'явилось повідомлення {text_err} про невалідний формат для поля '{n_field}' при введенні невалідних даних: {val_er}"))
+        else:
+            raise AssertionError(
             f"З'явилось повідомлення {text_err} про невалідний формат для поля '{n_field}' при введенні валідних даних: {val_er}")
         # Элемент не появился — просто пропускаем
 
@@ -335,7 +341,7 @@ def test_positive_form(page_open, user_data):
                     debug(f"Зафіксоване введення даних {val} клавішею Enter", f"{field}")
                 ######################################################################
                 # функція перевірки появи alert та інших повідомлень про помилку
-                check_er(page_open, field, value, user_data[0]["check_attr"])
+                check_er(page_open, field, value, user_data[0]["check_attr"], False)
             ###################################################################################
             # функція можливих дій після валідного заповнення усих полів
             # у разі відсутності елемента фіксації валідного введення
@@ -344,7 +350,7 @@ def test_positive_form(page_open, user_data):
             ####################################################################################
         with allure.step("Дії після заповнення полів валідними  даними"):
             # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-            after_fill_fields(page_open, el_t, txt, field)
+            after_fill_fields(page_open, el_t, txt, field, False)
             #########################################################################
             # функція переходу до головної сторінки після реєстрації
             if out_from_register(page_open):
@@ -460,7 +466,7 @@ def test_positive_form_login(page_open, user_data):
                     debug(f"Зафіксоване введення даних {val} клавішею Enter", f"{field}")
                 ######################################################################
                 # функція перевірки появи alert та інших повідомлень про помилку
-                check_er(page_open, field, value, user_data[0]["check_attr"])
+                check_er(page_open, field, value, user_data[0]["check_attr"], False)
             ###################################################################################
             # функція можливих дій після валідного заповнення усих полів
             # у разі відсутності елемента фіксації валідного введення
@@ -469,7 +475,7 @@ def test_positive_form_login(page_open, user_data):
             ####################################################################################
         with allure.step("Дії після заповнення полів валідними  даними"):
             # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-            after_fill_fields(page_open, el_t, txt, field)
+            after_fill_fields(page_open, el_t, txt, field, False)
             #########################################################################
             # функція переходу до головної сторінки після входу
             if out_from_register(page_open):
@@ -538,9 +544,9 @@ def test_positive_form_login(page_open, user_data):
 # @pytest.mark.parametrize("invalid_field, data", generate_negative_cases())
 @allure.epic("Реєстрація. Невалідні дані")
 # @pytest.mark.skip(reason="Тест вимкнено")
-# @pytest.mark.dependency(depends=["positive"])
+@pytest.mark.dependency(depends=["positive"])
 def test_negative_form(page_open: Page, user_data):
-    global valid_values, invalid_values, fields
+    global valid_values, invalid_values, fields, failed_cases
     if len(fields) < 1:
         for field in user_data[3].keys():
             fields.append(field)
@@ -553,7 +559,7 @@ def test_negative_form(page_open: Page, user_data):
     count_tests_for_field = {}
     for field_in, list_inv in invalid_values.items():
         count_tests_for_field[field_in] = len(list_inv)
-    failed_cases = []  # тут збираємо всі провали
+    failed_cases.clear()  # тут збираємо всі провали
     print('\n')
     print("\nНегативний тест: по черзі поля невалідні", "Початок негативного тесту\n")
     with (allure.step('\nПерехід на головну сторінку сайту')):
@@ -573,6 +579,7 @@ def test_negative_form(page_open: Page, user_data):
                     el_invalid_data = el_invalid[0]
                     el_invalid_t = el_invalid[1]
                     tb_f_neg = page_open.get_by_role("textbox", name=field, exact=True)
+                    print('\n')
                     debug(f"заповнення поля невалідністю {el_invalid_data} по типу {el_invalid_t}",f"{field}")
                     tb_f_neg.fill(el_invalid_data)
                     field_n = field
@@ -583,40 +590,47 @@ def test_negative_form(page_open: Page, user_data):
                         tb_f_neg.press("Enter")
                         debug(f"Зафіксоване введення невалідних даних {el_invalid_data} клавішею Enter", f"{field}")
                     ######################################################################
-                    # функція перевірки появи alert про помилку
-                    check_m = fail_on_alert(page_open, "error", 2000)
-                    if check_m is None:
-                        # перевірка на появу повідомлень про помилки після введення даних у поле
-                        # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
-                        # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                        if user_data[0]["check_attr"] != '':
-                            # відомі атрибути повідомлення про помилку
-                            check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-                        else:
-                            # невідомі атрибути, але відома частина тексту повідомлення
-                            loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-                            if loc_er.count() > 0:
-                                expect(loc_er).to_be_visible(timeout=1000)
-                                check_m = "Повідомлення про помилку", loc_er.inner_text()
-
-                    if check_m is not None:
-                        text_err = check_m[1]
-                        now = datetime.now()
-                        screenshot = page_open.screenshot(type='png',
-                                                          path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                        debug(
-                            f'Скриншот останньої сторінки після введення неваліду negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                            "Скрін сторінки", screenshot)
-                        print('\n')
-                        # raise AssertionError(
-                        #     f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {el_invalid_data}")
-                        failed_cases.append((field_n, el_invalid_data, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {el_invalid_data}"))
-                        # continue
-                        # Элемент не появился — просто пропускаем
-                    else:
-                        # в деяких випадках підтвердження введених валідних даних
-                        if el_t == '':
-                            confirmation(page_open, el_invalid_data, field)
+                    # # функція перевірки появи alert про помилку
+                    # check_m = fail_on_alert(page_open, "error", 2000)
+                    # if check_m is None:
+                    #     # перевірка на появу повідомлень про помилки після введення даних у поле
+                    #     # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
+                    #     # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+                    #     if user_data[0]["check_attr"] != '':
+                    #         # відомі атрибути повідомлення про помилку
+                    #         check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
+                    #     else:
+                    #         # невідомі атрибути, але відома частина тексту повідомлення
+                    #         loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
+                    #         if loc_er.count() > 0:
+                    #             expect(loc_er).to_be_visible(timeout=1000)
+                    #             check_m = "Повідомлення про помилку", loc_er.inner_text()
+                    #
+                    # if check_m is not None:
+                    #     text_err = check_m[1]
+                    #     now = datetime.now()
+                    #     screenshot = page_open.screenshot(type='png',
+                    #                                       path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                    #     debug(
+                    #         f'Скриншот останньої сторінки після введення неваліду negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                    #         "Скрін сторінки", screenshot)
+                    #     print('\n')
+                    #     # raise AssertionError(
+                    #     #     f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {el_invalid_data}")
+                    #     failed_cases.append((field_n, el_invalid_data, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field}' при введенні невалідних даних: {el_invalid_data}"))
+                    #     # continue
+                    #     # Элемент не появился — просто пропускаем
+                    # else:
+                    #     # в деяких випадках підтвердження введених валідних даних
+                    #     if el_t == '':
+                    #         confirmation(page_open, el_invalid_data, field)
+                    ######################################################################
+                    # функція перевірки появи alert та інших повідомлень про помилку
+                    check_er(page_open, field_n, el_invalid_data, user_data[0]["check_attr"], True)
+                    ###################################################################################
+                    # # в деяких випадках підтвердження введених валідних даних
+                    # if el_t == '':
+                    #     confirmation(page_open, el_invalid_data, field)
                     #######################################################################
                     for field_v, val_valid in user_data[3].items():
                         if field_v != field:
@@ -636,88 +650,99 @@ def test_negative_form(page_open: Page, user_data):
                                 tb_f_v.press("Enter")
                                 debug(f"Зафіксоване введення валідних даних {val_valid} клавішею Enter", f"{field_v}")
                             ######################################################################
-                            # функція перевірки появи alert про помилку
-                            check_m = fail_on_alert(page_open, "error", 2000)
-                            if check_m is None:
-                                # перевірка на появу повідомлень про помилки після введення даних у поле
-                                # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
-                                # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
-                                if user_data[0]["check_attr"] != '':
-                                    # відомі атрибути повідомлення про помилку
-                                    check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
-                                else:
-                                    # невідомі атрибути, але відома частина тексту повідомлення
-                                    loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-                                    if loc_er.count() > 0:
-                                        expect(loc_er).to_be_visible(timeout=1000)
-                                        check_m = "Повідомлення про помилку", loc_er.inner_text()
-
-                            if check_m is not None:
-                                text_err = check_m[1]
-                                now = datetime.now()
-                                screenshot = page_open.screenshot(type='png',
-                                                                  path=f'screenshots/negativ_question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                                debug(
-                                    f'Скриншот останньої сторінки після помилки при введенні валідних даних negativ_question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                                    "Скрін сторінки", screenshot)
-                                print('\n')
-                                failed_cases.append((field_n, value, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_v}' при введенні валідних даних: {val_valid}"))
-                            else:
-                                # Элемент не появился — просто пропускаем
-                                # в деяких випадках підтвердження введених валідних даних
-                                if el_t == '':
-                                    confirmation(page_open, val_valid, field_v)
-                        #############################################################################
+                        #     # функція перевірки появи alert про помилку
+                        #     check_m = fail_on_alert(page_open, "error", 2000)
+                        #     if check_m is None:
+                        #         # перевірка на появу повідомлень про помилки після введення даних у поле
+                        #         # тобто коли відомі атрибути аварійного повідомлення (id, чи інші селектори)
+                        #         # locator = page_open.locator('//*[@id="error_1_id_text_string"]')
+                        #         if user_data[0]["check_attr"] != '':
+                        #             # відомі атрибути повідомлення про помилку
+                        #             check_m = checking_for_errors(page_open, user_data[0]["check_attr"])
+                        #         else:
+                        #             # невідомі атрибути, але відома частина тексту повідомлення
+                        #             loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
+                        #             if loc_er.count() > 0:
+                        #                 expect(loc_er).to_be_visible(timeout=1000)
+                        #                 check_m = "Повідомлення про помилку", loc_er.inner_text()
+                        #
+                        #     if check_m is not None:
+                        #         text_err = check_m[1]
+                        #         now = datetime.now()
+                        #         screenshot = page_open.screenshot(type='png',
+                        #                                           path=f'screenshots/negativ_question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                        #         debug(
+                        #             f'Скриншот останньої сторінки після помилки при введенні валідних даних negativ_question_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                        #             "Скрін сторінки", screenshot)
+                        #         print('\n')
+                        #         failed_cases.append((field_n, value, f"З'явилось повідомлення {text_err} про невалідний формат для поля '{field_v}' при введенні валідних даних: {val_valid}"))
+                        #     else:
+                        #         # Элемент не появился — просто пропускаем
+                        #         # в деяких випадках підтвердження введених валідних даних
+                        #         if el_t == '':
+                        #             confirmation(page_open, val_valid, field_v)
+                        # #############################################################################
+                            ######################################################################
+                            # функція перевірки появи alert та інших повідомлень про помилку
+                            check_er(page_open, field_v, val_valid, user_data[0]["check_attr"], True)
+                            ###################################################################################
+                        # в деяких випадках підтвердження введених валідних даних
+                        if el_t == '':
+                            confirmation(page_open, val_valid, field_v)
+                    #############################################################################
                     with allure.step("Дії після заповнення полів невалідними  даними"):
+                        # # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
+                        # if el_t != '':
+                        #     if not after_fill_fields(page_open, el_t, txt, field):
+                        #         loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
+                        #         if loc_er.count() > 0:
+                        #             expect(loc_er).to_be_visible(timeout=1000)
+                        #             debug(f"{loc_er.inner_text()}", f"Не відкрилась сторінка після кліку на кнопці {txt}")
+                        #             failed_cases.append((field, el_invalid_data, f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}"))
+                        #             now = datetime.now()
+                        #             screenshot = page_open.screenshot(type='png',
+                        #                                               path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                        #             debug(
+                        #                 f'Скриншот останньої сторінки після планової помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                        #                 "Скрін сторінки", screenshot)
+                        #             print('\n')
+                        #             er_txt = loc_er.inner_text()
+                        #             # Перезагрузка страницы
+                        #             page_open.reload()
+                        #             page_open.wait_for_load_state("domcontentloaded")
+                        #             # Новый локатор после reload
+                        #             loc_er1 = page_open.get_by_text(er_txt)
+                        #             # # Проверка, что сообщение исчезло
+                        #             expect(loc_er1).not_to_be_visible()
+                        #             # expect(page_open.get_by_text(er_txt)).to_have_count(0)
+                        #             debug(f"Скинута помилка {er_txt}","Скидання помилки")
+                        #             print('\n')
+                        #
+                        #     else:
+                        #         loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
+                        #         if loc_txt_reg.count() > 0:
+                        #             expect(loc_txt_reg).to_be_visible()
+                        #             debug("Підтверджено привітання користувача", "Вхід у профіль")
+                        #             screenshot = page_open.screenshot(type='png',
+                        #                                               path=f'screenshots/questions_positiv_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                        #             debug(
+                        #                 f'Скриншот останньої сторінки після проходження позитивного тесту з невідомих причин question_positiv_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                        #                 "Скрін сторінки", screenshot)
+                        #             print('\n')
+                        #         else:
+                        #             debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
+                        #             now = datetime.now()
+                        #             screenshot = page_open.screenshot(type='png',
+                        #                                               path=f'screenshots/question_negativ_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                        #             debug(
+                        #                 f'Скриншот останньої сторінки після проходження негативного тесту з невідомих причин question_negative_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                        #                 "Скрін сторінки", screenshot)
+                        #             print('\n')
+                        #             raise Exception(
+                        #                 "З невідомих причин не відкрилась сторінка входу у профіль користувача")
                         # функція виконання можливої дії після заповнення полів (наприклад, вхід або реєстрація)
-                        if el_t != '':
-                            if not after_fill_fields(page_open, el_t, txt, field):
-                                loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-                                if loc_er.count() > 0:
-                                    expect(loc_er).to_be_visible(timeout=1000)
-                                    debug(f"{loc_er.inner_text()}", f"Не відкрилась сторінка після кліку на кнопці {txt}")
-                                    failed_cases.append((field, el_invalid_data, f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}"))
-                                    now = datetime.now()
-                                    screenshot = page_open.screenshot(type='png',
-                                                                      path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                                    debug(
-                                        f'Скриншот останньої сторінки після планової помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                                        "Скрін сторінки", screenshot)
-                                    print('\n')
-                                    er_txt = loc_er.inner_text()
-                                    # Перезагрузка страницы
-                                    page_open.reload()
-                                    page_open.wait_for_load_state("domcontentloaded")
-                                    # Новый локатор после reload
-                                    loc_er1 = page_open.get_by_text(er_txt)
-                                    # # Проверка, что сообщение исчезло
-                                    expect(loc_er1).not_to_be_visible()
-                                    # expect(page_open.get_by_text(er_txt)).to_have_count(0)
-                                    debug(f"Скинута помилка {er_txt}","Скидання помилки")
-                                    print('\n')
-
-                            else:
-                                loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
-                                if loc_txt_reg.count() > 0:
-                                    expect(loc_txt_reg).to_be_visible()
-                                    debug("Підтверджено привітання користувача", "Вхід у профіль")
-                                    screenshot = page_open.screenshot(type='png',
-                                                                      path=f'screenshots/questions_positiv_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                                    debug(
-                                        f'Скриншот останньої сторінки після проходження позитивного тесту з невідомих причин question_positiv_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                                        "Скрін сторінки", screenshot)
-                                    print('\n')
-                                else:
-                                    debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-                                    now = datetime.now()
-                                    screenshot = page_open.screenshot(type='png',
-                                                                      path=f'screenshots/question_negativ_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-                                    debug(
-                                        f'Скриншот останньої сторінки після проходження негативного тесту з невідомих причин question_negative_{safe_field1}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                                        "Скрін сторінки", screenshot)
-                                    print('\n')
-                                    raise Exception(
-                                        "З невідомих причин не відкрилась сторінка входу у профіль користувача")
+                        after_fill_fields(page_open, el_t, txt, field, True, failed_cases, el_invalid_data)
+                        #########################################################################
                     # ###################################################################################
             except Exception as e:
                 # логування інших помилок (поля, алерти тощо)

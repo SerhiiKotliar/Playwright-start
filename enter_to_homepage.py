@@ -5,7 +5,7 @@ from typing import Callable, Pattern, Union, Optional
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 import re
 from datetime import datetime
-
+# from tests.test_practice import failed_cases
 
 """Специфчні функції для конкретних виипадків тестування"""
 
@@ -91,7 +91,7 @@ def confirmation(page_open: Page, value, field):
 
 
 # функція дій після введення даних в усі поля
-def after_fill_fields(page_open: Page, el: str == '', txt: str == '', last_field) -> bool:
+def after_fill_fields(page_open: Page, el: str == '', txt: str == '', last_field, neg, failed_cases=None, invalid_data=None) -> bool:
     safe_field = re.sub(r'[\\/*?:"<>| ]', "", last_field)
     # є елемент HTML для впливу піля ввдення даних
     if el != '':
@@ -103,10 +103,32 @@ def after_fill_fields(page_open: Page, el: str == '', txt: str == '', last_field
         if loc_er.count() > 0:
             expect(loc_er).to_be_visible(timeout=1000)
             debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
-            raise AssertionError(
-                f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}")
+            if neg:
+                failed_cases.append((last_field, invalid_data,
+                                     f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}"))
+                now = datetime.now()
+                screenshot = page_open.screenshot(type='png',
+                                                  path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                debug(
+                    f'Скриншот останньої сторінки після планової помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                    "Скрін сторінки", screenshot)
+                print('\n')
+                er_txt = loc_er.inner_text()
+                # Перезагрузка страницы
+                page_open.reload()
+                page_open.wait_for_load_state("domcontentloaded")
+                # Новый локатор после reload
+                loc_er1 = page_open.get_by_text(er_txt)
+                # # Проверка, что сообщение исчезло
+                expect(loc_er1).not_to_be_visible()
+                # expect(page_open.get_by_text(er_txt)).to_have_count(0)
+                debug(f"Скинута помилка {er_txt}","Скидання помилки")
+                # print('\n')
+            else:
+                raise AssertionError(
+                f'{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}')
         else:
-            debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
+            debug("Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
             now = datetime.now()
             screenshot = page_open.screenshot(type='png',
                                               path=f'screenshots/question_positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
