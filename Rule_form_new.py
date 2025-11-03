@@ -13,7 +13,7 @@ import pytest
 import json
 from First_settings_dialog import SettingInputDialog as FirstSettingsDialog
 
-
+config_data = {}
 
 def report_bug_and_stop(message: str, page_open=None, name="screenshot_of_skip"):
     # додаємо повідомлення у Allure
@@ -145,7 +145,7 @@ def make_defaul_data(file_name):
 
 
 def get_user_input():
-    global number_of_test
+    global number_of_test, config_data
     app = QApplication.instance()
     created_app = False
     if app is None:
@@ -169,16 +169,16 @@ def get_user_input():
     msg.exec()
 
     if msg.clickedButton() == no_btn:
-        file_name, _ = QFileDialog.getOpenFileName(
+        file_config, _ = QFileDialog.getOpenFileName(
             None,
             "Відкрити існуючу конфігурацію",
             os.getcwd(),  # текущая директория
             "JSON files (*.json);;All files (*)"
         )
 
-        if file_name:
+        if file_config:
             try:
-                with open(file_name, "r", encoding="utf-8") as f:
+                with open(file_config, "r", encoding="utf-8") as f:
                     config_data = json.load(f)
                 # QMessageBox.information(None, "Успіх", f"Файл конфігурації успішно завантажено:\n{file_name}")
                 # print(config_data)
@@ -186,9 +186,10 @@ def get_user_input():
                 QMessageBox.critical(None, "Помилка", f"Не вдалося відкрити файл:\n{e}")
         else:
             QMessageBox.information(None, "Скасовано", "Вибір файлу конфігурації скасовано")
+            config_data = None
     else:
         dlg_config = FirstSettingsDialog()
-        # Запускаем диалог конфигурации
+        # Запускаем диалог создания конфигурации
         if dlg_config.exec() != QDialog.Accepted:
             return None
         else:
@@ -205,33 +206,37 @@ def get_user_input():
     input_dlg = ConfigInputDialog()
     # Заполняем отдельные поля
     # input_dlg.attr_input.setText('//*[@id="error_1_id_text_string"]')
-    input_dlg.html_input.setText(config_data['HTML_element'])
-    input_dlg.text_input.setText(config_data['HTML_text'])
-    input_dlg.radio_button.setChecked(config_data['fix_button']) #фіксація ввеедення кнопкою
-    input_dlg.radio_event.setChecked(config_data['fix_event']) #фіксація введення по події виходу з поля
-    input_dlg.radio_enter.setChecked(config_data['fix_enter']) #фіксація введення клавішею Enter
-    input_dlg.attr_input.setText(config_data['attribut_error'])
-    input_dlg.spin.setValue(config_data['count_fields'])  # Устанавливаем начальное значение
-    input_data_to_fields = [config_data['home_page']]
-    # Теперь можно заполнять каждое поле напрямую через виджеты
-    # titles = ['URL of page', 'Користувач', 'Пароль']
-    # names = ['url_of_page', 'Username', 'Password']
-    titles = []
-    names = []
-    titles = config_data['titles']
-    names = config_data['names']
-    requireds = config_data['required']
-    i = 0
-    n = len(input_dlg.current_widgets)
-    for title_edit, name_edit, checkbox in input_dlg.current_widgets:
-        title_edit.setText(titles[i])
-        name_edit.setText(names[i])
-        input_data_to_fields.append('')
-        checkbox.setChecked(requireds[i])
-        i += 1
+    if config_data is not None:
+        input_dlg.html_input.setText(config_data['HTML_element'])
+        input_dlg.text_input.setText(config_data['HTML_text'])
+        input_dlg.radio_button.setChecked(config_data['fix_button']) #фіксація ввеедення кнопкою
+        input_dlg.radio_event.setChecked(config_data['fix_event']) #фіксація введення по події виходу з поля
+        input_dlg.radio_enter.setChecked(config_data['fix_enter']) #фіксація введення клавішею Enter
+        input_dlg.attr_input.setText(config_data['attribut_error'])
+        input_dlg.spin.setValue(config_data['count_fields'])  # Устанавливаем начальное значение
+        input_data_to_fields = [config_data['home_page']]
+        # Теперь можно заполнять каждое поле напрямую через виджеты
+        # titles = ['URL of page', 'Користувач', 'Пароль']
+        # names = ['url_of_page', 'Username', 'Password']
+        titles = []
+        names = []
+        titles = config_data['titles']
+        names = config_data['names']
+        requireds = config_data['required']
+        i = 0
+        n = len(input_dlg.current_widgets)
+        for title_edit, name_edit, checkbox in input_dlg.current_widgets:
+            title_edit.setText(titles[i])
+            name_edit.setText(names[i])
+            input_data_to_fields.append('')
+            checkbox.setChecked(requireds[i])
+            i += 1
 
     # Запускаем диалог конфигурации
     if input_dlg.exec() != QDialog.Accepted:
+        if created_app:
+            app.quit()
+            sys.exit(0)
         return None
 
     config = input_dlg.get_config()
@@ -239,23 +244,33 @@ def get_user_input():
     # dlg = DynamicDialog(config, input_url=config_data['home_page'], input_login=input_data['login'],
     #                   input_login_l=input_data['login_l'], input_password=input_data['password'],
     #                   input_email=input_data['email'], name_of_test="")
-    dlg = DynamicDialog(config, input_data_to_fields, name_of_test="")
+    dlg = DynamicDialog(config, config_data )
     # запускаємо діалог введення даних у поля
-    if dlg.exec() == QDialog.Accepted:
-        if created_app:
-            app.quit()
-        # sys.exit(app.exec())
-        if input_dlg.radio_event.isChecked():
-            dlg.result["fix_enter"] = 0
-        if input_dlg.radio_enter.isChecked():
-            dlg.result["fix_enter"] = 1
-        if input_dlg.radio_button.isChecked():
-            dlg.result["fix_enter"] = 2
-        dlg.result['check_attr'] = input_dlg.attr_input.text()
-        dlg.result['el_fix_after_fill'] = input_dlg.html_input.text()
-        dlg.result['txt_el_fix_after_fill'] = input_dlg.text_input.text()
-        result_f = dlg.result, dlg.result_invalid, dlg.result_title_fields, dlg.result_fields
-        return result_f
+    if dlg.exec() != QDialog.Accepted:
+        return  None
+        # sys.exit(0)
+    if created_app:
+        app.quit()
+    try:
+        # Сохраняем словарь в JSON-файл
+        with open(file_config, "w", encoding="utf-8") as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=4)
+        # self.file_config = file_name
+        # QMessageBox.information(self, "Успіх", f"Дані конфігурації збережено у {file_name}")
+    except Exception as e:
+        QMessageBox.critical(None, "Помилка", f"Не вдалося зберегти файл:\n{e}")
+    # sys.exit(app.exec())
+    if input_dlg.radio_event.isChecked():
+        dlg.result["fix_enter"] = 0
+    if input_dlg.radio_enter.isChecked():
+        dlg.result["fix_enter"] = 1
+    if input_dlg.radio_button.isChecked():
+        dlg.result["fix_enter"] = 2
+    dlg.result['check_attr'] = input_dlg.attr_input.text()
+    dlg.result['el_fix_after_fill'] = input_dlg.html_input.text()
+    dlg.result['txt_el_fix_after_fill'] = input_dlg.text_input.text()
+    result_f = dlg.result, dlg.result_invalid, dlg.result_title_fields, dlg.result_fields
+    return result_f
     return None
 # # ---- Основной запуск ----
 # if __name__ == "__main__":

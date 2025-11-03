@@ -155,16 +155,16 @@ class ConfigInputDialog(QDialog):
             #     h_layout.addWidget(QLabel('Title:'))
             #     title_edit = QLineEdit("URL of page")
             # else:
-            h_layout.addWidget(QLabel(f'Title {i}:'))
-            title_edit = QLineEdit(f"Поле {i}")
+            h_layout.addWidget(QLabel(f'Title {i+1}:'))
+            title_edit = QLineEdit(f"Поле {i+1}")
             h_layout.addWidget(title_edit)
 
             # if i == 0:
             #     h_layout.addWidget(QLabel("Name:"))
             #     name_edit = QLineEdit("url_of_page")
             # else:
-            h_layout.addWidget(QLabel(f"Name {i}:"))
-            name_edit = QLineEdit(f"textbox{i}")
+            h_layout.addWidget(QLabel(f"Name {i+1}:"))
+            name_edit = QLineEdit(f"textbox{i+1}")
             h_layout.addWidget(name_edit)
 
             required_chk = QCheckBox("Обов'язкове")

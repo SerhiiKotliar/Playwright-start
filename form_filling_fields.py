@@ -326,9 +326,13 @@ class GroupBoxWrapper:
 # ---- Динамическая форма заполнения полей----
 class DynamicDialog(QDialog):
     # def __init__(self, config, parent=None, input_url=None, input_login=None, input_login_l=None, input_password=None, input_email=None, name_of_test="", **def_settings):
-    def __init__(self, config, input_data_to_fields, parent=None, name_of_test="", **def_settings):
+    def __init__(self, config, def_settings):
+        super().__init__()
         self.entries_def = def_settings
-        super().__init__(parent)
+        import copy
+        # self.entries_def = copy.deepcopy(def_settings)  # создаём копию
+        self.temp_data = copy.deepcopy(def_settings)  # рабочая копия для формы
+        self.result_data = None
         self.gb_focus_left_triggered = False  # флаг, вызывалось ли on_gb_focus_left
         self._focus_processing = False  # <— добавляем внутренний флаг
         self.current_groupbox = None
@@ -367,8 +371,8 @@ class DynamicDialog(QDialog):
         chkb = QCheckBox("Обов'язкове", gb_widget)
         # cmb.addItem(input_url)
         # cmb.setCurrentText(input_url)
-        cmb.addItem(input_data_to_fields[0])
-        cmb.setCurrentText(input_data_to_fields[0])
+        cmb.addItem(self.entries_def['home_page'])
+
         cmb.checkbox = chkb
         chkb.setChecked(required)
         cmb.setStyleSheet("background-color: rgb(255, 255, 255);")
@@ -439,7 +443,7 @@ class DynamicDialog(QDialog):
             # if name in ('email', 'Email'):
             #     cmb.addItems(input_email)
             #     cmb.setCurrentText(input_email[0])
-            cmb.addItem(input_data_to_fields[i])
+            # cmb.addItem(input_data_to_fields[i])
             if required:
                 chkb.setChecked(required)
             cmb.setStyleSheet("background-color: rgb(255, 255, 255);")
@@ -656,7 +660,7 @@ class DynamicDialog(QDialog):
     # нажатие на кнопку Правила
     def on_rules_clicked(self, combo, field_name):
         global rule_invalid
-        rule_def_fields_settings[field_name] = {}
+        # rule_def_fields_settings[field_name] = {}
         title_str = ""
         for name, wrapper in self.gb.items():
             # wrapper = GroupBoxWrapper()
@@ -689,43 +693,46 @@ class DynamicDialog(QDialog):
 
         dlg.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         dlg.setModal(True)
-        if self.entries_def is not None and field_name in self.entries_def.keys() and all(all(value is not None and value != "" for value in d.values()) for d in self.entries_def[field_name]):
-            dlg.chkbLocaliz_at_least_one.setChecked(self.entries_def[field_name]['chk_localiz_1'])
-            dlg.chkbRegistr_at_least_one.setChecked(self.entries_def[field_name]['chk_register_1'])
-            dlg.chkbCyfry_at_least_one.setChecked(self.entries_def[field_name]['chk_cyfry_1'])
-            dlg.chkbSpecS_at_least_one.setChecked(self.entries_def[field_name]['chk_spec_1'])
-            dlg.chkbCyfry.setChecked(self.entries_def[field_name]['chk_cyfry'])
-            dlg.chkbSpecS.setChecked(self.entries_def[field_name]['chk_spec'])
-            dlg.chkbEmail.setChecked(self.entries_def[field_name]['chk_email'])
-            dlg.chkbURL.setChecked(self.entries_def[field_name]['chk_url'])
-            dlg.chkbProbel.setChecked(self.entries_def[field_name]['chk_space'])
-            dlg.chkbNo_absent.setChecked(self.entries_def[field_name]['chk_no_absent'])
-            dlg.tbSpec.setText(self.entries_def[field_name]['tb_spec'])
-            dlg.cmbLocaliz.currentText(self.entries_def[field_name]['cmb_localiz'])
-            dlg.cmbLocaliz_2.currentText(self.entries_def[field_name]['cmb_register'])
-            dlg.spinBoxLenMin.setValue(self.entries_def[field_name]['n_min'])
-            dlg.spinBoxLenMax.setValue(self.entries_def[field_name]['n_max'])
+        if self.temp_data is not None and field_name in self.temp_data.keys() and all(d is not None for d in self.temp_data[field_name].values()):
+            dlg.chkbLocaliz_at_least_one.setChecked(self.temp_data[field_name]['chk_localiz_1'])
+            dlg.chkbRegistr_at_least_one.setChecked(self.temp_data[field_name]['chk_register_1'])
+            dlg.chkbCyfry_at_least_one.setChecked(self.temp_data[field_name]['chk_cyfry_1'])
+            dlg.chkbSpecS_at_least_one.setChecked(self.temp_data[field_name]['chk_spec_1'])
+            dlg.chkbCyfry.setChecked(self.temp_data[field_name]['chk_cyfry'])
+            dlg.chkbSpecS.setChecked(self.temp_data[field_name]['chk_spec'])
+            dlg.chkbEmail.setChecked(self.temp_data[field_name]['chk_email'])
+            dlg.chkbURL.setChecked(self.temp_data[field_name]['chk_url'])
+            dlg.chkbProbel.setChecked(self.temp_data[field_name]['chk_space'])
+            dlg.chkbNo_absent.setChecked(self.temp_data[field_name]['chk_no_absent'])
+            dlg.tbSpec.setText(self.temp_data[field_name]['tb_spec'])
+            dlg.cmbLocaliz.setCurrentText(self.temp_data[field_name]['cmb_localiz'])
+            dlg.cmbLocaliz_2.setCurrentText(self.temp_data[field_name]['cmb_register'])
+            dlg.spinBoxLenMin.setValue(self.temp_data[field_name]['len_min'])
+            dlg.spinBoxLenMax.setValue(self.temp_data[field_name]['len_max'])
         dlg.setWindowTitle(dlg.windowTitle()+title_str)
         # запуск діалогу встановлення правил формування даних, що вводяться у поля
         if dlg.exec() == QDialog.Accepted:  # ← проверка, нажата ли OK
             cur_rules = dlg.result  # ← берём результат после закрытия
             if not entries_rules(combo.currentText(), field_name, entries=cur_rules):
                 self.reject()
-            rule_def_fields_settings[field_name]['chk_no_absent'] = dlg.chkbNo_absent.isChecked()
-            rule_def_fields_settings[field_name]['cmb_register'] = dlg.cmbLocaliz_2.currentText()
-            rule_def_fields_settings[field_name]['chk_register_1'] = dlg.chkbRegistr_at_least_one.isChecked()
-            rule_def_fields_settings[field_name]['cmb_localiz'] = dlg.cmbLocaliz.currentText()
-            rule_def_fields_settings[field_name]['chk_localiz_1'] = dlg.chkbLocaliz_at_least_one.isChecked()
-            rule_def_fields_settings[field_name]['chk_cyfry'] = dlg.chkbCyfry.isChecked()
-            rule_def_fields_settings[field_name]['chk_cyfry_1'] = dlg.chkbCyfry_at_least_one.isChecked()
-            rule_def_fields_settings[field_name]['chk_spec'] = dlg.chkbSpecS.isChecked()
-            rule_def_fields_settings[field_name]['chk_spec_1'] = dlg.chkbSpecS_at_least_one.isChecked()
-            rule_def_fields_settings[field_name]['tb_spec'] = dlg.tbSpec.text()
-            rule_def_fields_settings[field_name]['probel'] = dlg.chkbProbel.isChecked()
-            rule_def_fields_settings[field_name]['len_min'] = dlg.spinBoxLenMin.value()
-            rule_def_fields_settings[field_name]['len_max'] = dlg.spinBoxLenMax.value()
-            rule_def_fields_settings[field_name]['email_in'] = dlg.chkbEmail.isChecked()
-            rule_def_fields_settings[field_name]['url_in'] = dlg.chkbURL.isChecked()
+            dic_tmp = {}
+
+            dic_tmp['chk_no_absent'] = dlg.chkbNo_absent.isChecked()
+            dic_tmp['cmb_register'] = dlg.cmbLocaliz_2.currentText()
+            dic_tmp['chk_register_1'] = dlg.chkbRegistr_at_least_one.isChecked()
+            dic_tmp['cmb_localiz'] = dlg.cmbLocaliz.currentText()
+            dic_tmp['chk_localiz_1'] = dlg.chkbLocaliz_at_least_one.isChecked()
+            dic_tmp['chk_cyfry'] = dlg.chkbCyfry.isChecked()
+            dic_tmp['chk_cyfry_1'] = dlg.chkbCyfry_at_least_one.isChecked()
+            dic_tmp['chk_spec'] = dlg.chkbSpecS.isChecked()
+            dic_tmp['chk_spec_1'] = dlg.chkbSpecS_at_least_one.isChecked()
+            dic_tmp['tb_spec'] = dlg.tbSpec.text()
+            dic_tmp['chk_space'] = dlg.chkbProbel.isChecked()
+            dic_tmp['len_min'] = dlg.spinBoxLenMin.value()
+            dic_tmp['len_max'] = dlg.spinBoxLenMax.value()
+            dic_tmp['chk_email'] = dlg.chkbEmail.isChecked()
+            dic_tmp['chk_url'] = dlg.chkbURL.isChecked()
+            self.temp_data[field_name] = dic_tmp
         # wrapper.cmb.setFocus()
         combo.setFocus()
 
@@ -768,6 +775,9 @@ class DynamicDialog(QDialog):
                 if el[:7] != "localiz":
                     val_new.append(el)
             self.result_invalid[key] = val_new
+        # self.entries_def = self.temp_data
+        self.entries_def.clear()
+        self.entries_def.update(self.temp_data)
         self.accept()
 
     def on_cnl_clicked(self):
