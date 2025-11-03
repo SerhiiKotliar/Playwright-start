@@ -541,6 +541,8 @@ class DynamicDialog(QDialog):
         # gb = self.sender()
         self.active_groupbox = gb
         self.previous_text = gb.cmb.currentText()
+        if gb.objectName() in self.temp_data.keys() and 'txt_field' in self.temp_data[gb.objectName()].keys():
+            gb.cmb.setCurrentText(self.temp_data[gb.objectName()]['txt_field'])
         self.gb_focus_left_triggered = False
 
 
@@ -653,6 +655,8 @@ class DynamicDialog(QDialog):
         chars == "."
         pattern = rf"^[{chars}]+$"
         self._focus_processing = False  # обязательно снять блокировку даже при ошибке
+        if self.temp_data[gr_t] is not None:
+            self.temp_data[gr_t]['txt_field'] = gb.cmb.currentText()
         if self.current_groupbox == gb:
             self.current_groupbox = None
         return True
