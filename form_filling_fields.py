@@ -333,8 +333,8 @@ class DynamicDialog(QDialog):
         # self.entries_def = copy.deepcopy(def_settings)  # создаём копию
         self.temp_data = copy.deepcopy(def_settings)  # рабочая копия для формы
         self.result_data = None
-        self.gb_focus_left_triggered = False  # флаг, вызывалось ли on_gb_focus_left
-        self._focus_processing = False  # <— добавляем внутренний флаг
+        # self.gb_focus_left_triggered = False  # флаг, вызывалось ли on_gb_focus_left
+        # self._focus_processing = False  # <— добавляем внутренний флаг
         self.current_groupbox = None
         self.setWindowTitle("Введення даних у тест для поля   ")
         self.resize(640, 140)
@@ -535,22 +535,28 @@ class DynamicDialog(QDialog):
     def on_gb_focus_entered(self, gb):
         if gb is None:
             gb = self.sender()  # если не передали явно, берём источник сигнала
-        if gb is None:
-            return
+        # if gb is None:
+        #     return
         self.current_groupbox = gb
         # gb = self.sender()
         self.active_groupbox = gb
         self.previous_text = gb.cmb.currentText()
-        if gb.objectName() in self.temp_data.keys() and 'txt_field' in self.temp_data[gb.objectName()].keys():
-            gb.cmb.setCurrentText(self.temp_data[gb.objectName()]['txt_field'])
-        self.gb_focus_left_triggered = False
+        # if gb.objectName() in self.temp_data.keys() and 'txt_field' in self.temp_data[gb.objectName()].keys():
+        #     gb.cmb.setCurrentText(self.temp_data[gb.objectName()]['txt_field'])
+        # self.gb_focus_left_triggered = False
+
+    # def on_cmb_focus_entered(self, gb):
+    #     gb = self.sender()
+    #     if gb.objectName() in self.temp_data.keys() and 'txt_field' in self.temp_data[gb.objectName()].keys():
+    #         gb.cmb.setCurrentText(self.temp_data[gb.objectName()]['txt_field'])
+
 
 
     # втрата фокусу групбоксом
     def on_gb_focus_left(self, gb=None):
-        if self._focus_processing:
-            return False  # предотвращаем повторный вызов
-        self._focus_processing = True
+        # if self._focus_processing:
+        #     return False  # предотвращаем повторный вызов
+        # self._focus_processing = True
         if gb is None:
             gb = self.sender()  # если вызвано сигналом — возьмём sender
         # gb = self.sender()
@@ -561,15 +567,15 @@ class DynamicDialog(QDialog):
         if chars == ".":
             pattern = rf"^[{chars}]+$"
             self.previous_text = gb.cmb.currentText()
-            self.gb_focus_left_triggered = True
-            self._focus_processing = False  # обязательно снять блокировку даже при ошибке
+            # self.gb_focus_left_triggered = True
+            # self._focus_processing = False  # обязательно снять блокировку даже при ошибке
             if self.current_groupbox == gb:
                 self.current_groupbox = None
             return True
 
         # Перевірка на відповідність pattern
         txt_err = ""
-        self.gb_focus_left_triggered = True
+        # self.gb_focus_left_triggered = True
         for el_t in rule_invalid[gr_t]:
             if el_t[:7] == "localiz":
                 # локализация установленная, полная, с учётом всех символов и регистра
@@ -648,13 +654,13 @@ class DynamicDialog(QDialog):
                     txt_err = "не має бути з цифрами"
             if txt_err != "":
                 QMessageBox.warning(self, "Помилка вводу", f"Поле {gr_t_title}\n"+txt_err)
-                self._focus_processing = False  # обязательно снять блокировку даже при ошибке
+                # self._focus_processing = False  # обязательно снять блокировку даже при ошибке
                 return False
         # Якщо все добре, зберігаємо нове значення
         self.previous_text = gb.cmb.currentText()
         chars == "."
         pattern = rf"^[{chars}]+$"
-        self._focus_processing = False  # обязательно снять блокировку даже при ошибке
+        # self._focus_processing = False  # обязательно снять блокировку даже при ошибке
         if self.temp_data[gr_t] is not None:
             self.temp_data[gr_t]['txt_field'] = gb.cmb.currentText()
         if self.current_groupbox == gb:
@@ -736,16 +742,19 @@ class DynamicDialog(QDialog):
             dic_tmp['len_max'] = dlg.spinBoxLenMax.value()
             dic_tmp['chk_email'] = dlg.chkbEmail.isChecked()
             dic_tmp['chk_url'] = dlg.chkbURL.isChecked()
-            self.temp_data[field_name] = dic_tmp
+            for key, value in dic_tmp.items():
+                self.temp_data[field_name][key] = value
         # wrapper.cmb.setFocus()
         combo.setFocus()
+        if field_name in self.temp_data.keys() and 'txt_field' in self.temp_data[field_name].keys():
+            combo.setCurrentText(self.temp_data[field_name]['txt_field'])
 
     def on_ok_clicked(self):
         """Срабатывает при нажатии кнопки 'Введення' — собирает данные и закрывает диалог."""
-        if not self.gb_focus_left_triggered:
-            # if not self.on_gb_focus_left():
-            if not self.on_gb_focus_left(self.current_groupbox):
-                return False
+        # if not self.gb_focus_left_triggered:
+        #     # if not self.on_gb_focus_left():
+        #     if not self.on_gb_focus_left(self.current_groupbox):
+        #         return False
         global rule_invalid
         titles = []
         for name, wrapper in self.gb.items():

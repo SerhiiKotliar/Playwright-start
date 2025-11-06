@@ -22,7 +22,7 @@ from helper import debug
 def user_data():
 
     result, result_inv, result_tit_f, result_fields = get_user_input()  # открытие формы
-
+    print("\n")
     debug(f"Дані для тестів отримані:\n{result}\n{result_inv}\n{result_tit_f}\n{result_fields}", "FIXTURE")
     return result, result_inv, result_tit_f, result_fields  # возвращаем введённые данные
 ###################################################################################
