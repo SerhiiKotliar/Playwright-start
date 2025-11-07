@@ -661,8 +661,8 @@ class DynamicDialog(QDialog):
         chars == "."
         pattern = rf"^[{chars}]+$"
         # self._focus_processing = False  # обязательно снять блокировку даже при ошибке
-        if self.temp_data[gr_t] is not None:
-            self.temp_data[gr_t]['txt_field'] = gb.cmb.currentText()
+        # if self.temp_data[gr_t] is not None:
+        self.temp_data[gr_t]['txt_field'] = gb.cmb.currentText()
         if self.current_groupbox == gb:
             self.current_groupbox = None
         return True
@@ -726,7 +726,8 @@ class DynamicDialog(QDialog):
             if not entries_rules(combo.currentText(), field_name, entries=cur_rules):
                 self.reject()
             dic_tmp = {}
-
+            if self.temp_data[field_name] is None:
+                self.temp_data[field_name] = dic_tmp
             dic_tmp['chk_no_absent'] = dlg.chkbNo_absent.isChecked()
             dic_tmp['cmb_register'] = dlg.cmbLocaliz_2.currentText()
             dic_tmp['chk_register_1'] = dlg.chkbRegistr_at_least_one.isChecked()
@@ -746,7 +747,8 @@ class DynamicDialog(QDialog):
                 self.temp_data[field_name][key] = value
         # wrapper.cmb.setFocus()
         combo.setFocus()
-        if field_name in self.temp_data.keys() and 'txt_field' in self.temp_data[field_name].keys():
+        # if field_name in self.temp_data.keys() and 'txt_field' in self.temp_data[field_name].keys():
+        if 'txt_field' in self.temp_data[field_name].keys():
             combo.setCurrentText(self.temp_data[field_name]['txt_field'])
 
     def on_ok_clicked(self):

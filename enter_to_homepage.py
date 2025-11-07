@@ -34,7 +34,7 @@ def click_and_wait_url_change(
 
 # функція переходу з головної сторінки на цільову для реєстрації
 def enter_to_fieldspage(page_open: Page) -> Page:
-    # ## https: // www.qa - practice.com /
+    # ## https://www.qa-practice.com/
     # ## перехід на сторінку, де заповнюються поля
     # expect(page_open.get_by_role("link", name="Text input")).to_be_visible()
     # debug("знайдено посилання Text input", "Перевірка наявності посилання Text input")
@@ -98,63 +98,63 @@ def after_fill_fields(page_open: Page, el: str == '', txt: str == '', last_field
         lo_reg = page_open.get_by_role(el, name=txt)
         changed, new_url = click_and_wait_url_change(page_open, lambda: lo_reg.click())
         debug(f"здійснено клік на кнопці {txt}", f"Перехід на сторінку після кліку на кнопці {txt}")
-    if not changed:
-        loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
-        if loc_er.count() > 0:
-            expect(loc_er).to_be_visible(timeout=1000)
-            debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
-            if neg:
-                failed_cases.append((last_field, invalid_data,
-                                     f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}"))
+        if not changed:
+            loc_er = page_open.get_by_text(re.compile(r"^(Invalid .*|User .*)"))
+            if loc_er.count() > 0:
+                expect(loc_er).to_be_visible(timeout=1000)
+                debug(f"{loc_er.inner_text()}", "Повідомлення про помилку")
+                if neg:
+                    failed_cases.append((last_field, invalid_data,
+                                         f"{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}"))
+                    now = datetime.now()
+                    screenshot = page_open.screenshot(type='png',
+                                                      path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                    debug(
+                        f'Скриншот останньої сторінки після планової помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                        "Скрін сторінки", screenshot)
+                    print('\n')
+                    er_txt = loc_er.inner_text()
+                    # Перезагрузка страницы
+                    page_open.reload()
+                    page_open.wait_for_load_state("domcontentloaded")
+                    # Новый локатор после reload
+                    loc_er1 = page_open.get_by_text(er_txt)
+                    # # Проверка, что сообщение исчезло
+                    expect(loc_er1).not_to_be_visible()
+                    # expect(page_open.get_by_text(er_txt)).to_have_count(0)
+                    debug(f"Скинута помилка {er_txt}","Скидання помилки")
+                    # print('\n')
+                else:
+                    raise AssertionError(
+                    f'{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}')
+            else:
+                debug("Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
                 now = datetime.now()
                 screenshot = page_open.screenshot(type='png',
-                                                  path=f'screenshots/negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                                                  path=f'screenshots/question_positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
                 debug(
-                    f'Скриншот останньої сторінки після планової помилки negativ_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                    f'Скриншот останньої сторінки після проходження негативного тесту з невідомих причин question_positive_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
                     "Скрін сторінки", screenshot)
                 print('\n')
-                er_txt = loc_er.inner_text()
-                # Перезагрузка страницы
-                page_open.reload()
-                page_open.wait_for_load_state("domcontentloaded")
-                # Новый локатор после reload
-                loc_er1 = page_open.get_by_text(er_txt)
-                # # Проверка, что сообщение исчезло
-                expect(loc_er1).not_to_be_visible()
-                # expect(page_open.get_by_text(er_txt)).to_have_count(0)
-                debug(f"Скинута помилка {er_txt}","Скидання помилки")
-                # print('\n')
+                raise Exception(
+                    "З невідомих причин не відкрилась сторінка входу у профіль користувача")
+        else:
+            loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
+            if loc_txt_reg.count() > 0:
+                expect(loc_txt_reg).to_be_visible()
+                debug("Підтверджено привітання користувача", "Вхід у профіль")
+                # Скриншот страницы
+                now = datetime.now()
+                screenshot = page_open.screenshot()
+                page_open.screenshot(type='png',
+                                     path=f'screenshots/positiv_reestr_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
+                debug(
+                    f'Скриншот сторінки привітання після заповнення полів positiv_reestr_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
+                    "Скрін сторінки", screenshot)
             else:
+                debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
                 raise AssertionError(
-                f'{loc_er.inner_text()}\nНе відкрилась сторінка після кліку на кнопці {txt}')
-        else:
-            debug("Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-            now = datetime.now()
-            screenshot = page_open.screenshot(type='png',
-                                              path=f'screenshots/question_positiv_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-            debug(
-                f'Скриншот останньої сторінки після проходження негативного тесту з невідомих причин question_positive_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                "Скрін сторінки", screenshot)
-            print('\n')
-            raise Exception(
-                "З невідомих причин не відкрилась сторінка входу у профіль користувача")
-    else:
-        loc_txt_reg = page_open.get_by_text(re.compile(r"^(Welcome, .*|Congradulation.*)"))
-        if loc_txt_reg.count() > 0:
-            expect(loc_txt_reg).to_be_visible()
-            debug("Підтверджено привітання користувача", "Вхід у профіль")
-            # Скриншот страницы
-            now = datetime.now()
-            screenshot = page_open.screenshot()
-            page_open.screenshot(type='png',
-                                 path=f'screenshots/positiv_reestr_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png")
-            debug(
-                f'Скриншот сторінки привітання після заповнення полів positiv_reestr_{safe_field}_{now.strftime("%d-%m-%Y %H-%M-%S")}' + f"-{now.microsecond}.png",
-                "Скрін сторінки", screenshot)
-        else:
-            debug(f"Вхід у профіль відхилено з невідомих причин", "Вхід у профіль")
-            raise AssertionError(
-                f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
+                    f"{loc_txt_reg.inner_text()}\nЗ невідомих причин не відкрилась сторінка входу у профіль користувача")
 
 
 # функція переходу на головну сторінку (виходу)
